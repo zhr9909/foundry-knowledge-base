@@ -437,9 +437,13 @@ def select_context(results, top_k=6, original_query="", search_query=""):
     selected = candidates_pool[:top_k]
     formatted = []
     for i, r in enumerate(selected):
+        cid = r.get("chunk_id", "")
+        # Determine source_id from chunk_id prefix
+        src = 5 if cid.startswith("ci_page-") else 2
         formatted.append({
             "index": i + 1,
-            "chunk_id": r.get("chunk_id", ""),
+            "chunk_id": cid,
+            "source_id": src,
             "page": r.get("page", 0),
             "type": r.get("type", ""),
             "text": r.get("text_full", r.get("text", "")),

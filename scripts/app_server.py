@@ -12,7 +12,7 @@ from search import search, list_sections
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import FileResponse,  RedirectResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import uvicorn
@@ -107,6 +107,22 @@ async def chat(req: ChatRequest):
         latency_ms=result.get("latency_ms", 0),
         attempts=result.get("attempts", 1),
     )
+
+
+
+
+# ===== PDF serving =====
+PDF_PATHS = {
+    2: r"D:\微信\xwechat_files\wxid_sr7ys0udhx4a22_0df5\msg\file\2026-06\ASM Handbook Volume 2 Properties and Selection Nonferrous Alloys and Special-Purpose Materials (ASM International) (Z-Library).pdf",
+    5: r"D:\微信\xwechat_files\wxid_sr7ys0udhx4a22_0df5\msg\file\2026-06\ASM Handbook Volume 1A Cast Iron Science and Technology (ASM International, Doru M. Stefanescu) (Z-Library)(1).pdf",
+}
+
+@app.get("/pdf/{source_id}")
+def serve_pdf(source_id: int):
+    path = PDF_PATHS.get(source_id)
+    if not path or not os.path.exists(path):
+        raise HTTPException(404, f"PDF source_id={source_id} not found")
+    return FileResponse(path, media_type="application/pdf", headers={"Content-Disposition": "inline"})
 
 
 if __name__ == "__main__":

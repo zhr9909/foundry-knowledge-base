@@ -17,6 +17,7 @@
     </div>
     <div class="topbar-right">
       <span class="chunk-count" id="chunkCount">5849 chunks</span>
+      <button class="icon-btn" id="pdfToggle" title="文档查看器">📄</button>
       <button class="icon-btn" id="themeToggle" title="切换主题">🌙</button>
       <button class="icon-btn" id="infoToggle" title="关于">ℹ️</button>
     </div>
@@ -131,6 +132,20 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Floating PDF Viewer -->
+<div id="pdfViewer" class="pdf-viewer" style="display:none">
+  <div class="pdf-viewer-header" id="pdfDragHandle">
+    <span class="pdf-viewer-title">📄 文档查看器</span>
+    <div class="pdf-viewer-controls">
+      <span class="pdf-viewer-status" id="pdfStatus">关闭</span>
+      <button class="icon-btn pdf-close-btn" id="pdfCloseBtn">✕</button>
+    </div>
+  </div>
+  <div class="pdf-viewer-body">
+    <iframe id="pdfEmbed" style="width:100%;height:100%;border:none"></iframe>
   </div>
 </div>
 

@@ -632,3 +632,601 @@ Evaluate the answer strictly against the 3 criteria, calculate total score by su
 13:18:56 [AGENT]   Resp (2684ms): 
 13:18:56 [AGENT] Quality: 7/10
 13:18:56 [AGENT] Done: 7201ms
+14:29:51 [AGENT] ==================================================
+14:29:51 [AGENT] Query: 6061铝合金
+14:29:51 [AGENT] Attempt 1/2
+14:29:51 [AGENT] Rewritten: ['6061铝合金']
+14:30:05 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+14:30:05 [AGENT] SQL [hybrid] query='6061铝合金' top_k=12 section=all
+14:30:05 [AGENT]   params: limit=24, top_k=12
+14:30:06 [AGENT]   returned 12 rows in 932ms
+14:30:06 [AGENT]   Query [6061铝合金]: 12 results
+14:30:06 [AGENT]     Top: pg.1963 score=0.5112
+14:30:06 [AGENT]   Merged: 12 candidates -> returning top 12
+14:30:06 [AGENT] Candidates: 12
+14:30:06 [AGENT] Dynamic k: 8 (top_score=0.511)
+14:30:06 [AGENT]   Boost keywords: ['6061']
+14:30:06 [AGENT]     pg.143: 0.4880 -> 0.5680 [+0.08]
+14:30:06 [AGENT]     pg.111: 0.4770 -> 0.5570 [+0.08]
+14:30:06 [AGENT] Context: 8 chunks
+14:30:11 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:30:11 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+14:30:11 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+14:30:12 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:30:12 [AGENT]   Resp (1457ms): 
+14:30:12 [AGENT] Quality: 7/10
+14:30:12 [AGENT] Done: 20495ms
+14:30:29 [AGENT] ==================================================
+14:30:29 [AGENT] Query: 铝合金6061的力学性能
+14:30:29 [AGENT] Attempt 1/2
+14:30:29 [AGENT] Rewritten: ['铝合金6061的力学性能']
+14:30:29 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+14:30:29 [AGENT]   params: limit=24, top_k=12
+14:30:29 [AGENT]   returned 12 rows in 83ms
+14:30:29 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+14:30:29 [AGENT]     Top: pg.767 score=0.4977
+14:30:29 [AGENT]   Merged: 12 candidates -> returning top 12
+14:30:29 [AGENT] Candidates: 12
+14:30:29 [AGENT] Dynamic k: 8 (top_score=0.498)
+14:30:29 [AGENT]   Boost keywords: ['6061']
+14:30:29 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+14:30:29 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+14:30:29 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+14:30:29 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+14:30:29 [AGENT] Context: 8 chunks
+14:30:38 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:30:38 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+14:30:38 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+14:30:40 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:30:40 [AGENT]   Resp (1961ms): 
+14:30:40 [AGENT] Quality: 7/10
+14:30:40 [AGENT] Done: 10683ms
+14:32:06 [AGENT] ==================================================
+14:32:06 [AGENT] Query: 铝合金6061的力学性能
+14:32:06 [AGENT] Attempt 1/2
+14:32:06 [AGENT] Rewritten: ['铝合金6061的力学性能']
+14:32:06 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+14:32:06 [AGENT]   params: limit=24, top_k=12
+14:32:06 [AGENT]   returned 12 rows in 84ms
+14:32:06 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+14:32:06 [AGENT]     Top: pg.767 score=0.4977
+14:32:06 [AGENT]   Merged: 12 candidates -> returning top 12
+14:32:06 [AGENT] Candidates: 12
+14:32:06 [AGENT] Dynamic k: 8 (top_score=0.498)
+14:32:06 [AGENT]   Boost keywords: ['6061']
+14:32:06 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+14:32:06 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+14:32:06 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+14:32:06 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+14:32:06 [AGENT] Context: 8 chunks
+14:32:17 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:32:17 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+14:32:17 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+14:32:19 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:32:19 [AGENT]   Resp (1989ms): 
+14:32:19 [AGENT] Quality: 7/10
+14:32:19 [AGENT] Done: 13271ms
+14:33:10 [AGENT] ==================================================
+14:33:10 [AGENT] Query: 不锈钢的热处理温度
+14:33:10 [AGENT] Attempt 1/2
+14:33:10 [AGENT] Rewritten: ['不锈钢的热处理温度']
+14:33:10 [AGENT] SQL [hybrid] query='不锈钢的热处理温度' top_k=12 section=all
+14:33:10 [AGENT]   params: limit=24, top_k=12
+14:33:10 [AGENT]   returned 12 rows in 110ms
+14:33:10 [AGENT]   Query [不锈钢的热处理温度]: 12 results
+14:33:10 [AGENT]     Top: pg.944 score=0.5746
+14:33:10 [AGENT]   Merged: 12 candidates -> returning top 12
+14:33:10 [AGENT] Candidates: 12
+14:33:10 [AGENT] Dynamic k: 8 (top_score=0.575)
+14:33:10 [AGENT] Context: 8 chunks
+14:33:12 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:33:21 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:33:21 [AGENT] Done: 10450ms
+14:36:28 [AGENT] ==================================================
+14:36:28 [AGENT] Query: 铝合金6061的力学性能
+14:36:28 [AGENT] Attempt 1/2
+14:36:28 [AGENT] Rewritten: ['铝合金6061的力学性能']
+14:36:39 [AGENT] ==================================================
+14:36:39 [AGENT] Query: 6061
+14:36:39 [AGENT] Attempt 1/2
+14:36:39 [AGENT] Rewritten: ['6061']
+14:36:39 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+14:36:39 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+14:36:40 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+14:36:40 [AGENT]   params: limit=24, top_k=12
+14:36:40 [AGENT]   returned 12 rows in 108ms
+14:36:40 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+14:36:40 [AGENT]     Top: pg.767 score=0.4977
+14:36:40 [AGENT]   Merged: 12 candidates -> returning top 12
+14:36:40 [AGENT] Candidates: 12
+14:36:40 [AGENT] Dynamic k: 8 (top_score=0.498)
+14:36:40 [AGENT]   Boost keywords: ['6061']
+14:36:40 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+14:36:40 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+14:36:40 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+14:36:40 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+14:36:40 [AGENT] Context: 8 chunks
+14:36:40 [AGENT] SQL [hybrid] query='6061' top_k=12 section=all
+14:36:40 [AGENT]   params: limit=24, top_k=12
+14:36:40 [AGENT]   returned 12 rows in 123ms
+14:36:40 [AGENT]   Query [6061]: 12 results
+14:36:40 [AGENT]     Top: pg.626 score=0.1016
+14:36:40 [AGENT]   Merged: 12 candidates -> returning top 12
+14:36:40 [AGENT] Candidates: 12
+14:36:40 [AGENT] Dynamic k: 8 (top_score=0.102)
+14:36:40 [AGENT]   Boost keywords: ['6061']
+14:36:40 [AGENT] Context: 8 chunks
+14:36:47 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:36:47 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+14:36:47 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+14:36:49 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:36:49 [AGENT]   Resp (2486ms): 
+14:36:49 [AGENT] Quality: 7/10
+14:36:49 [AGENT] Done: 10569ms
+14:36:52 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:36:52 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+14:36:52 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+14:36:54 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:36:54 [AGENT]   Resp (2197ms): 
+14:36:54 [AGENT] Quality: 7/10
+14:36:54 [AGENT] Done: 25928ms
+14:40:49 [AGENT] ==================================================
+14:40:49 [AGENT] Query: 铜合金的铸造工艺
+14:40:49 [AGENT] Attempt 1/2
+14:40:49 [AGENT] Rewritten: ['铜合金的铸造工艺']
+14:40:59 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+14:40:59 [AGENT] SQL [hybrid] query='铜合金的铸造工艺' top_k=12 section=all
+14:40:59 [AGENT]   params: limit=24, top_k=12
+14:40:59 [AGENT]   returned 12 rows in 108ms
+14:40:59 [AGENT]   Query [铜合金的铸造工艺]: 12 results
+14:40:59 [AGENT]     Top: pg.3380 score=0.5893
+14:40:59 [AGENT]   Merged: 12 candidates -> returning top 12
+14:40:59 [AGENT] Candidates: 12
+14:40:59 [AGENT] Dynamic k: 8 (top_score=0.589)
+14:40:59 [AGENT] Context: 8 chunks
+14:41:03 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:41:15 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:41:15 [AGENT] Done: 26101ms
+14:47:02 [AGENT] ==================================================
+14:47:02 [AGENT] Query: 铝合金6061的力学性能
+14:47:02 [AGENT] Attempt 1/2
+14:47:02 [AGENT] Rewritten: ['铝合金6061的力学性能']
+14:47:02 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+14:47:02 [AGENT]   params: limit=24, top_k=12
+14:47:02 [AGENT]   returned 12 rows in 95ms
+14:47:02 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+14:47:02 [AGENT]     Top: pg.767 score=0.4977
+14:47:02 [AGENT]   Merged: 12 candidates -> returning top 12
+14:47:02 [AGENT] Candidates: 12
+14:47:02 [AGENT] Dynamic k: 8 (top_score=0.498)
+14:47:02 [AGENT]   Boost keywords: ['6061']
+14:47:02 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+14:47:02 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+14:47:02 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+14:47:02 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+14:47:02 [AGENT] Context: 8 chunks
+14:47:10 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:47:10 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+14:47:10 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+14:47:12 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:47:12 [AGENT]   Resp (2026ms): 
+14:47:12 [AGENT] Quality: 7/10
+14:47:12 [AGENT] Done: 10100ms
+14:58:57 [AGENT] ==================================================
+14:58:57 [AGENT] Query: 铝合金6061的力学性能
+14:58:57 [AGENT] Attempt 1/2
+14:58:57 [AGENT] Rewritten: ['铝合金6061的力学性能']
+14:59:09 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+14:59:09 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+14:59:09 [AGENT]   params: limit=24, top_k=12
+14:59:09 [AGENT]   returned 12 rows in 91ms
+14:59:09 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+14:59:09 [AGENT]     Top: pg.767 score=0.4977
+14:59:09 [AGENT]   Merged: 12 candidates -> returning top 12
+14:59:09 [AGENT] Candidates: 12
+14:59:09 [AGENT] Dynamic k: 8 (top_score=0.498)
+14:59:09 [AGENT]   Boost keywords: ['6061']
+14:59:09 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+14:59:09 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+14:59:09 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+14:59:09 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+14:59:09 [AGENT] Context: 8 chunks
+14:59:25 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:59:25 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+14:59:25 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+14:59:27 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+14:59:27 [AGENT]   Resp (2268ms): 
+14:59:27 [AGENT] Quality: 7/10
+14:59:27 [AGENT] Done: 29799ms
+15:03:23 [AGENT] ==================================================
+15:03:23 [AGENT] Query: 铝合金6061的力学性能
+15:03:23 [AGENT] Attempt 1/2
+15:03:23 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:03:34 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+15:03:34 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:03:34 [AGENT]   params: limit=24, top_k=12
+15:03:34 [AGENT]   returned 12 rows in 86ms
+15:03:34 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:03:34 [AGENT]     Top: pg.767 score=0.4977
+15:03:34 [AGENT]   Merged: 12 candidates -> returning top 12
+15:03:34 [AGENT] Candidates: 12
+15:03:34 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:03:34 [AGENT]   Boost keywords: ['6061']
+15:03:34 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:03:34 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:03:34 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:03:34 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:03:34 [AGENT] Context: 8 chunks
+15:03:47 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:03:47 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:03:47 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:03:49 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:03:49 [AGENT]   Resp (2398ms): 
+15:03:49 [AGENT] Quality: 7/10
+15:03:49 [AGENT] Done: 26392ms
+15:10:06 [AGENT] ==================================================
+15:10:06 [AGENT] Query: 铝合金6061的力学性能
+15:10:06 [AGENT] Attempt 1/2
+15:10:06 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:10:16 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+15:10:17 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:10:17 [AGENT]   params: limit=24, top_k=12
+15:10:17 [AGENT]   returned 12 rows in 81ms
+15:10:17 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:10:17 [AGENT]     Top: pg.767 score=0.4977
+15:10:17 [AGENT]   Merged: 12 candidates -> returning top 12
+15:10:17 [AGENT] Candidates: 12
+15:10:17 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:10:17 [AGENT]   Boost keywords: ['6061']
+15:10:17 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:10:17 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:10:17 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:10:17 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:10:17 [AGENT] Context: 8 chunks
+15:10:33 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:10:33 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:10:33 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:10:36 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:10:36 [AGENT]   Resp (2552ms): 
+15:10:36 [AGENT] Quality: 7/10
+15:10:36 [AGENT] Done: 29362ms
+15:11:34 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:14:05 [AGENT] ==================================================
+15:14:05 [AGENT] Query: 铝合金6061的力学性能
+15:14:05 [AGENT] Attempt 1/2
+15:14:05 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:14:15 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+15:14:15 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:14:15 [AGENT]   params: limit=24, top_k=12
+15:14:15 [AGENT]   returned 12 rows in 97ms
+15:14:15 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:14:15 [AGENT]     Top: pg.767 score=0.4977
+15:14:15 [AGENT]   Merged: 12 candidates -> returning top 12
+15:14:15 [AGENT] Candidates: 12
+15:14:15 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:14:15 [AGENT]   Boost keywords: ['6061']
+15:14:15 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:14:15 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:14:15 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:14:15 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:14:15 [AGENT] Context: 8 chunks
+15:14:26 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:14:26 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:14:26 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:14:28 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:14:28 [AGENT]   Resp (2396ms): 
+15:14:28 [AGENT] Quality: 7/10
+15:14:28 [AGENT] Done: 23597ms
+15:14:53 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:15:23 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:15:40 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:24:54 [AGENT] ==================================================
+15:24:54 [AGENT] Query: 铝合金6061的力学性能
+15:24:54 [AGENT] Attempt 1/2
+15:24:54 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:25:04 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+15:25:04 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:25:04 [AGENT]   params: limit=24, top_k=12
+15:25:04 [AGENT]   returned 12 rows in 74ms
+15:25:04 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:25:04 [AGENT]     Top: pg.767 score=0.4977
+15:25:04 [AGENT]   Merged: 12 candidates -> returning top 12
+15:25:04 [AGENT] Candidates: 12
+15:25:04 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:25:04 [AGENT]   Boost keywords: ['6061']
+15:25:04 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:25:04 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:25:04 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:25:04 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:25:04 [AGENT] Context: 8 chunks
+15:25:16 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:25:16 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:25:16 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:25:18 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:25:18 [AGENT]   Resp (2147ms): 
+15:25:18 [AGENT] Quality: 7/10
+15:25:18 [AGENT] Done: 24491ms
+15:28:58 [AGENT] ==================================================
+15:28:58 [AGENT] Query: 铝合金6061的力学性能
+15:28:58 [AGENT] Attempt 1/2
+15:28:58 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:29:09 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+15:29:09 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:29:09 [AGENT]   params: limit=24, top_k=12
+15:29:09 [AGENT]   returned 12 rows in 84ms
+15:29:09 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:29:09 [AGENT]     Top: pg.767 score=0.4977
+15:29:09 [AGENT]   Merged: 12 candidates -> returning top 12
+15:29:09 [AGENT] Candidates: 12
+15:29:09 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:29:09 [AGENT]   Boost keywords: ['6061']
+15:29:09 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:29:09 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:29:09 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:29:09 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:29:09 [AGENT] Context: 8 chunks
+15:29:20 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:29:20 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:29:20 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:29:22 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:29:22 [AGENT]   Resp (2348ms): 
+15:29:22 [AGENT] Quality: 7/10
+15:29:22 [AGENT] Done: 24370ms
+15:39:55 [AGENT] ==================================================
+15:39:55 [AGENT] Query: 铝合金6061的力学性能
+15:39:55 [AGENT] Attempt 1/2
+15:39:55 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:40:05 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+15:40:05 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:40:05 [AGENT]   params: limit=24, top_k=12
+15:40:05 [AGENT]   returned 12 rows in 98ms
+15:40:05 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:40:05 [AGENT]     Top: pg.767 score=0.4977
+15:40:05 [AGENT]   Merged: 12 candidates -> returning top 12
+15:40:05 [AGENT] Candidates: 12
+15:40:05 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:40:05 [AGENT]   Boost keywords: ['6061']
+15:40:05 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:40:05 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:40:05 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:40:05 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:40:05 [AGENT] Context: 8 chunks
+15:40:17 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:40:17 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:40:17 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:40:19 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:40:19 [AGENT]   Resp (2310ms): 
+15:40:19 [AGENT] Quality: 7/10
+15:40:19 [AGENT] Done: 24102ms
+15:42:58 [AGENT] ==================================================
+15:42:58 [AGENT] Query: 铝合金6061的力学性能
+15:42:58 [AGENT] Attempt 1/2
+15:42:58 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:43:08 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+15:43:08 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:43:08 [AGENT]   params: limit=24, top_k=12
+15:43:08 [AGENT]   returned 12 rows in 91ms
+15:43:08 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:43:08 [AGENT]     Top: pg.767 score=0.4977
+15:43:08 [AGENT]   Merged: 12 candidates -> returning top 12
+15:43:08 [AGENT] Candidates: 12
+15:43:08 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:43:08 [AGENT]   Boost keywords: ['6061']
+15:43:08 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:43:08 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:43:08 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:43:08 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:43:08 [AGENT] Context: 8 chunks
+15:43:17 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:43:17 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:43:17 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:43:20 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:43:20 [AGENT]   Resp (2392ms): 
+15:43:20 [AGENT] Quality: 7/10
+15:43:20 [AGENT] Done: 21213ms
+15:43:36 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:43:43 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:44:02 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:44:09 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:44:12 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:44:16 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:44:48 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:47:23 [AGENT] ==================================================
+15:47:23 [AGENT] Query: 铝合金6061的力学性能
+15:47:23 [AGENT] Attempt 1/2
+15:47:23 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:47:23 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:47:23 [AGENT]   params: limit=24, top_k=12
+15:47:23 [AGENT]   returned 12 rows in 130ms
+15:47:23 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:47:23 [AGENT]     Top: pg.767 score=0.4977
+15:47:23 [AGENT]   Merged: 12 candidates -> returning top 12
+15:47:23 [AGENT] Candidates: 12
+15:47:23 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:47:23 [AGENT]   Boost keywords: ['6061']
+15:47:23 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:47:23 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:47:23 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:47:23 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:47:23 [AGENT] Context: 8 chunks
+15:47:33 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:47:33 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:47:33 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:47:36 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:47:36 [AGENT]   Resp (2781ms): 
+15:47:36 [AGENT] Quality: 7/10
+15:47:36 [AGENT] Done: 13011ms
+15:47:58 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:48:02 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:49:07 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:57:12 [AGENT] ==================================================
+15:57:12 [AGENT] Query: 铝合金6061的力学性能
+15:57:12 [AGENT] Attempt 1/2
+15:57:12 [AGENT] Rewritten: ['铝合金6061的力学性能']
+15:57:12 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+15:57:12 [AGENT]   params: limit=24, top_k=12
+15:57:12 [AGENT]   returned 12 rows in 119ms
+15:57:12 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+15:57:12 [AGENT]     Top: pg.767 score=0.4977
+15:57:12 [AGENT]   Merged: 12 candidates -> returning top 12
+15:57:12 [AGENT] Candidates: 12
+15:57:12 [AGENT] Dynamic k: 8 (top_score=0.498)
+15:57:12 [AGENT]   Boost keywords: ['6061']
+15:57:12 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+15:57:12 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+15:57:12 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+15:57:12 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+15:57:12 [AGENT] Context: 8 chunks
+15:57:25 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:57:25 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+15:57:25 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+15:57:27 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+15:57:27 [AGENT]   Resp (2306ms): 
+15:57:27 [AGENT] Quality: 7/10
+15:57:27 [AGENT] Done: 15001ms
+15:57:33 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:58:43 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+15:58:50 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+16:10:56 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。

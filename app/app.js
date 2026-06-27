@@ -101,6 +101,90 @@ document.querySelectorAll('.suggestion-chip').forEach(el => {
 });
 
 
+
+// ===== PDF Viewer =====
+function openPDF(sourceId, pageNum) {
+  const embed = document.getElementById("pdfEmbed");
+  const viewer = document.getElementById("pdfViewer");
+  const status = document.getElementById("pdfStatus");
+  const toggle = document.getElementById("pdfToggle");
+  
+  if (!embed || !viewer) return;
+  
+  // Cache-bust + page anchor to force iframe reload & navigation
+  if (pageNum) {
+    embed.src = "/static/pdf-viewer.html?file=" + encodeURIComponent("/pdf/" + sourceId) + "&page=" + pageNum;
+  } else {
+    embed.src = "/static/pdf-viewer.html?file=" + encodeURIComponent("/pdf/" + sourceId) + "&page=1";
+  }
+  viewer.style.display = "flex";
+  if (toggle) toggle.classList.add("active");
+  if (status) status.textContent = "pg." + (pageNum || "1");
+  
+  // Remember position
+  state.pdfState = { sourceId: sourceId, page: pageNum || 1 };
+}
+
+function closePDF() {
+  const viewer = document.getElementById("pdfViewer");
+  const toggle = document.getElementById("pdfToggle");
+  if (viewer) viewer.style.display = "none";
+  if (toggle) toggle.classList.remove("active");
+}
+
+function togglePDF() {
+  const viewer = document.getElementById("pdfViewer");
+  if (!viewer) return;
+  if (viewer.style.display === "none" || !viewer.style.display) {
+    // Open last document or default to Vol.2
+    const src = state.pdfState ? state.pdfState.sourceId : 2;
+    const page = state.pdfState ? state.pdfState.page : 1;
+    openPDF(src, page);
+  } else {
+    closePDF();
+  }
+}
+
+// Drag support for PDF viewer
+let pdfDragState = null;
+document.addEventListener("mousedown", function(e) {
+  const handle = e.target.closest(".pdf-viewer-header");
+  if (!handle) return;
+  const viewer = handle.closest(".pdf-viewer");
+  if (!viewer) return;
+  
+  const rect = viewer.getBoundingClientRect();
+  pdfDragState = {
+    viewer: viewer,
+    startX: e.clientX,
+    startY: e.clientY,
+    left: rect.left,
+    top: rect.top
+  };
+  e.preventDefault();
+});
+
+document.addEventListener("mousemove", function(e) {
+  if (!pdfDragState) return;
+  const dx = e.clientX - pdfDragState.startX;
+  const dy = e.clientY - pdfDragState.startY;
+  pdfDragState.viewer.style.left = (pdfDragState.left + dx) + "px";
+  pdfDragState.viewer.style.top = (pdfDragState.top + dy) + "px";
+  pdfDragState.viewer.style.right = "auto";
+});
+
+document.addEventListener("mouseup", function() {
+  pdfDragState = null;
+});
+
+// Citation click handler - opens PDF at specific page
+function openCitation(page, sourceId) {
+  if (!sourceId) {
+    sourceId = state.pdfState ? state.pdfState.sourceId : 2;
+  }
+  openPDF(sourceId, page);
+}
+
 // ===== Log Panel =====
 function createAssistantSkeleton() {
   const div = document.createElement('div');
@@ -147,7 +231,7 @@ function fillAssistantAnswer(skeleton, answerText, citations, thinking) {
       const preview = (c.text || '').substring(0, 200);
       const score = typeof c.score === 'number' ? c.score.toFixed(3) : '';
       content += `
-        <a class="citation-card" href="#" onclick="event.preventDefault(); openCitation(${page})">
+        <a class="citation-card" href="#" onclick="event.preventDefault(); sessionStorage.setItem('pdfHighlight',this.querySelector('.citation-text')?.textContent||'');openCitation(${page}, ${c.source_id || 2})">
           <div class="citation-header">
             <span class="citation-page">pg.${page}</span>
             <span class="citation-score">[${score}]</span>
@@ -493,7 +577,7 @@ function addAssistantMessage(text, citations, thinking) {
       const preview = (c.text || '').substring(0, 200);
       const score = typeof c.score === 'number' ? c.score.toFixed(3) : '';
       content += `
-        <a class="citation-card" href="#" onclick="event.preventDefault(); openCitation(${page})">
+        <a class="citation-card" href="#" onclick="event.preventDefault(); sessionStorage.setItem('pdfHighlight',this.querySelector('.citation-text')?.textContent||'');openCitation(${page}, ${c.source_id || 2})">
           <div class="citation-header">
             <span class="citation-page">pg.${page}</span>
             <span class="citation-score">[${score}]</span>
@@ -522,9 +606,7 @@ function renderAnswer(text, citations) {
   return result.replace(/\n/g, '<br>');
 }
 
-function openCitation(page) {
-  alert(`查看第 ${page} 页原文（需 PDF 查看器）`);
-}
+
 
 // ===== Utility =====
 function escapeHtml(s) {
@@ -552,6 +634,15 @@ showKnowledgeBtn.addEventListener('click', () => {
 
 // ===== Init =====
 loadSections();
+
+// PDF viewer toggle
+const pdfToggle = document.getElementById('pdfToggle');
+const pdfClose = document.getElementById('pdfCloseBtn');
+if (pdfToggle) pdfToggle.addEventListener('click', togglePDF);
+if (pdfClose) pdfClose.addEventListener('click', closePDF);
+
+// Init PDF state
+state.pdfState = null;
 
 // Also show chunk count from health endpoint
 fetch('/health').then(r => r.json()).then(d => {

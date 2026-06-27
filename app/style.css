@@ -651,3 +651,107 @@ body {
 .log-panel-inline .log-entry.log-fallback .log-msg { color: #f97316; }
 .log-panel-inline .log-entry.log-done .log-msg { color: #10b981; }
 .log-panel-inline .log-entry.log-error .log-msg { color: #ef4444; }
+
+/* ===== Floating PDF Viewer ===== */
+.pdf-viewer {
+  position: fixed;
+  top: 56px;
+  right: 16px;
+  bottom: 16px;
+  width: 860px;
+  height: auto;
+  height: 70vh;
+  min-width: 320px;
+  min-height: 300px;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: pdfFadeIn 0.25s ease;
+  resize: both;
+}
+
+@keyframes pdfFadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.pdf-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.pdf-viewer-header:active {
+  cursor: grabbing;
+}
+
+.pdf-viewer-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pdf-viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf-viewer-status {
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+}
+
+.pdf-close-btn {
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
+}
+
+.pdf-viewer-body {
+  flex: 1;
+  overflow: hidden;
+  background: #525659;
+  position: relative;
+  min-height: 0;
+}
+
+.pdf-viewer-body embed {
+  display: block;
+}
+
+/* Resize handle (bottom-right corner) */
+.pdf-viewer::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--text-secondary) 50%);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* PDF toggle button active state */
+#pdfToggle.active {
+  background: var(--accent-light);
+  color: var(--accent);
+}
