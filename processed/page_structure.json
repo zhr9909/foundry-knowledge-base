@@ -1,0 +1,122 @@
+{
+  "total_pages": 3470,
+  "pages": [
+    {
+      "page": 1,
+      "text_len": 53,
+      "num_tables": 1,
+      "preview": "ASM\nINTERNATIONAL ®\nThe Materials\nInformation Company",
+      "table_shapes": [
+        "3r x 7c"
+      ]
+    },
+    {
+      "page": 2,
+      "text_len": 1494,
+      "num_tables": 0,
+      "preview": "Volume 2 Publication Information and Contributors\nProperties and Selection: Nonferrous Alloys and Special-Purpose Materials was published in 1990 as Volume 2 of the 10\nEdition Metals Handbook. With the second printing (1992), the series title was changed to ASM Handbook. The Volume\nwas prepared unde"
+    },
+    {
+      "page": 3,
+      "text_len": 2364,
+      "num_tables": 0,
+      "preview": "• Charles O. Bounds Rhône-Poulenc\n• Jack W. Bray Reynolds Metals Company\n• M.B. Brodsky Argonne National Laboratory\n• Terrence K. Brog Coors Ceramics Company\n• J. Capellen Iowa State University\n• Paul J. Cascone J.F. Jelenko & Company\n• J.E Casteras Alpha Metals, Inc.\n• Barrie Cayless Alcan Rolled P"
+    },
+    {
+      "page": 4,
+      "text_len": 2222,
+      "num_tables": 0,
+      "preview": "• James R. Keiser Oak Ridge National Laboratory\n• Kenneth E. Kihlstrom Westmont College\n• Erhard Klar SCM Metal Products, Inc.\n• James J. Klinzing Johnson Matthey Inc.\n• C. Koch North Carolina State University\n• Deborah A. Kramer U.S. Bureau of Mines\n• T. Scott Kreilick Hudson International Conducto"
+    },
+    {
+      "page": 5,
+      "text_len": 2173,
+      "num_tables": 0,
+      "preview": "• L.G. Stevens Indium Corporation of America\n• Michael F. Stevens Los Alamos National Laboratory\n• Archie Stevenson Magnesium Elektron, Inc.\n• James O. Stiegler Oak Ridge National Laboratory\n• A.J. Stonehouse Brush Wellman Inc.\n• Michael Suisman Suisman Titanium Corporation\n• John K. Thorne TiTech I"
+    },
+    {
+      "page": 6,
+      "text_len": 2055,
+      "num_tables": 0,
+      "preview": "• D. Bernier Kester Solder\n• Michael Bess Certified Alloys, Inc.\n• A.W. Blackwood ASARCO Inc.\n• M. Bohlmann Bohlmann TECHNET\n• G. Boiko Billiton Witmetaal U.S.A.\n• Rodney R. Boyer Boeing Commercial Airplane Company\n• Leonard Bozza Engelhard Corporation\n• John F. Breedis Olin Corporation\n• S. Brown A"
+    },
+    {
+      "page": 11,
+      "text_len": 1561,
+      "num_tables": 0,
+      "preview": "science during the past decade--changes that undoubtedly will continue to impact materials engineering into the 21st\ncentury.\nDuring the 1970s and '80s, the metals industry was forced to respond to the challenges brought about by rapid\nadvancements in composite, plastic, and ceramic technology. Duri"
+    },
+    {
+      "page": 21,
+      "text_len": 337,
+      "num_tables": 0,
+      "preview": "Fig. 3 U.S. aluminum production and supply statistics. Source: Aluminum Association, Inc.\nAluminum Alloys\nIt is convenient to divide aluminum alloys into two major categories: casting compositions and wrought compositions. A\nfurther differentiation for each category is based on the primary mechanism"
+    },
+    {
+      "page": 51,
+      "text_len": 1006,
+      "num_tables": 1,
+      "preview": "Grade designation Composition, wt%\nUnspecified\nother\nelements\n3207 . . . . . . 0.30 0.45 0.10 0.40- 0.10 . . . . . . 0.10 . . . . . . . . . . . . 0.05 0.10 rem\n0.8\n3307 . . . . . . 0.6 0.8 0.30 0.50- 0.30 . . . . . . 0.25 . . . . . . . . . 0.10 0.05 0.15 rem\n0.9\n3008 . . . . . . 0.40 0.7 0.10 1.2- 0",
+      "table_shapes": [
+        "11r x 18c"
+      ]
+    },
+    {
+      "page": 101,
+      "text_len": 1099,
+      "num_tables": 1,
+      "preview": "Grade designation Product(c) Composition, wt%\nAluminum UNS. No. ISO(b) Si Fe Cu Mn Mg Cr Ni Zn Sn Ti Unspecified Al,\nAssociation(a) other min(d)\nelements\nEach Total\n520.0 A05200 3522 AlMg10 S 0.25 0.30 0.25 0.15 9.5- . . . . . . 0.15 . . . 0.25 0.05 0.15 rem\nR164 AlMg10; 10.6\nR2147 AlMg10\n520.2 A052",
+      "table_shapes": [
+        "12r x 17c"
+      ]
+    },
+    {
+      "page": 201,
+      "text_len": 701,
+      "num_tables": 1,
+      "preview": "H321 . . . . . . . . . . . . 1 1 2t 1\n1 t 1 t 2 t\n2 2 2\n5086 O . . . 0 1 1t 1t 1t 1 1\nt 1 t 1 t\n2 2 2\nH32 . . . 1 1t 1 1 2t 1 3t\nt 1 t 1 t 2 t\n2 2 2 2\nH34 1 1t 1 2t 1 3t 1 4t\nt 1 t 2 t 3 t\n2 2 2 2\nH36 1 2t 1 . . . . . . . . . . . . . . .\n1 t 2 t\n2 2\n5154 . . . . . . 0 1 1t 1t 1t 1 1\nt 1 t 1 t\n2 2 2\n",
+      "table_shapes": [
+        "14r x 10c"
+      ]
+    },
+    {
+      "page": 501,
+      "text_len": 1138,
+      "num_tables": 1,
+      "preview": "Alloy Temper Specific Density(b) Approximate Electrical Thermal Coefficient of\nand gravity(b) melting range conductivity, conductivity thermal expansion,\nproduct %IACS at 25 °C per °C × 10-6\nform(a) (77 °F), (per °F × 10-6)\ncal/cm·s· °C\nkg/m3 lb/in.3 °C °F 20-100 °C 20-300\n(68-212 °C\n°F) (68-570\n°F)",
+      "table_shapes": [
+        "10r x 11c"
+      ]
+    },
+    {
+      "page": 3466,
+      "text_len": 787,
+      "num_tables": 0,
+      "preview": "• (cid:181)\n• is proportional to; varies as\n• (cid:242)\n• integral of\n• <\n• less than\n•\n=\n• much less than\n• <\n=\n• less than or equal to\n• ±\n• maximum deviation\n• -\n• minus; negative ion charge\n• ×\n• diameters (magnification); multiplied by\n• ·\n• multiplied by\n• /\n• per\n• %\n• percent\n• +\n• plus; pos"
+    },
+    {
+      "page": 3467,
+      "text_len": 778,
+      "num_tables": 0,
+      "preview": "• x (T)\n• temperature dependent coherence length\n• π\n• pi (3.141592)\n• ρ\n• electrical resistivity; density\n• σ\n• liquid surface tension; stress\n• σ\nc\n• capture thermal neutron cross section\n• σ\nf\n• fission thermal neutron cross section\n• S\n• summation of\n• τ\n• time constant; applied stress\n• f (x,t)"
+    },
+    {
+      "page": 3468,
+      "text_len": 1470,
+      "num_tables": 0,
+      "preview": "• N, ν\n• nu\n• X , x\n• xi\n• O, o\n• omicron\n• P , π\n• pi\n• P, ρ\n• rho\n• S , σ\n• sigma\n• T, τ\n• tau\n• ¡ , ν\n• upsilon\n• F ,f\n• phi\n• X, χ\n• chi\n• Ψ, ψ\n• psi\n• Ω, ω\n• omega\no Tradenames\n• AF-56\n• is a registered tradename of Allison Gas Turbine, Division of General Motors Corporation.\n• AL-6X, AL-6XN, A"
+    },
+    {
+      "page": 3469,
+      "text_len": 2189,
+      "num_tables": 0,
+      "preview": "• Ferralium\n• is a registered tradename of Bonar Langley Alloy Ltd.\n• FVS-0611. FVS-0812, FVS-1212, and Metglas\n• are registered tradenames of Allied-Signal Inc.\n• GlidCop\n• is a registered tradename of SCM Metal Products, Inc.\n• Hastelloy and Haynes\n• are registered tradenames of Haynes Internation"
+    },
+    {
+      "page": 3470,
+      "text_len": 212,
+      "num_tables": 0,
+      "preview": "• Waspaloy\n• is a registered tradename of United Technologies, Inc.\n• Weldalite\n• is a registered tradename of Martin Marietta Corporation.\n• 253MA and 254SMO\n• are registered tradenames of Avesta Stainless, Inc."
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "E:\AgentProjects\ai-solution-architect-lab\projects\foundry-knowledge-base\scripts\app_server.py", line 83, in <module>
+    print("\U0001f680 铸造知识库服务启动: http://127.0.0.1:8002")
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f680' in position 0: illegal multibyte sequence

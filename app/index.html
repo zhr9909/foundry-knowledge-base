@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>铸造知识库</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="app">
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo">🏭</span>
+      <h1 class="title">铸造知识库</h1>
+      <span class="model-badge" id="modelBadge">deepseek-v4-flash</span>
+    </div>
+    <div class="topbar-right">
+      <span class="chunk-count" id="chunkCount">5849 chunks</span>
+      <button class="icon-btn" id="themeToggle" title="切换主题">🌙</button>
+      <button class="icon-btn" id="infoToggle" title="关于">ℹ️</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h3>📂 章节筛选</h3>
+        <button class="btn-sm" id="clearSection">清除</button>
+      </div>
+      <div class="sidebar-search">
+        <input type="text" id="sectionFilter" placeholder="搜索章节..." class="input-sm">
+      </div>
+      <div class="section-list" id="sectionList">
+        <div class="section-item active" data-section="">📄 全部章节</div>
+      </div>
+      <div class="sidebar-footer">
+        <button class="btn-link" id="showKnowledgeBtn">📖 知识库概览</button>
+      </div>
+    </aside>
+
+    <!-- Main Chat -->
+    <main class="main">
+      <div class="chat-area" id="chatArea">
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">🏭</div>
+          <h2>铸造知识库 AI 助手</h2>
+          <p>输入问题，从 ASM Handbook Vol.2 中检索相关知识</p>
+          <div class="suggestions">
+            <button class="suggestion-chip" data-q="铝合金6061的力学性能">铝合金6061的力学性能</button>
+            <button class="suggestion-chip" data-q="不锈钢的热处理温度">不锈钢的热处理温度</button>
+            <button class="suggestion-chip" data-q="铜合金的铸造工艺">铜合金的铸造工艺</button>
+            <button class="suggestion-chip" data-q="钛合金的抗拉强度">钛合金的抗拉强度</button>
+          </div>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="loading" id="loading" style="display:none">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+          <span>正在检索知识库...</span>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="input-area">
+        <div class="section-indicator" id="sectionIndicator" style="display:none">
+          当前筛选: <span id="activeSectionLabel"></span>
+          <button class="btn-sm" id="clearSectionBtn">✕</button>
+        </div>
+        <div class="input-row">
+          <textarea id="queryInput" rows="1" placeholder="输入关于金属材料、合金、工艺的问题..." 
+                    autofocus></textarea>
+          <button id="sendBtn" disabled>发送</button>
+        </div>
+        <div class="input-footer">
+          <span>知识库: ASM Handbook Vol.2 (3470页)</span>
+          <span>AI 回答可能不准确，请核实关键数据</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Info Modal -->
+  <div class="modal-overlay" id="infoModal" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>ℹ️ 关于铸造知识库</h2>
+        <button class="icon-btn" id="closeModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="info-grid">
+          <div class="info-item"><label>知识源</label><span>ASM Handbook Vol.2</span></div>
+          <div class="info-item"><label>总页数</label><span>3,470</span></div>
+          <div class="info-item"><label>Chunks</label><span>5,849</span></div>
+          <div class="info-item"><label>检索引擎</label><span>pgvector + 全文检索</span></div>
+          <div class="info-item"><label>混合策略</label><span>RRF 加权融合</span></div>
+          <div class="info-item"><label>AI 模型</label><span>deepseek-v4-flash</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
