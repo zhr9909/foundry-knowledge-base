@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """agent.py - Intelligent RAG Orchestrator
 ===========================================
 Multi-step agent that rewrites queries, parallel searches, selects context,
@@ -125,7 +125,7 @@ IMPROVED_SYSTEM_PROMPT = """你是铸造、金属材料专业知识库专属AI�
 
 
 
-"""
+QUERY_REWRITE_PROMPT = """
 
 你是材料工程专业知识库的检索语句优化专家。
 你的任务：将用户中文材料问题，优化生成1~3条适配混合检索的英文专业检索语句，严格遵循以下全部规则：
@@ -513,6 +513,13 @@ def select_context(results, top_k=6, original_query="", search_query=""):
         scored.append((score, r))
     scored.sort(key=lambda x: x[0], reverse=True)
     candidates_pool = [r for _, r in scored[:max(top_k * 2, 12)]]
+    # Apply cross-encoder reranker
+    try:
+        rq = search_query or original_query
+        candidates_pool = rerank(rq, candidates_pool, top_k=max(top_k * 2, 12))
+        _log.info("  Reranked: %d candidates" % len(candidates_pool))
+    except Exception as re_err:
+        _log.warning("  Reranker failed: %s" % re_err)
     selected = candidates_pool[:top_k]
     formatted = []
     for i, r in enumerate(selected):

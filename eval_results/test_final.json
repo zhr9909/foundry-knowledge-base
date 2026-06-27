@@ -1,0 +1,50 @@
+[
+  {
+    "query": "2048-T851 1000h longitudinal rupture strength 324 MPa",
+    "expected_chunk_ids": [
+      "page-00283"
+    ],
+    "page": 283,
+    "source_id": 2,
+    "all_queries": [
+      "2048-T851 1000h longitudinal rupture strength 324 MPa",
+      "2048-T851 shear strength longitudinal 271 MPa transverse 270 MPa",
+      "2048-T851 Charpy V-notch impact energy longitudinal 10.3 J transverse 6.1 J"
+    ],
+    "summary": "该文本提供了合金2048-T851板材的典型力学性能，包括持久强度（100h和1000h）、剪切强度、压缩性能、弹性模量和冲击强度（Charpy V-notch）的数据。",
+    "keywords": [
+      "2048-T851",
+      "rupture strength",
+      "shear strength",
+      "impact strength",
+      "Charpy V-notch",
+      "0.2% plastic extension"
+    ]
+  },
+  {
+    "query": "合金356.0 T6砂型铸造典型力学性能",
+    "expected_chunk_ids": [
+      "page-00620"
+    ],
+    "page": 620,
+    "source_id": 2,
+    "all_queries": [
+      "合金356.0 T6砂型铸造典型力学性能",
+      "356.0 T7永久模铸造疲劳强度值",
+      "356.0 T51屈服强度0.2% offset"
+    ],
+    "summary": "合金356.0在不同铸造方式和热处理状态下的典型机械性能表，包括拉伸、屈服、延伸率、硬度、剪切、疲劳和压缩强度。",
+    "keywords": [
+      "356.0",
+      "砂型铸造",
+      "永久模铸造",
+      "T6",
+      "T7",
+      "拉伸强度",
+      "屈服强度",
+      "延伸率",
+      "硬度",
+      "疲劳强度"
+    ]
+  }
+]

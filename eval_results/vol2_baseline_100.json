@@ -1,0 +1,2004 @@
+[
+  {
+    "query": "1145 aluminum foil O temper tensile strength MPa",
+    "expected_chunk_ids": [
+      "page-00236"
+    ],
+    "page": 236,
+    "source_id": 2,
+    "all_queries": [
+      "1145 aluminum foil O temper tensile strength MPa",
+      "1145 aluminum foil H18 yield strength ksi",
+      "1145 aluminum foil density g/cm3 20°C"
+    ],
+    "summary": "1145铝箔的典型用途、力学性能（O和H18状态的拉伸强度、屈服强度、延伸率）及热性能（密度、液相线、固相线温度）",
+    "keywords": [
+      "1145 aluminum foil",
+      "tensile strength",
+      "yield strength",
+      "elongation",
+      "O temper",
+      "H18 temper",
+      "density",
+      "liquidus temperature",
+      "solidus temperature"
+    ]
+  },
+  {
+    "query": "C82500铜合金的铸造温度和固溶温度是多少？",
+    "expected_chunk_ids": [
+      "page-01192"
+    ],
+    "page": 1192,
+    "source_id": 2,
+    "all_queries": [
+      "C82500铜合金的铸造温度和固溶温度是多少？",
+      "C82500 typical uses and aging temperature",
+      "C82500 (Cu-2Be-0.5Co-0.25Si) heat treatment parameters"
+    ],
+    "summary": "C82500铜合金的铸造、固溶和时效温度参数及其典型用途",
+    "keywords": [
+      "C82500",
+      "铸造温度",
+      "固溶温度",
+      "时效温度",
+      "Cu-2Be-0.5Co-0.25Si"
+    ]
+  },
+  {
+    "query": "internal tin process MJR superconductor wire heat treatment 210°C 340°C 650°C",
+    "expected_chunk_ids": [
+      "page-02880"
+    ],
+    "page": 2880,
+    "source_id": 2,
+    "all_queries": [
+      "internal tin process MJR superconductor wire heat treatment 210°C 340°C 650°C",
+      "irreversible strain limit of tin-core MJR processed superconductor wire",
+      "microstructure of internal tin processed MJR superconductor wire before and after reaction heat treatment"
+    ],
+    "summary": "内部锡工艺的MJR超导导线在反应热处理前后的显微组织，以及绕制时弯曲应变需低于不可逆应变极限。",
+    "keywords": [
+      "内部锡工艺",
+      "MJR超导导线",
+      "反应热处理",
+      "不可逆应变极限",
+      "显微照片"
+    ]
+  },
+  {
+    "query": "Iridium crucibles for high-temperature reactions and single crystal growth",
+    "expected_chunk_ids": [
+      "page-03015"
+    ],
+    "page": 3015,
+    "source_id": 2,
+    "all_queries": [
+      "Iridium crucibles for high-temperature reactions and single crystal growth",
+      "Uses of iridium in electronic and industrial substrates and jewelry",
+      "Iridium alloying element and crucible applications in crystal production"
+    ],
+    "summary": "铱（Ir）主要用于制造坩埚进行高温反应研究和生产大尺寸、高纯度、无缺陷的人工晶体，应用于电子、工业及珠宝领域，同时也用作合金元素。",
+    "keywords": [
+      "铱",
+      "坩埚",
+      "晶体生长",
+      "高温反应",
+      "电子工业"
+    ]
+  },
+  {
+    "query": "C42500 OS035 tensile strength MPa",
+    "expected_chunk_ids": [
+      "page-01066"
+    ],
+    "page": 1066,
+    "source_id": 2,
+    "all_queries": [
+      "C42500 OS035 tensile strength MPa",
+      "C42500 yield strength 0.2% offset ksi",
+      "C42500 copper alloy typical mechanical properties"
+    ],
+    "summary": "C42500合金（Cu-Sn-Zn）的化学成分和典型力学性能，包括OS035回火态的抗拉强度、屈服强度、伸长率和硬度。",
+    "keywords": [
+      "C42500",
+      "OS035",
+      "抗拉强度",
+      "屈服强度",
+      "0.2% offset",
+      "伸长率",
+      "硬度",
+      "HRB",
+      "HR30T",
+      "ASTM B 591"
+    ]
+  },
+  {
+    "query": "thermal neutron capture cross section of natural uranium at 0.025 eV",
+    "expected_chunk_ids": [
+      "page-03302"
+    ],
+    "page": 3302,
+    "source_id": 2,
+    "all_queries": [
+      "thermal neutron capture cross section of natural uranium at 0.025 eV",
+      "uranium 238 capture cross section 1.6 barns",
+      "alpha uranium fracture stress dependence on grain size and preferred orientation"
+    ],
+    "summary": "铀同位素（234U、235U、238U）的核特性（半衰期、α粒子能量、热中子截面）及α铀机械性能的变异性说明",
+    "keywords": [
+      "铀同位素",
+      "热中子截面",
+      "半衰期",
+      "α铀",
+      "机械性能",
+      "择优取向",
+      "晶粒尺寸",
+      "断裂应力"
+    ]
+  },
+  {
+    "query": "C36000 mechanical properties tensile yield elongation",
+    "expected_chunk_ids": [
+      "page-01051"
+    ],
+    "page": 1051,
+    "source_id": 2,
+    "all_queries": [
+      "C36000 mechanical properties tensile yield elongation",
+      "C36000 chemical composition limits Cu Pb Fe",
+      "C36000 typical uses gears pinions automatic screw machine parts"
+    ],
+    "summary": "C36000铜合金的化学成分、机械性能及应用概述，包括Cu、Pb、Fe等元素含量限值和不同状态下的强度、延伸率、硬度等数据。",
+    "keywords": [
+      "C36000",
+      "化学成分",
+      "机械性能",
+      "抗拉强度",
+      "屈服强度",
+      "延伸率",
+      "硬度",
+      "剪切强度",
+      "QQ-B-613",
+      "QQ-B-626",
+      "齿轮",
+      "小齿轮"
+    ]
+  },
+  {
+    "query": "FeAl alloy fatigue resistance 23.7% vs 28.7% Al room temperature 500°C",
+    "expected_chunk_ids": [
+      "page-02578"
+    ],
+    "page": 2578,
+    "source_id": 2,
+    "all_queries": [
+      "FeAl alloy fatigue resistance 23.7% vs 28.7% Al room temperature 500°C",
+      "Why does higher Al content improve FeAl fatigue at RT but reverse at 500°C?",
+      "superdislocation effect on crack initiation in hyperstoichiometric FeAl alloy"
+    ],
+    "summary": "FeAl合金的疲劳和裂纹扩展行为受铝含量（23.7-28.7 at.%）和温度（20-600°C）影响，室温下高铝含量合金因超位错导致疲劳抗力更好，但500°C时趋势反转。",
+    "keywords": [
+      "FeAl合金",
+      "疲劳抗力",
+      "铝含量",
+      "温度效应",
+      "超位错",
+      "裂纹萌生"
+    ]
+  },
+  {
+    "query": "tungsten carbide tricone bits heavy impact loading abrasion button size shape oil gas drilling",
+    "expected_chunk_ids": [
+      "page-02687"
+    ],
+    "page": 2687,
+    "source_id": 2,
+    "all_queries": [
+      "tungsten carbide tricone bits heavy impact loading abrasion button size shape oil gas drilling",
+      "steel tricone bits shallow soft medium hard sedimentary rocks oil drilling",
+      "diamond oil bits deep bore holes hard crystalline rocks"
+    ],
+    "summary": "石油天然气钻井中三种钻头类型，重点描述了硬质合金三牙轮钻头在重冲击和高磨损工况下需要特殊形状和尺寸的按钮。",
+    "keywords": [
+      "三牙轮钻头",
+      "硬质合金按钮",
+      "冲击载荷",
+      "磨损",
+      "钢齿钻头",
+      "金刚石钻头"
+    ]
+  },
+  {
+    "query": "铌在25°C和870°C下的拉伸弹性模量是多少？",
+    "expected_chunk_ids": [
+      "page-03120"
+    ],
+    "page": 3120,
+    "source_id": 2,
+    "all_queries": [
+      "铌在25°C和870°C下的拉伸弹性模量是多少？",
+      "锻造铌在高温下的蠕变断裂应力数据（10小时、100小时、1000小时）",
+      "铌的韧脆转变温度与纯度的关系？"
+    ],
+    "summary": "铌的力学性能数据包括硬度、泊松比、应变硬化指数、弹性模量随温度变化、韧脆转变温度及蠕变断裂特性。",
+    "keywords": [
+      "铌",
+      "硬度",
+      "泊松比",
+      "应变硬化指数",
+      "弹性模量",
+      "韧脆转变温度",
+      "蠕变断裂"
+    ]
+  },
+  {
+    "query": "MA 956 ODS合金的Y2O3含量是多少？",
+    "expected_chunk_ids": [
+      "page-02114"
+    ],
+    "page": 2114,
+    "source_id": 2,
+    "all_queries": [
+      "MA 956 ODS合金的Y2O3含量是多少？",
+      "Haynes 8077氧化物弥散强化合金的Y2O3添加量为1.0 wt%吗？",
+      "Unimet 700加铈（Ce 0.2-0.5%）用于何种目的？"
+    ],
+    "summary": "列举了多种氧化物弥散强化（ODS）合金（如MA 956、Haynes 8077、IN 853、MA 753/754/758/953/957等）的稀土氧化物种类与含量，以及Unimet 700加铈用于夹杂物形状控制的信息。",
+    "keywords": [
+      "氧化物弥散强化合金",
+      "稀土氧化物",
+      "Y2O3",
+      "MA系列",
+      "Haynes 8077",
+      "IN 853",
+      "Unimet 700"
+    ]
+  },
+  {
+    "query": "ASM手册 直径D与圆角半径r1 r2对应表",
+    "expected_chunk_ids": [
+      "page-01460"
+    ],
+    "page": 1460,
+    "source_id": 2,
+    "all_queries": [
+      "ASM手册 直径D与圆角半径r1 r2对应表",
+      "r3 r4 圆角半径 与D关系 数据表 ASM",
+      "ASM handbook radius r1 r2 r3 r4 for diameter D"
+    ],
+    "summary": "ASM手册中给出了不同直径D对应的圆角半径r1、r2、r3、r4的尺寸表格，适用于机械测试或加工标准。",
+    "keywords": [
+      "直径D",
+      "圆角半径r1",
+      "圆角半径r2",
+      "圆角半径r3",
+      "圆角半径r4",
+      "尺寸标准"
+    ]
+  },
+  {
+    "query": "铜在Cu2+状态下的电化学当量是多少mg/C？",
+    "expected_chunk_ids": [
+      "page-02989"
+    ],
+    "page": 2989,
+    "source_id": 2,
+    "all_queries": [
+      "铜在Cu2+状态下的电化学当量是多少mg/C？",
+      "铜的电解液电位相对于标准氢电极的值是多少？",
+      "铜在1N H2SO4中的氢过电压常数a和b是多少？"
+    ],
+    "summary": "纯铜的物理和电化学性能数据，包括密度随温度变化、电化学当量、电解液电位、电离电位、氢过电压和霍尔效应参数。",
+    "keywords": [
+      "铜",
+      "电化学当量",
+      "电解液电位",
+      "氢过电压",
+      "电离电位"
+    ]
+  },
+  {
+    "query": "90Ag-10Mo PSR density 10.38 g/cm3 electrical conductivity 65-68 IACS hardness 35-40 HRB",
+    "expected_chunk_ids": [
+      "page-02394"
+    ],
+    "page": 2394,
+    "source_id": 2,
+    "all_queries": [
+      "90Ag-10Mo PSR density 10.38 g/cm3 electrical conductivity 65-68 IACS hardness 35-40 HRB",
+      "80Ag-20Mo composite electrical conductivity 59-62 IACS HRB 38-42 automotive circuit breakers",
+      "Ag-Mo electrical contact properties table ASM handbook page 2394"
+    ],
+    "summary": "ASM手册中的银钼（Ag-Mo）电触头复合材料性能参数表，涵盖密度、电导率、硬度、抗拉强度和模量等。",
+    "keywords": [
+      "90Ag-10Mo",
+      "80Ag-20Mo",
+      "75Ag-25Mo",
+      "70Ag-30Mo",
+      "PSR",
+      "密度",
+      "电导率%IACS",
+      "HRB硬度",
+      "抗拉强度",
+      "模量",
+      "电触头"
+    ]
+  },
+  {
+    "query": "5454 铝合金密度 g/cm3",
+    "expected_chunk_ids": [
+      "page-00186"
+    ],
+    "page": 186,
+    "source_id": 2,
+    "all_queries": [
+      "5454 铝合金密度 g/cm3",
+      "6061 aluminum density lb/in3",
+      "5xxx 6xxx series aluminum density chart"
+    ],
+    "summary": "列出5xxx和6xxx系列铝合金的密度（g/cm³和lb/in³）对应表。",
+    "keywords": [
+      "5454",
+      "6061",
+      "铝合金密度",
+      "g/cm³",
+      "lb/in³"
+    ]
+  },
+  {
+    "query": "C68800 H02 temper tensile strength yield strength MPa ksi",
+    "expected_chunk_ids": [
+      "page-01124"
+    ],
+    "page": 1124,
+    "source_id": 2,
+    "all_queries": [
+      "C68800 H02 temper tensile strength yield strength MPa ksi",
+      "C68800 annealed grain size 0.010 mm mechanical properties",
+      "C68800 low-temperature thermal treatment stabilization tensile strength yield strength"
+    ],
+    "summary": "C68800合金在不同回火状态（包括退火和低温稳定化处理）下的典型机械性能数据，包含抗拉强度、屈服强度、延伸率等。",
+    "keywords": [
+      "C68800",
+      "机械性能",
+      "回火状态",
+      "抗拉强度",
+      "屈服强度",
+      "延伸率",
+      "低温热处理",
+      "晶粒度"
+    ]
+  },
+  {
+    "query": "manganese density at 1400°C gamma phase solid",
+    "expected_chunk_ids": [
+      "page-03092"
+    ],
+    "page": 3092,
+    "source_id": 2,
+    "all_queries": [
+      "manganese density at 1400°C gamma phase solid",
+      "manganese gamma to delta transition temperature 1411°C",
+      "manganese liquid density at 1519°C"
+    ],
+    "summary": "给出了纯锰在高温下（1370-1700°C）的密度与另一物理参数（可能是热导率或电阻率）随温度和相态（γ、δ、液体）的变化数据，包括γ→δ相变温度（1411°C）和熔点（1519°C）。",
+    "keywords": [
+      "Manganese",
+      "density",
+      "thermal properties",
+      "phase transition",
+      "liquid",
+      "solid",
+      "gamma phase",
+      "delta phase"
+    ]
+  },
+  {
+    "query": "40K half-life decay mode beta EC branching ratio",
+    "expected_chunk_ids": [
+      "page-03135"
+    ],
+    "page": 3135,
+    "source_id": 2,
+    "all_queries": [
+      "40K half-life decay mode beta EC branching ratio",
+      "potassium isotope beta decay energy table 38K 42K"
+    ],
+    "summary": "钾同位素（38mK至51K）的放射性衰变数据，包括半衰期、衰变类型（β+, β-, EC）、最大能量（MeV）和分支比（%）。",
+    "keywords": [
+      "钾同位素",
+      "半衰期",
+      "β衰变",
+      "分支比",
+      "衰变能量",
+      "40K"
+    ]
+  },
+  {
+    "query": "6061-T6 sheet axial fatigue -1.0 stress ratio",
+    "expected_chunk_ids": [
+      "page-00222"
+    ],
+    "page": 222,
+    "source_id": 2,
+    "all_queries": [
+      "6061-T6 sheet axial fatigue -1.0 stress ratio",
+      "7075-T6 fatigue 150 in. rms surface finish",
+      "7039-T6 flex fatigue data -1.0 stress ratio"
+    ],
+    "summary": "三种铝合金板材（6061-T6、7039-T6、7075-T6）在不同应力比和表面光洁度条件下的疲劳性能数据列表。",
+    "keywords": [
+      "6061-T6",
+      "7039-T6",
+      "7075-T6",
+      "疲劳性能",
+      "应力比-1.0",
+      "表面光洁度"
+    ]
+  },
+  {
+    "query": "1% cobalt copper alloy substitute for C82400 C82500 thin section casting high temperature",
+    "expected_chunk_ids": [
+      "page-01273"
+    ],
+    "page": 1273,
+    "source_id": 2,
+    "all_queries": [
+      "1% cobalt copper alloy substitute for C82400 C82500 thin section casting high temperature",
+      "How does 1% Co content improve grain refinement and wear resistance in copper alloys replacing beryllium-copper C82500?",
+      "C82500 alternative copper alloy with 1% cobalt for thick and thin sections uniform fine grain"
+    ],
+    "summary": "1%钴含量的铜合金用作C82400和C82500的替代品，通过细化晶粒适用于薄壁铸造或厚薄截面共存铸件，提高耐磨性但降低抛光性和加工性。",
+    "keywords": [
+      "1% Co",
+      "grain refiner",
+      "C82400",
+      "C82500",
+      "wear resistance",
+      "polishability",
+      "machinability"
+    ]
+  },
+  {
+    "query": "C28000 Muntz metal annealing temperature range",
+    "expected_chunk_ids": [
+      "page-01033"
+    ],
+    "page": 1033,
+    "source_id": 2,
+    "all_queries": [
+      "C28000 Muntz metal annealing temperature range",
+      "C28000 hot working temperature 700-820°C",
+      "C28000 maximum cold reduction 90%"
+    ],
+    "summary": "C28000（Muntz metal，60Cu-40Zn）的加工参数：最大冷减率90%，热加工温度700-820°C，退火温度425-700°C，典型用途包括建筑装饰、结构件、热交换器管等。",
+    "keywords": [
+      "C28000",
+      "Muntz metal",
+      "冷减率",
+      "热加工温度",
+      "退火温度"
+    ]
+  },
+  {
+    "query": "Zinc melting point 420°C boiling point 906°C coefficient of thermal expansion",
+    "expected_chunk_ids": [
+      "page-03220"
+    ],
+    "page": 3220,
+    "source_id": 2,
+    "all_queries": [
+      "Zinc melting point 420°C boiling point 906°C coefficient of thermal expansion",
+      "Specific heat of zinc 0.382 kJ/kg·K at 20°C",
+      "Latent heat of fusion of zinc 100.9 kJ/kg"
+    ],
+    "summary": "锌的物理性质：熔点420°C，沸点906°C，热膨胀系数（单晶沿a轴15 μm/m·K，沿c轴61.5 μm/m·K，多晶39.7 μm/m·K），比热0.382 kJ/kg·K，潜热100.9 kJ/kg",
+    "keywords": [
+      "锌",
+      "熔点",
+      "沸点",
+      "热膨胀系数",
+      "比热",
+      "潜热"
+    ]
+  },
+  {
+    "query": "铁基和镍基高温合金中各元素对固溶强化和碳化物形成的作用",
+    "expected_chunk_ids": [
+      "page-01367"
+    ],
+    "page": 1367,
+    "source_id": 2,
+    "all_queries": [
+      "铁基和镍基高温合金中各元素对固溶强化和碳化物形成的作用",
+      "高温合金中形成γ'相的添加元素有哪些",
+      "镍基高温合金中MC型碳化物形成元素"
+    ],
+    "summary": "表格总结了添加元素对铁基和镍基高温合金的作用，包括固溶强化、碳化物形成和γ'相形成等",
+    "keywords": [
+      "镍基高温合金",
+      "铁基高温合金",
+      "固溶强化",
+      "碳化物形成",
+      "γ'相"
+    ]
+  },
+  {
+    "query": "lead electrical resistivity at 20°C in nΩ·m",
+    "expected_chunk_ids": [
+      "page-03066"
+    ],
+    "page": 3066,
+    "source_id": 2,
+    "all_queries": [
+      "lead electrical resistivity at 20°C in nΩ·m",
+      "lead standard electrode potential 0.122 V vs SHE",
+      "lead spectral reflectance 62% at 589 nm"
+    ],
+    "summary": "铅的物理和电化学性能参数，包括电阻率、电化学当量、标准电极电位、超导温度、磁化率、光学性能。",
+    "keywords": [
+      "Lead",
+      "electrical resistivity",
+      "electrochemical equivalent",
+      "standard electrode potential",
+      "superconductivity temperature",
+      "magnetic susceptibility",
+      "spectral reflectance"
+    ]
+  },
+  {
+    "query": "AuCd形状记忆效应是哪一年首次发现的",
+    "expected_chunk_ids": [
+      "page-02525"
+    ],
+    "page": 2525,
+    "source_id": 2,
+    "all_queries": [
+      "AuCd形状记忆效应是哪一年首次发现的",
+      "Buehler在1962年发现的形状记忆合金是什么成分",
+      "铜锌合金中形状记忆转变是谁在何时发现的"
+    ],
+    "summary": "形状记忆效应最早在AuCd合金中发现，随后在铜锌合金中观察到，直到1962年在等原子比NiTi合金中被发现后研究才深入",
+    "keywords": [
+      "形状记忆效应(SME)",
+      "AuCd",
+      "NiTi",
+      "铜锌合金",
+      "Buehler",
+      "Chang and Read"
+    ]
+  },
+  {
+    "query": "合金含71%Cu 11-14%Mn 7-8.5%Al 密度7.53 g/cm3 液相线990°C 固相线950°C",
+    "expected_chunk_ids": [
+      "page-01262"
+    ],
+    "page": 1262,
+    "source_id": 2,
+    "all_queries": [
+      "合金含71%Cu 11-14%Mn 7-8.5%Al 密度7.53 g/cm3 液相线990°C 固相线950°C",
+      "high manganese aluminum bronze composition 71Cu 11-14Mn 7-8.5Al 2-4Fe 1.5-3Ni",
+      "propeller impeller material Cu-Mn-Al bronze thermal expansion 17.6 liquidus 990 solidus 950"
+    ],
+    "summary": "该文本描述了高锰铝青铜（Cu-Mn-Al）的化学成分范围、物理性能（密度、液相线/固相线温度、线膨胀系数、收缩率）以及典型应用（如螺旋桨、叶轮等）。",
+    "keywords": [
+      "Cu-Mn-Al铜合金",
+      "成分范围",
+      "密度7.53 g/cm³",
+      "液相线990°C",
+      "固相线950°C",
+      "线膨胀系数17.6",
+      "典型应用"
+    ]
+  },
+  {
+    "query": "C24000 tensile strength vs annealing temperature grain size cold drawn 37%",
+    "expected_chunk_ids": [
+      "page-01022"
+    ],
+    "page": 1022,
+    "source_id": 2,
+    "all_queries": [
+      "C24000 tensile strength vs annealing temperature grain size cold drawn 37%",
+      "C24000 coefficient of linear thermal expansion 19.1 μm/m·K",
+      "C24000 elastic modulus 110 GPa tension 40 GPa shear"
+    ],
+    "summary": "C24000低黄铜从H02状态退火后的抗拉强度与晶粒尺寸随退火温度变化，以及剪切强度、线膨胀系数、硬度、比热、弹性模量等性能数据。",
+    "keywords": [
+      "C24000",
+      "退火温度",
+      "抗拉强度",
+      "晶粒尺寸",
+      "剪切强度",
+      "线膨胀系数",
+      "比热",
+      "弹性模量"
+    ]
+  },
+  {
+    "query": "AZ31B-H24热处理后强度损失的原因及解决方法",
+    "expected_chunk_ids": [
+      "page-01501"
+    ],
+    "page": 1501,
+    "source_id": 2,
+    "all_queries": [
+      "AZ31B-H24热处理后强度损失的原因及解决方法",
+      "镁合金AZ31B-H24应力消除工艺对强度的影响",
+      "How to prevent distortion during machining of AZ31B-H24 magnesium alloy"
+    ],
+    "summary": "AZ31B-H24板材在2小时缓慢冷却热处理后强度损失，建议通过刀具检查、减小切削量或应力释放来应对加工变形。",
+    "keywords": [
+      "AZ31B-H24",
+      "强度损失",
+      "应力释放",
+      "缓慢冷却",
+      "加工变形"
+    ]
+  },
+  {
+    "query": "5086-O铝合金抗拉强度130MPa(19ksi)对应的是什么屈服强度?",
+    "expected_chunk_ids": [
+      "page-00213"
+    ],
+    "page": 213,
+    "source_id": 2,
+    "all_queries": [
+      "5086-O铝合金抗拉强度130MPa(19ksi)对应的是什么屈服强度?",
+      "ASM手册中5454-H32铝合金的屈服强度248MPa(36ksi)数据来源",
+      "铝合金5456-O的力学性能数值117(17)代表什么测试条件?"
+    ],
+    "summary": "ASM手册中列出了5086、5154、5254、5454、5456铝合金在O、H32、H34状态下的力学性能数据（如抗拉强度、屈服强度，单位MPa和ksi）。",
+    "keywords": [
+      "5086-O",
+      "5454-H32",
+      "抗拉强度",
+      "屈服强度",
+      "MPa",
+      "ksi"
+    ]
+  },
+  {
+    "query": "tantalum addition effect on high field properties of NbTi superconductor",
+    "expected_chunk_ids": [
+      "page-02818"
+    ],
+    "page": 2818,
+    "source_id": 2,
+    "all_queries": [
+      "tantalum addition effect on high field properties of NbTi superconductor",
+      "consumable electrode vacuum arc remelting process for NbTi alloy",
+      "role of oxygen and tantalum impurities in pinning sites nucleation of NbTi"
+    ],
+    "summary": "论述了铌钛合金中钽和氧杂质对高场性能的影响以及采用真空电弧重熔（VAR）或等离子弧熔炼制备合金的工艺",
+    "keywords": [
+      "铌钛合金",
+      "钽杂质",
+      "高场性能",
+      "真空电弧重熔（VAR）",
+      "等离子弧熔炼"
+    ]
+  },
+  {
+    "query": "C11000铜合金在还原气氛中加热到多少度会发生脆化？",
+    "expected_chunk_ids": [
+      "page-00929"
+    ],
+    "page": 929,
+    "source_id": 2,
+    "all_queries": [
+      "C11000铜合金在还原气氛中加热到多少度会发生脆化？",
+      "添加锑对C11000再结晶温度的影响",
+      "C11000在含氢或一氧化碳气氛中的脆化条件"
+    ],
+    "summary": "C11000铜合金在还原气氛中加热至370°C以上会快速脆化，添加锑可提高再结晶温度。",
+    "keywords": [
+      "C11000",
+      "脆化",
+      "还原气氛",
+      "再结晶温度",
+      "370°C"
+    ]
+  },
+  {
+    "query": "干袋冷等静压如何实现自动化并提高生产率？",
+    "expected_chunk_ids": [
+      "page-02697"
+    ],
+    "page": 2697,
+    "source_id": 2,
+    "all_queries": [
+      "干袋冷等静压如何实现自动化并提高生产率？",
+      "干袋法 vs 湿袋法在陶瓷近净成形中的优缺点？",
+      "冷等静压干袋技术用于陶瓷成型的具体工艺步骤"
+    ],
+    "summary": "干袋冷等静压技术通过永久密封在压力容器中的柔性模具实现快速自动化生产，相比湿袋法更适合近净成形陶瓷的批量生产。",
+    "keywords": [
+      "干袋冷等静压",
+      "湿袋冷等静压",
+      "柔性模具",
+      "近净成形",
+      "自动化"
+    ]
+  },
+  {
+    "query": "C72500 合金 应力松弛 各向异性 弯曲 冷轧",
+    "expected_chunk_ids": [
+      "page-00906"
+    ],
+    "page": 906,
+    "source_id": 2,
+    "all_queries": [
+      "C72500 合金 应力松弛 各向异性 弯曲 冷轧",
+      "C72500 stress relaxation anisotropic bending cold rolled 98.7%",
+      "89Cu-9Ni-2Sn 应力松弛 方向 平行轧制 横向 45°"
+    ],
+    "summary": "C72500合金（89Cu-9Ni-2Sn）经98.7%冷轧和375°C/2h热处理后，在弯曲应力松弛中表现出各向异性，平行、45°和横向方向的松弛行为不同，初始应力分别为524 MPa、510 MPa等。",
+    "keywords": [
+      "C72500",
+      "应力松弛",
+      "各向异性",
+      "冷轧98.7%",
+      "375°C热处理",
+      "89Cu-9Ni-2Sn"
+    ]
+  },
+  {
+    "query": "GaAs 300K 电子迁移率 8500 cm2/V·s",
+    "expected_chunk_ids": [
+      "page-02137"
+    ],
+    "page": 2137,
+    "source_id": 2,
+    "all_queries": [
+      "GaAs 300K 电子迁移率 8500 cm2/V·s",
+      "GaAs 本征电阻率 300K 3.7e8 Ω·cm",
+      "GaAs 热扩散率 300K 0.27 cm2/s"
+    ],
+    "summary": "GaAs（砷化镓）在77K和300K下的电子迁移率、本征电阻率、热扩散率等关键性能参数",
+    "keywords": [
+      "GaAs",
+      "电子迁移率",
+      "本征电阻率",
+      "热扩散率",
+      "介电常数",
+      "带隙"
+    ]
+  },
+  {
+    "query": "EZ33A-T5 isochronous stress-strain curves at 371°C",
+    "expected_chunk_ids": [
+      "page-01559"
+    ],
+    "page": 1559,
+    "source_id": 2,
+    "all_queries": [
+      "EZ33A-T5 isochronous stress-strain curves at 371°C",
+      "EZ33A-T5 thermal conductivity 100 W/mK density 1.83 g/cm3",
+      "EZ33A-T5 liquidus solidus temperature electrical conductivity 25% IACS"
+    ],
+    "summary": "EZ33A-T5合金的等时应力-应变曲线（371°C和427°C）及其物理性能（热导率、密度、电导率等）",
+    "keywords": [
+      "EZ33A-T5",
+      "等时应力-应变曲线",
+      "热导率",
+      "密度",
+      "电导率",
+      "液相线温度",
+      "固相线温度"
+    ]
+  },
+  {
+    "query": "Nb-46.5Ti composite wire critical current density at 5T 4.2K",
+    "expected_chunk_ids": [
+      "page-02802"
+    ],
+    "page": 2802,
+    "source_id": 2,
+    "all_queries": [
+      "Nb-46.5Ti composite wire critical current density at 5T 4.2K",
+      "alpha-Ti precipitates flux pinning in NbTi superconducting wire",
+      "Jc 3150 A/mm2 Nb-46.5Ti wire 5 Tesla"
+    ],
+    "summary": "Nb-46.5Ti复合线材中α-Ti析出物提供磁通钉扎，5T、4.2K下临界电流密度达3150 A/mm²。",
+    "keywords": [
+      "Nb-46.5Ti",
+      "α-Ti析出物",
+      "磁通钉扎",
+      "临界电流密度3150 A/mm²",
+      "5T/4.2K"
+    ]
+  },
+  {
+    "query": "metallic glasses rapid quenching cooling rates suppress nucleation growth crystalline phases",
+    "expected_chunk_ids": [
+      "page-02287"
+    ],
+    "page": 2287,
+    "source_id": 2,
+    "all_queries": [
+      "metallic glasses rapid quenching cooling rates suppress nucleation growth crystalline phases",
+      "Pol Duwez discovery metallic glasses 1960 rapid quenching method",
+      "synthesis and processing of metallic glasses amorphous metals historical survey"
+    ],
+    "summary": "金属玻璃通过快速凝固抑制晶化相制备，回顾其发现历史与合成工艺。",
+    "keywords": [
+      "Metallic Glasses",
+      "rapid quenching",
+      "Pol Duwez",
+      "amorphous alloys"
+    ]
+  },
+  {
+    "query": "Inconel 718 持久强度 温度 应力 数据表",
+    "expected_chunk_ids": [
+      "page-00475"
+    ],
+    "page": 475,
+    "source_id": 2,
+    "all_queries": [
+      "Inconel 718 持久强度 温度 应力 数据表",
+      "Inconel 718 creep rupture strength 1000°C 10000h",
+      "镍基合金718 高温持久性能 测试条件 0.75 ref"
+    ],
+    "summary": "Inconel 718合金在不同温度下的持久强度数据（表格式，含应力值和测试条件）",
+    "keywords": [
+      "Inconel 718",
+      "持久强度",
+      "蠕变性能",
+      "应力-温度-时间数据"
+    ]
+  },
+  {
+    "query": "硬态铜合金弹性模量110 GPa 剪切模量41 GPa",
+    "expected_chunk_ids": [
+      "page-01060"
+    ],
+    "page": 1060,
+    "source_id": 2,
+    "all_queries": [
+      "硬态铜合金弹性模量110 GPa 剪切模量41 GPa",
+      "铜合金电导率37% IACS 20°C 电阻率46.6 nΩ·m",
+      "铜合金密度8.86 g/cm3 液相线1054°C 固相线1038°C"
+    ],
+    "summary": "该技术文本提供了某铜合金（推测为铍铜）在硬态下的弹性模量（110 GPa）、剪切模量（41 GPa）、电导率（37% IACS at 20°C）、密度（8.86 g/cm³）、电阻率（46.6 nΩ·m）、液相线温度（1054°C）、固相线温度（1038°C）、热膨胀系数（18.2 μm/m·K）以及可加工性（20% of C36000）和成形性（冷加工优异）等关键性能数据。",
+    "keywords": [
+      "弹性模量",
+      "硬态",
+      "电导率",
+      "密度",
+      "电阻率",
+      "液相线温度",
+      "热膨胀系数",
+      "可加工性",
+      "铜合金"
+    ]
+  },
+  {
+    "query": "ENiCrCoMo-1 617合金 化学成分 焊接 温度范围 760°C",
+    "expected_chunk_ids": [
+      "page-01401"
+    ],
+    "page": 1401,
+    "source_id": 2,
+    "all_queries": [
+      "ENiCrCoMo-1 617合金 化学成分 焊接 温度范围 760°C",
+      "ENiCrMo-4 C-276 镍基焊条 化学成分 Mo W V 抗点蚀",
+      "ENiCrMo-2 800HT 合金 焊接 温度 675°C 化学成分 Mo W"
+    ],
+    "summary": "列举了ENiCrCoMo-（617合金）、ENiCrMo-4（C-276合金）、ENiCrMo-2（800/800HT合金）三种镍基焊条的化学成分及应用温度范围，用于钢与镍合金的异种焊接或耐点蚀堆焊。",
+    "keywords": [
+      "ENiCrCoMo-",
+      "ENiCrMo-4",
+      "ENiCrMo-2",
+      "Joining Alloy 617",
+      "Alloy C-276",
+      "Alloy 800HT",
+      "化学成分",
+      "异种焊接"
+    ]
+  },
+  {
+    "query": "Fatigue strength comparison of fully dense extra-low chloride Ti-6Al-4V BE compacts with I/M alloy at room temperature",
+    "expected_chunk_ids": [
+      "page-01927"
+    ],
+    "page": 1927,
+    "source_id": 2,
+    "all_queries": [
+      "Fatigue strength comparison of fully dense extra-low chloride Ti-6Al-4V BE compacts with I/M alloy at room temperature",
+      "Effect of compact density on fatigue strength of CIP and sintered Ti-6Al-4V BE compacts",
+      "Fatigue strength of Ti-6Al-4V BE compacts in as-HIP, BUS, and TCP conditions at R=0.1, 5Hz"
+    ],
+    "summary": "比较全致密低氯Ti-6Al-4V BE压坯在不同状态下的疲劳强度与IM合金的分散带，并展示压坯密度对疲劳强度的影响",
+    "keywords": [
+      "Ti-6Al-4V",
+      "fatigue strength",
+      "extra-low chloride",
+      "BE compacts",
+      "fully dense",
+      "as-HIP",
+      "BUS",
+      "TCP",
+      "CIP",
+      "sintered",
+      "room temperature",
+      "stress ratio 0.1",
+      "5 Hz"
+    ]
+  },
+  {
+    "query": "Haynes alloy 6B steam turbine erosion shield liquid droplet erosion resistance",
+    "expected_chunk_ids": [
+      "page-01416"
+    ],
+    "page": 1416,
+    "source_id": 2,
+    "all_queries": [
+      "Haynes alloy 6B steam turbine erosion shield liquid droplet erosion resistance",
+      "Haynes alloy 306 rudder bearing sliding wear weld overlay performance",
+      "Haynes alloy 12 bar mill guide rolls impact abrasion resistance"
+    ],
+    "summary": "Haynes系列合金（6B、306、12、1等）通过堆焊工艺应用于电力、船舶、钢铁和化工行业的耐磨损、抗侵蚀部件。",
+    "keywords": [
+      "Haynes alloy 6B",
+      "Haynes alloy 306",
+      "Haynes alloy 12",
+      "weld overlay",
+      "sliding wear",
+      "cavitation erosion",
+      "liquid droplet erosion",
+      "impact abrasion"
+    ]
+  },
+  {
+    "query": "铱铑热电偶最高使用温度 2000°C 空气",
+    "expected_chunk_ids": [
+      "page-02465"
+    ],
+    "page": 2465,
+    "source_id": 2,
+    "all_queries": [
+      "铱铑热电偶最高使用温度 2000°C 空气",
+      "Ir-Rh thermocouple vs R S B temperature range upper limit",
+      "iridium-rhodium thermocouple reducing atmosphere limitation"
+    ],
+    "summary": "铱-铑/铱热电偶在空气或含氧气氛中最高可使用至约2000°C，适用于高于R、S、B型热电偶的温度范围，可在惰性气氛和真空中使用，但禁止在还原气氛中使用。",
+    "keywords": [
+      "铱-铑热电偶",
+      "热电动势",
+      "2000°C",
+      "R型热电偶",
+      "S型热电偶",
+      "B型热电偶",
+      "还原气氛"
+    ]
+  },
+  {
+    "query": "DIN 17851 WL3.7165 化学成分 C Fe Al V 限制",
+    "expected_chunk_ids": [
+      "page-01805"
+    ],
+    "page": 1805,
+    "source_id": 2,
+    "all_queries": [
+      "DIN 17851 WL3.7165 化学成分 C Fe Al V 限制",
+      "AMS 4905 plate 钒含量范围 3.6-4.4",
+      "Ti-6Al-4V 不同AMS标准 成分对比"
+    ],
+    "summary": "Ti-6Al-4V合金在不同AMS标准和DIN 17851下的化学成分要求（包括C、Fe、Al、V等元素含量），适用于板、带、环、锻件、线材等多种产品形式。",
+    "keywords": [
+      "Ti-6Al-4V",
+      "DIN 17851 WL3.7165",
+      "AMS 4905",
+      "AMS 4906",
+      "AMS 4911",
+      "化学成分",
+      "钒含量",
+      "产品形式"
+    ]
+  },
+  {
+    "query": "tungsten ductile-to-brittle transition temperature vs annealing temperature 4t bend",
+    "expected_chunk_ids": [
+      "page-03212"
+    ],
+    "page": 3212,
+    "source_id": 2,
+    "all_queries": [
+      "tungsten ductile-to-brittle transition temperature vs annealing temperature 4t bend",
+      "1-h rupture strength of tungsten temperature dependence",
+      "DBTT of tungsten sheet after annealing 4t bend test"
+    ],
+    "summary": "文本描述了钨的韧脆转变温度随退火温度的变化（4t弯曲测试）以及1小时蠕变断裂强度随温度的变化，并引用多个参考文献。",
+    "keywords": [
+      "钨",
+      "韧脆转变温度",
+      "退火温度",
+      "4t弯曲测试",
+      "1小时蠕变断裂强度"
+    ]
+  },
+  {
+    "query": "M-6 electrical steel thickness for voltage regulator and welding transformer",
+    "expected_chunk_ids": [
+      "page-02230"
+    ],
+    "page": 2230,
+    "source_id": 2,
+    "all_queries": [
+      "M-6 electrical steel thickness for voltage regulator and welding transformer",
+      "typical grain-oriented 3% Si steel thickness used in radar pulse transformers",
+      "2V-49Co-49Fe and 79Ni-4Mo-Fe applications in special transformer (instrument, radio)"
+    ],
+    "summary": "电气钢牌号（M系列）及特殊合金（钴铁、镍铁）在不同变压器和无线电应用中的厚度规格对应表",
+    "keywords": [
+      "M-6",
+      "M-15",
+      "M-22",
+      "M-5",
+      "M-27",
+      "M-19",
+      "M-17",
+      "M-36",
+      "M-43",
+      "2V-49Co-49Fe",
+      "79Ni-4Mo-Fe",
+      "45-50% Ni iron",
+      "厚度",
+      "应用场景"
+    ]
+  },
+  {
+    "query": "α phase rhombohedral lattice parameters a=0.89834 nm α=23.311° at 24°C",
+    "expected_chunk_ids": [
+      "page-03261"
+    ],
+    "page": 3261,
+    "source_id": 2,
+    "all_queries": [
+      "α phase rhombohedral lattice parameters a=0.89834 nm α=23.311° at 24°C",
+      "β phase density 7.353 g/cm3 at 450°C",
+      "γ phase bcc a=0.410 nm at 922°C density 7.25 g/cm3"
+    ],
+    "summary": "文本描述了某材料α、β、γ三相的晶体结构参数（晶系、空间群、晶格常数）和密度数据，以及原子间距和原子量。",
+    "keywords": [
+      "α相",
+      "菱形晶系",
+      "六方晶系",
+      "体心立方",
+      "晶格常数",
+      "密度",
+      "原子间距",
+      "原子量"
+    ]
+  },
+  {
+    "query": "I-70A beryllium 99.0% Be 0.7% BeO mechanical properties 700 700 1000",
+    "expected_chunk_ids": [
+      "page-02001"
+    ],
+    "page": 2001,
+    "source_id": 2,
+    "all_queries": [
+      "I-70A beryllium 99.0% Be 0.7% BeO mechanical properties 700 700 1000",
+      "S-200F impact-ground powder structural grade beryllium difference from S-200E attritioned powder",
+      "instrument grade beryllium I-220B 98.0% Be 2.2% BeO tensile strength and yield strength values"
+    ],
+    "summary": "铍的仪器级（I-70A, O-50, I-220B, I-400B）和结构级（S-200F, S-200E）的化学成分（Be%、BeO%）及力学性能数值要求，其中S-200F为冲击磨粉级，是常用牌号。",
+    "keywords": [
+      "I-70A",
+      "O-50",
+      "I-220B",
+      "I-400B",
+      "S-200F",
+      "S-200E",
+      "铍",
+      "仪器级",
+      "结构级",
+      "力学性能"
+    ]
+  },
+  {
+    "query": "2090-T84纵向拉伸强度与温度关系",
+    "expected_chunk_ids": [
+      "page-00689"
+    ],
+    "page": 689,
+    "source_id": 2,
+    "all_queries": [
+      "2090-T84纵向拉伸强度与温度关系",
+      "2090-T83 sheet室温拉伸强度加热100h",
+      "Longitudinal tensile strength vs temperature for Al-Li alloy 2090-T84"
+    ],
+    "summary": "铝锂合金2090-T84和2090-T83的拉伸性能随温度及加热时间的变化",
+    "keywords": [
+      "2090-T84",
+      "2090-T83",
+      "纵向拉伸强度",
+      "室温拉伸强度",
+      "加热100h"
+    ]
+  },
+  {
+    "query": "What are the major market segments for aluminum in the United States according to the ASM handbook?",
+    "expected_chunk_ids": [
+      "page-00029"
+    ],
+    "page": 29,
+    "source_id": 2,
+    "all_queries": [
+      "What are the major market segments for aluminum in the United States according to the ASM handbook?",
+      "Aluminum industry market distribution for building and construction and transportation U.S. shipments",
+      "ASM handbook introduction to aluminum alloys product classifications and end uses"
+    ],
+    "summary": "介绍美国铝行业的主要市场分类（建筑、交通、消费耐用品等），并提及相关图表数据。",
+    "keywords": [
+      "aluminum",
+      "aluminum alloys",
+      "market classifications",
+      "building and construction",
+      "transportation",
+      "consumer durables",
+      "electrical",
+      "machinery and equipment",
+      "containers and packaging"
+    ]
+  },
+  {
+    "query": "pure cobalt elastic modulus 210 GPa tension compression",
+    "expected_chunk_ids": [
+      "page-01405"
+    ],
+    "page": 1405,
+    "source_id": 2,
+    "all_queries": [
+      "pure cobalt elastic modulus 210 GPa tension compression",
+      "typical tensile properties of pure cobalt Table 1",
+      "pure cobalt linear expansion 30°C Fig. 1"
+    ],
+    "summary": "纯钴在30°C的线性膨胀、弹性模量及典型拉伸和压缩性能，数据来自ASM手册表1。",
+    "keywords": [
+      "pure cobalt",
+      "elastic modulus 210 GPa",
+      "tensile properties",
+      "compressive yield strength"
+    ]
+  },
+  {
+    "query": "美国银供应中来自主要银矿的比例是多少？",
+    "expected_chunk_ids": [
+      "page-02007"
+    ],
+    "page": 2007,
+    "source_id": 2,
+    "all_queries": [
+      "美国银供应中来自主要银矿的比例是多少？",
+      "哪些州是美国银矿的主要产地？",
+      "银作为副产品从哪些金属的提炼中获得？"
+    ],
+    "summary": "概述了美国银的供应来源，其中约25%来自主要银矿，其余来自铜、铅、锌等金属精炼的副产品，并列出主要产银州",
+    "keywords": [
+      "银",
+      "初级银",
+      "副产品",
+      "产银州"
+    ]
+  },
+  {
+    "query": "7050 plate toughness effect of AlCuMg constituent",
+    "expected_chunk_ids": [
+      "page-00162"
+    ],
+    "page": 162,
+    "source_id": 2,
+    "all_queries": [
+      "7050 plate toughness effect of AlCuMg constituent",
+      "chromium content effect on unit propagation energy 7xxx alloy sheet",
+      "zirconium manganese substitution chromium fracture toughness 7xxx"
+    ],
+    "summary": "该文本探讨了AlCuMg相含量对7050板材韧性的影响，以及铬含量和替代元素（锆、锰）对7xxx合金断裂韧性的作用。",
+    "keywords": [
+      "7050",
+      "7xxx",
+      "toughness",
+      "AlCuMg constituent",
+      "chromium",
+      "dispersoid"
+    ]
+  },
+  {
+    "query": "8090-T651与2024铝合金的疲劳裂纹扩展速率对比",
+    "expected_chunk_ids": [
+      "page-00719"
+    ],
+    "page": 719,
+    "source_id": 2,
+    "all_queries": [
+      "8090-T651与2024铝合金的疲劳裂纹扩展速率对比",
+      "8090铝合金T651状态的疲劳S-N曲线数据",
+      "8090板材在恒幅加载下的疲劳性能"
+    ],
+    "summary": "文本比较了8090-T651与2024铝合金的疲劳性能，指出8090具有更优的疲劳裂纹扩展速率和更高的疲劳应力。",
+    "keywords": [
+      "8090",
+      "2024",
+      "fatigue crack growth rate",
+      "fatigue stress",
+      "T651",
+      "constant-amplitude loading"
+    ]
+  },
+  {
+    "query": "2419 aluminum alloy cold work effect on yield strength at 149°C aging with Mg addition",
+    "expected_chunk_ids": [
+      "page-00168"
+    ],
+    "page": 168,
+    "source_id": 2,
+    "all_queries": [
+      "2419 aluminum alloy cold work effect on yield strength at 149°C aging with Mg addition",
+      "冷加工对2419铝合金屈服强度的影响 含0.18at% Mg 时效300°F",
+      "合金2419 149°C时效 屈服强度 冷加工对比 有无Mg"
+    ],
+    "summary": "研究了冷加工和Mg含量（0.18 at% vs 无Mg）对合金2419在149°C时效时屈服强度的影响。",
+    "keywords": [
+      "合金2419",
+      "冷加工",
+      "Mg添加",
+      "屈服强度",
+      "时效温度149°C"
+    ]
+  },
+  {
+    "query": "Ti-6Al-4V PA compacts fatigue crack growth rate vs I/M alloy at room temperature",
+    "expected_chunk_ids": [
+      "page-01938"
+    ],
+    "page": 1938,
+    "source_id": 2,
+    "all_queries": [
+      "Ti-6Al-4V PA compacts fatigue crack growth rate vs I/M alloy at room temperature",
+      "Ti-6Al-4V 粉末冶金 疲劳裂纹扩展速率 应力比0.1 比较 铸锻",
+      "Room temperature fatigue crack growth of Ti-6Al-4V PA compacts R=0.1"
+    ],
+    "summary": "比较Ti-6Al-4V粉末冶金压块与铸锻材料在室温空气中的疲劳裂纹扩展速率，测试条件为应力比R=0.1，频率5-30Hz（PA压块为5Hz）。",
+    "keywords": [
+      "Ti-6Al-4V",
+      "疲劳裂纹扩展速率",
+      "P/M",
+      "I/M",
+      "应力比0.1",
+      "频率"
+    ]
+  },
+  {
+    "query": "H08状态铍铜的拉伸强度和屈服强度是多少？",
+    "expected_chunk_ids": [
+      "page-01090"
+    ],
+    "page": 1090,
+    "source_id": 2,
+    "all_queries": [
+      "H08状态铍铜的拉伸强度和屈服强度是多少？",
+      "OS035铍铜的电导率（%IACS）和电阻率（nΩ·m）值？",
+      "H02铍铜的弹性模量（GPa）和密度（g/cm³）数据？"
+    ],
+    "summary": "铜合金（铍铜）在不同状态下的力学、电学和物理性能参数，包括拉伸强度、屈服强度、弹性模量、电导率、电阻率、密度、液相线温度和可加工性。",
+    "keywords": [
+      "H08铍铜",
+      "H10铍铜",
+      "OS035铍铜",
+      "H01铍铜",
+      "H02铍铜",
+      "H04铍铜",
+      "拉伸强度",
+      "屈服强度",
+      "弹性模量",
+      "电导率IACS",
+      "电阻率",
+      "密度",
+      "液相线温度",
+      "可加工性"
+    ]
+  },
+  {
+    "query": "extruded 202 alloy Young's modulus 29.3",
+    "expected_chunk_ids": [
+      "page-03303"
+    ],
+    "page": 3303,
+    "source_id": 2,
+    "all_queries": [
+      "extruded 202 alloy Young's modulus 29.3",
+      "cast 203 elastic modulus 29.5",
+      "hot-rolled 202 203 Young's modulus table"
+    ],
+    "summary": "不同加工状态（挤压、铸造、热轧）下合金202和203的杨氏模量值，以及超钚锕系金属性能的表格参考。",
+    "keywords": [
+      "202合金",
+      "203合金",
+      "杨氏模量",
+      "弹性模量",
+      "挤压态",
+      "铸造态",
+      "热轧态",
+      "超钚锕系金属"
+    ]
+  },
+  {
+    "query": "What is the latent heat of fusion of mercury in kJ/kg?",
+    "expected_chunk_ids": [
+      "page-03101"
+    ],
+    "page": 3101,
+    "source_id": 2,
+    "all_queries": [
+      "What is the latent heat of fusion of mercury in kJ/kg?",
+      "Mercury thermal conductivity at 60°C in W/m·K",
+      "Electrical resistivity of mercury at 200°C in nΩ·m"
+    ],
+    "summary": "提供了汞的热学（潜热、汽化热、导热系数）和电学（电阻率、温度系数、热电势、标准电极电位）性能数据",
+    "keywords": [
+      "汞",
+      "潜热",
+      "导热系数",
+      "电阻率",
+      "温度系数"
+    ]
+  },
+  {
+    "query": "Massalski Binary Alloy Phase Diagrams 1986 reference",
+    "expected_chunk_ids": [
+      "page-03328"
+    ],
+    "page": 3328,
+    "source_id": 2,
+    "all_queries": [
+      "Massalski Binary Alloy Phase Diagrams 1986 reference",
+      "Smithells Metals Reference Book 2nd edition 1955",
+      "Adenstedt Trans ASM 44 1952 p990"
+    ],
+    "summary": "这段文本是ASM手册第3328页的参考文献列表（531-540），涵盖合金相图、金属参考书、中子截面等材料科学经典文献。",
+    "keywords": [
+      "Binary Alloy Phase Diagrams",
+      "Metals Reference Book",
+      "Neutron Cross Sections",
+      "Trans. ASM",
+      "Rare Metals Handbook"
+    ]
+  },
+  {
+    "query": "TM02 copper strip formability R/t ratio",
+    "expected_chunk_ids": [
+      "page-01328"
+    ],
+    "page": 1328,
+    "source_id": 2,
+    "all_queries": [
+      "TM02 copper strip formability R/t ratio",
+      "TM05 HTR temper copper alloy minimum punch radius to thickness",
+      "copper alloy strip formability ratios for 90 degree vee bending"
+    ],
+    "summary": "列出不同回火等级铜合金带材的最小冲头半径与料厚比（R/t）成形性数据，适用于90°V形弯曲。",
+    "keywords": [
+      "TM02",
+      "TM04",
+      "TM08",
+      "成形性比率",
+      "R/t",
+      "冲头半径/料厚",
+      "铜合金带材"
+    ]
+  },
+  {
+    "query": "油断路器弧触头常用材料 Cu-W 与 Ag-W 的性能对比",
+    "expected_chunk_ids": [
+      "page-02432"
+    ],
+    "page": 2432,
+    "source_id": 2,
+    "all_queries": [
+      "油断路器弧触头常用材料 Cu-W 与 Ag-W 的性能对比",
+      "高电压大电流开关中 Ag-Mo 合金的抗焊接和电导率表现",
+      "用于火花隙的纯钨电极最大操作次数和适用电压范围"
+    ],
+    "summary": "文本列出了不同合金（Cu、Ag on Cu、Ag-Ni、Cu-W、Cu-WC、Ag-W、Ag-Mo、W）在油断路器、弧触头和火花隙中的应用，并注明了各自的电流/电压范围、最大操作次数及关键性能特点（如成本、电导率、接触电阻、抗粘着焊接性等）。",
+    "keywords": [
+      "油断路器",
+      "弧触头",
+      "火花隙",
+      "合金",
+      "电导率",
+      "接触电阻",
+      "Cu-W",
+      "Ag-W"
+    ]
+  },
+  {
+    "query": "ASM手册 超导态 宏观序参量 波函数 电子对",
+    "expected_chunk_ids": [
+      "page-02812"
+    ],
+    "page": 2812,
+    "source_id": 2,
+    "all_queries": [
+      "ASM手册 超导态 宏观序参量 波函数 电子对",
+      "约瑟夫森效应 宏观序参量 ASM手册 定义",
+      "superconducting state macroscopic order parameter ASM handbook"
+    ],
+    "summary": "ASM手册中关于超导态宏观序参量（波函数）的定义及约瑟夫森效应的引用文献列表",
+    "keywords": [
+      "超导态",
+      "宏观序参量",
+      "约瑟夫森效应",
+      "电子对波函数"
+    ]
+  },
+  {
+    "query": "材料在800°C下氢、氧、氮的扩散系数是多少？",
+    "expected_chunk_ids": [
+      "page-03228"
+    ],
+    "page": 3228,
+    "source_id": 2,
+    "all_queries": [
+      "材料在800°C下氢、氧、氮的扩散系数是多少？",
+      "电导率为4.1% IACS时，电阻率及温度系数（0-200°C）数据",
+      "从1574°C到4409°C的蒸气压对应压力值（1.013×10^-5至1.013×10^5 Pa）"
+    ],
+    "summary": "该文本提供了某种材料在高温下的蒸气压数据（1574-4409°C对应1.013×10^-5至1.013×10^5 Pa），以及在800°C下氢、氧、氮的扩散系数，同时给出了电导率（4.1% IACS）、电阻率（450 nΩ·m）、温度系数（44±1×10^-4 per K）、压力系数（每980 MPa电阻降低0.2%）和塑性变形影响（2-5%）。",
+    "keywords": [
+      "蒸气压",
+      "扩散系数",
+      "电导率",
+      "电阻率",
+      "温度系数",
+      "压力系数",
+      "800°C",
+      "氢",
+      "氧",
+      "氮"
+    ]
+  },
+  {
+    "query": "Silicon elastic modulus 53.82 GPa tension",
+    "expected_chunk_ids": [
+      "page-03139"
+    ],
+    "page": 3139,
+    "source_id": 2,
+    "all_queries": [
+      "Silicon elastic modulus 53.82 GPa tension",
+      "Si surface tension 220°C 105.5 mN/m",
+      "冶金级硅 纯度 98% 主要杂质 Al Ca Fe"
+    ],
+    "summary": "硅（Si）的弹性模量（拉伸53.82 GPa，剪切6.46 GPa）和表面张力（220-310°C下从105.5到98.2 mN/m）数据，并介绍了冶金级硅的制备（电弧炉还原SiO₂）、纯度（约98% Si）及主要杂质（Al、Ca、Fe）和用途（铝、钢铁、有机硅工业）。",
+    "keywords": [
+      "硅",
+      "弹性模量",
+      "表面张力",
+      "冶金级硅",
+      "半导体级硅"
+    ]
+  },
+  {
+    "query": "UBC briquettes density 500 kg/m3 recycling process",
+    "expected_chunk_ids": [
+      "page-03339"
+    ],
+    "page": 3339,
+    "source_id": 2,
+    "all_queries": [
+      "UBC briquettes density 500 kg/m3 recycling process",
+      "UBC shredding bales 400 kg closed-loop recycling",
+      "UBC bales vs briquettes storage and shredding"
+    ],
+    "summary": "描述闭环UBC回收流程中从收集到粉碎的步骤，含bales和briquettes的特性参数",
+    "keywords": [
+      "UBC回收",
+      "briquettes密度500kg/m3",
+      "bales重量400kg",
+      "粉碎操作"
+    ]
+  },
+  {
+    "query": "85% HPO 100°C 212°F 5.56 mpy brittle corrosion test",
+    "expected_chunk_ids": [
+      "page-01727"
+    ],
+    "page": 1727,
+    "source_id": 2,
+    "all_queries": [
+      "85% HPO 100°C 212°F 5.56 mpy brittle corrosion test",
+      "20% tartaric acid corrosion rate 0.0084 mpy no change specimen",
+      "5% NaOH 100°C 212°F 13.0 mpy brittle action at surface of liquid"
+    ],
+    "summary": "该文本列出了某种合金在多种化学介质（如磷酸、酒石酸、草酸、氢氧化钠等）中不同温度和暴露时间下的腐蚀测试结果，包括重量损失、腐蚀速率及表面现象（脆化、无变化等），并注明了原始试样尺寸。",
+    "keywords": [
+      "腐蚀测试",
+      "磷酸",
+      "酒石酸",
+      "草酸",
+      "氢氧化钠",
+      "氢氧化钾",
+      "过氧化氢",
+      "脆化",
+      "腐蚀速率",
+      "重量损失"
+    ]
+  },
+  {
+    "query": "BAg-9 P07650 固相线液相线钎焊温度范围 671°C 718°C 718-843°C",
+    "expected_chunk_ids": [
+      "page-02042"
+    ],
+    "page": 2042,
+    "source_id": 2,
+    "all_queries": [
+      "BAg-9 P07650 固相线液相线钎焊温度范围 671°C 718°C 718-843°C",
+      "BAg-13 化学成分 Cu bal Zn 4.0-6.0 Ni 0.5-1.5 固相线 718°C 液相线 857°C",
+      "BAg-18 与 BAg-19 银含量对比 熔点 60% vs 92%"
+    ],
+    "summary": "该文本列出了BAg系列钎焊合金（BAg-9至BAg-19）的UNS编号、化学成分范围（Ag, Cu, Zn等）以及固相线、液相线、钎焊温度范围的摄氏度和华氏度值。",
+    "keywords": [
+      "BAg-9",
+      "BAg-10",
+      "BAg-13",
+      "BAg-13a",
+      "BAg-18",
+      "BAg-19",
+      "钎焊合金",
+      "固相线温度",
+      "液相线温度",
+      "钎焊温度范围",
+      "UNS P07650",
+      "银含量",
+      "铜含量",
+      "锌含量"
+    ]
+  },
+  {
+    "query": "electrical resistivity of silver at 0°C 14.7 nΩ·m",
+    "expected_chunk_ids": [
+      "page-03152"
+    ],
+    "page": 3152,
+    "source_id": 2,
+    "all_queries": [
+      "electrical resistivity of silver at 0°C 14.7 nΩ·m",
+      "temperature coefficient of electrical resistivity of silver 0.0041 per K",
+      "electrical conductivity of extremely pure silver 108.4% IACS"
+    ],
+    "summary": "银的电气性能，包括电导率（108.4% IACS）、电阻率（14.7 nΩ·m at 0°C）及温度系数（0.0041 per K）。",
+    "keywords": [
+      "银",
+      "电导率",
+      "电阻率",
+      "温度系数",
+      "IACS"
+    ]
+  },
+  {
+    "query": "2014铝合金的化学成分范围是多少？",
+    "expected_chunk_ids": [
+      "page-00249"
+    ],
+    "page": 249,
+    "source_id": 2,
+    "all_queries": [
+      "2014铝合金的化学成分范围是多少？",
+      "Alclad 2014包铝层的化学成分是什么？",
+      "2014铝合金对应哪些国家的标准牌号？"
+    ],
+    "summary": "2014铝合金的化学成分、包铝层成分及国际标准对照信息",
+    "keywords": [
+      "2014铝合金",
+      "Alclad 2014",
+      "化学成分",
+      "国际标准"
+    ]
+  },
+  {
+    "query": "C10400  C10500  C10700 的ASTM规范有哪些？",
+    "expected_chunk_ids": [
+      "page-00920"
+    ],
+    "page": 920,
+    "source_id": 2,
+    "all_queries": [
+      "C10400  C10500  C10700 的ASTM规范有哪些？",
+      "政府规范QQ-C-502适用于哪些铜合金的棒材？",
+      "What ASTM specifications apply to C10400 flat products?"
+    ],
+    "summary": "列出了C10400、C10500、C10700三种铜合金在不同产品形式下的ASTM和政府规范编号。",
+    "keywords": [
+      "C10400",
+      "C10500",
+      "C10700",
+      "ASTM规范",
+      "政府规范",
+      "扁平产品",
+      "棒材",
+      "管材",
+      "线材",
+      "型材"
+    ]
+  },
+  {
+    "query": "How does molten salt distillation separate hafnium from zirconium at 500°C using potassium chloroaluminate?",
+    "expected_chunk_ids": [
+      "page-01949"
+    ],
+    "page": 1949,
+    "source_id": 2,
+    "all_queries": [
+      "How does molten salt distillation separate hafnium from zirconium at 500°C using potassium chloroaluminate?",
+      "What is the flow diagram for hafnium extraction by distillation from molten salt with zirconium tetrachloride vapor?",
+      "Temperature and counterflow conditions for hafnium chloride enrichment in molten salt distillation of hafnium from zirconium."
+    ],
+    "summary": "描述通过熔盐蒸馏提取铪的流程，包括四氯化锆蒸气在约500°C下与含锆铪氯化物的氯铝酸钾溶液逆流接触，实现铪的富集与分离。",
+    "keywords": [
+      "hafnium extraction",
+      "molten salt distillation",
+      "zirconium tetrachloride",
+      "potassium chloroaluminate",
+      "500°C"
+    ]
+  },
+  {
+    "query": "铝合金 O temper 230 W/m·K 导热系数 H18 227 W/m·K",
+    "expected_chunk_ids": [
+      "page-00237"
+    ],
+    "page": 237,
+    "source_id": 2,
+    "all_queries": [
+      "铝合金 O temper 230 W/m·K 导热系数 H18 227 W/m·K",
+      "61% IACS 电导率 铝合金 O temper 20°C",
+      "铝合金 体积热膨胀系数 68×10^-6 m3/m3·K 20°C"
+    ],
+    "summary": "文本提供了某种铝合金在O和H18状态下的热膨胀、比热、导热、电导率和电阻率等性能参数及测试条件。",
+    "keywords": [
+      "热膨胀系数",
+      "比热",
+      "导热系数",
+      "电导率",
+      "电阻率",
+      "O temper",
+      "H18 temper",
+      "铝合金"
+    ]
+  },
+  {
+    "query": "2219 aluminum alloy weldability comparison with Weldalite 049",
+    "expected_chunk_ids": [
+      "page-00669"
+    ],
+    "page": 669,
+    "source_id": 2,
+    "all_queries": [
+      "2219 aluminum alloy weldability comparison with Weldalite 049",
+      "Cryogenic properties of 2090 and 8090 aluminum-lithium alloys",
+      "Superplastic forming of 7475 aluminum alloy vs 2090/8090"
+    ],
+    "summary": "手册列出了多种铝合金（包括铝锂合金）在焊接性、低温性能和超塑成形方面的应用或标识",
+    "keywords": [
+      "铝合金",
+      "焊接性",
+      "低温性能",
+      "超塑成形",
+      "2024",
+      "2091",
+      "8090",
+      "2219",
+      "2519",
+      "2090",
+      "7475",
+      "Weldalite 049"
+    ]
+  },
+  {
+    "query": "C51000磷青铜冷轧93%后260°C热处理2小时的应力松弛各向异性数据",
+    "expected_chunk_ids": [
+      "page-00904"
+    ],
+    "page": 904,
+    "source_id": 2,
+    "all_queries": [
+      "C51000磷青铜冷轧93%后260°C热处理2小时的应力松弛各向异性数据",
+      "Highly cold-rolled C51000 phosphor bronze stress relaxation anisotropy after heat treatment at 260°C for 2h",
+      "C51000带材弯曲应力松弛平行与垂直轧制方向初始应力对比"
+    ],
+    "summary": "C51000（5%Sn磷青铜）经93%冷轧后260°C热处理2小时，在弯曲条件下表现出各向异性应力松弛行为，平行和垂直轧制方向的初始应力数据分别为607/634 MPa（冷轧态）和641/738 MPa（热处理态）。",
+    "keywords": [
+      "C51000",
+      "应力松弛",
+      "各向异性",
+      "冷加工",
+      "热处理",
+      "磷青铜",
+      "弯曲",
+      "初始应力"
+    ]
+  },
+  {
+    "query": "Praseodymium elastic constants at 27°C c11 c12 c13 c33 c44 values",
+    "expected_chunk_ids": [
+      "page-03257"
+    ],
+    "page": 3257,
+    "source_id": 2,
+    "all_queries": [
+      "Praseodymium elastic constants at 27°C c11 c12 c13 c33 c44 values",
+      "Pr (praseodymium) surface tension 0.687 N/m at 1021°C",
+      "镨的弹性常数和表面张力数据（27°C和1021°C）"
+    ],
+    "summary": "镨(Pr)在27°C时的弹性常数(c11=54.77 GPa, c12=24.60 GPa, c13=16.56 GPa, c33=60.80 GPa, c44=15.01 GPa)和1021°C时的液态表面张力(0.687 N/m)。",
+    "keywords": [
+      "Praseodymium",
+      "弹性常数",
+      "表面张力",
+      "27°C",
+      "1021°C",
+      "c11",
+      "c12",
+      "c13",
+      "c33",
+      "c44"
+    ]
+  },
+  {
+    "query": "O60 temper 825 MPa compressive strength 13 mm plate",
+    "expected_chunk_ids": [
+      "page-01097"
+    ],
+    "page": 1097,
+    "source_id": 2,
+    "all_queries": [
+      "O60 temper 825 MPa compressive strength 13 mm plate",
+      "Charpy keyhole 81 J at -30°C for H04 temper aluminum",
+      "elastic modulus 115 GPa tension shear 44 GPa O60 H04"
+    ],
+    "summary": "铝板O60和H04回火态在13mm厚度下的压缩强度、弹性模量、硬度及冲击性能数据",
+    "keywords": [
+      "O60 temper",
+      "H04 temper",
+      "压缩强度",
+      "弹性模量",
+      "硬度HRB",
+      "Charpy冲击",
+      "Izod冲击"
+    ]
+  },
+  {
+    "query": "Charpy V-notch impact energy of electron-beam-melted tantalum with <44 ppm C+N",
+    "expected_chunk_ids": [
+      "page-03175"
+    ],
+    "page": 3175,
+    "source_id": 2,
+    "all_queries": [
+      "Charpy V-notch impact energy of electron-beam-melted tantalum with <44 ppm C+N",
+      "Rotating-beam fatigue strength of wrought electron-beam-melted tantalum",
+      "Creep-rupture characteristics of electron-beam-melted tantalum"
+    ],
+    "summary": "电子束熔炼钽（杂质<44 ppm C+N）的冲击强度（Charry V-notch）、疲劳强度（旋转梁）和蠕变断裂特性。",
+    "keywords": [
+      "电子束熔炼钽",
+      "夏比V型缺口冲击",
+      "旋转梁疲劳",
+      "蠕变断裂"
+    ]
+  },
+  {
+    "query": "C92200 compressive strength 0.1% permanent set",
+    "expected_chunk_ids": [
+      "page-01233"
+    ],
+    "page": 1233,
+    "source_id": 2,
+    "all_queries": [
+      "C92200 compressive strength 0.1% permanent set",
+      "C92200 hardness HB 500 kg",
+      "C92200 tensile properties Fig 30"
+    ],
+    "summary": "C92200合金的拉伸、压缩性能及硬度数据",
+    "keywords": [
+      "C92200",
+      "压缩强度",
+      "硬度HB",
+      "永久变形"
+    ]
+  },
+  {
+    "query": "How does quench rate affect the properties of U-0.75Ti alloy? (Fig. 16)",
+    "expected_chunk_ids": [
+      "page-01990"
+    ],
+    "page": 1990,
+    "source_id": 2,
+    "all_queries": [
+      "How does quench rate affect the properties of U-0.75Ti alloy? (Fig. 16)",
+      "Effect of titanium content on quench rate sensitivity and martensite formation in U-Ti alloys",
+      "What is the critical quench rate for martensite formation in U-0.75Ti with varying Ti content?"
+    ],
+    "summary": "U-0.75Ti合金的淬火速率对性能的影响以及钛含量降低对马氏体形成临界淬火速率的影响。",
+    "keywords": [
+      "U-0.75Ti",
+      "quench rate",
+      "martensite start temperature",
+      "titanium content",
+      "critical quench rate"
+    ]
+  },
+  {
+    "query": "355.0-T51 tensile strength at -80°C permanent mold",
+    "expected_chunk_ids": [
+      "page-00612"
+    ],
+    "page": 612,
+    "source_id": 2,
+    "all_queries": [
+      "355.0-T51 tensile strength at -80°C permanent mold",
+      "yield strength 0.2% offset for alloy 355.0-T51 at 205°C",
+      "355.0-T51 elongation values at 260°C sand casting vs permanent mold"
+    ],
+    "summary": "合金355.0-T51在不同温度下的拉伸性能数据表，涵盖永久模铸造和（推测）砂型铸造的两组数据，包括抗拉强度、屈服强度（0.2%偏移）和延伸率。",
+    "keywords": [
+      "355.0-T51",
+      "拉伸性能",
+      "温度",
+      "永久模铸造",
+      "抗拉强度",
+      "屈服强度",
+      "延伸率",
+      "MPa",
+      "ksi"
+    ]
+  },
+  {
+    "query": "51123 lead-tellurium-copper alloy HB hardness",
+    "expected_chunk_ids": [
+      "page-01671"
+    ],
+    "page": 1671,
+    "source_id": 2,
+    "all_queries": [
+      "51123 lead-tellurium-copper alloy HB hardness",
+      "52605 1% Sb sheathing extruded aged 1 month tensile strength",
+      "52901 hard lead (96-4) cold-rolled sheet elongation 4.0"
+    ],
+    "summary": "ASM手册第1671页列出了多种铅基合金（如铅-碲-铜合金、铅-铟合金、焊料、硬铅等）的力学性能数据，包括抗拉强度、延伸率和布氏硬度，以及部分材料的加工或热处理状态。",
+    "keywords": [
+      "铅基合金",
+      "力学性能",
+      "51123",
+      "51510",
+      "52605",
+      "52901",
+      "53105",
+      "抗拉强度",
+      "延伸率",
+      "布氏硬度",
+      "冷轧",
+      "热处理"
+    ]
+  },
+  {
+    "query": "C17510 TD04 temper electrical conductivity unaged vs peak aged IACS",
+    "expected_chunk_ids": [
+      "page-01312"
+    ],
+    "page": 1312,
+    "source_id": 2,
+    "all_queries": [
+      "C17510 TD04 temper electrical conductivity unaged vs peak aged IACS",
+      "C17200 conductivity 15-19% IACS unaged 22-28% peak aged",
+      "beryllium copper mill hardened high strength alloy electrical conductivity range"
+    ],
+    "summary": "铍铜合金C17510和C17200在不同时效状态下的电导率范围，包括未时效、峰值时效及加工硬化回火态的电导率数据。",
+    "keywords": [
+      "C17510",
+      "C17200",
+      "IACS",
+      "电导率",
+      "峰值时效",
+      "未时效",
+      "TD04",
+      "TB00"
+    ]
+  },
+  {
+    "query": "Titanium closed-die forging temperature range 95-480°C for hammers presses",
+    "expected_chunk_ids": [
+      "page-01839"
+    ],
+    "page": 1839,
+    "source_id": 2,
+    "all_queries": [
+      "Titanium closed-die forging temperature range 95-480°C for hammers presses",
+      "Extrusion vs forging properties titanium rod seamless pipe",
+      "Titanium alloy processing conditions 200-900°C orbital spin roll forging"
+    ],
+    "summary": "钛合金闭模锻造和挤压工艺的温度范围及性能对比说明",
+    "keywords": [
+      "Closed-die forging",
+      "Extrusion",
+      "Titanium",
+      "temperature range",
+      "mechanical properties"
+    ]
+  },
+  {
+    "query": "铝板厚度大于等于6.25 mm，铝箔厚度小于0.15 mm的分类标准",
+    "expected_chunk_ids": [
+      "page-00023"
+    ],
+    "page": 23,
+    "source_id": 2,
+    "all_queries": [
+      "铝板厚度大于等于6.25 mm，铝箔厚度小于0.15 mm的分类标准",
+      "如何通过冷轧和退火控制铝材的加工硬化回火性能？",
+      "aluminum flat-rolled products: plate sheet foil thickness definitions and work-hardened tempers control"
+    ],
+    "summary": "定义了铝轧制产品（板材、薄板、箔）的厚度范围，并说明其通过冷轧和退火控制加工硬化回火性能。",
+    "keywords": [
+      "flat-rolled products",
+      "plate",
+      "sheet",
+      "foil",
+      "work-hardened tempers",
+      "cold reduction",
+      "annealing"
+    ]
+  },
+  {
+    "query": "titanium-gettered iron yield stress temperature dependence 2.5e-4 s-1 ASTM grain size 5-6",
+    "expected_chunk_ids": [
+      "page-03056"
+    ],
+    "page": 3056,
+    "source_id": 2,
+    "all_queries": [
+      "titanium-gettered iron yield stress temperature dependence 2.5e-4 s-1 ASTM grain size 5-6",
+      "compressive yield strength titanium-gettered iron same as tensile",
+      "Vickers hardness pure iron single crystal versus temperature 300 ppm carbon"
+    ],
+    "summary": "描述了钛净化铁的屈服和流动应力随温度变化（应变率2.5×10⁻⁴ s⁻¹，晶粒度ASTM No.5-6），以及压缩性能（屈服强度与拉伸相同）和纯铁单晶与含碳单晶的维氏硬度随温度变化及各向异性。",
+    "keywords": [
+      "钛净化铁",
+      "屈服应力",
+      "流动应力",
+      "温度依赖性",
+      "维氏硬度",
+      "纯铁单晶",
+      "各向异性"
+    ]
+  },
+  {
+    "query": "ZrB SiC cermet rocket propulsion gas erosion resistance",
+    "expected_chunk_ids": [
+      "page-02692"
+    ],
+    "page": 2692,
+    "source_id": 2,
+    "all_queries": [
+      "ZrB SiC cermet rocket propulsion gas erosion resistance",
+      "boride base cermet high temperature corrosion resistance molten aluminum",
+      "carbon containing cermets electrical brushes graphite lubrication"
+    ],
+    "summary": "文本介绍了硼化物基陶瓷（如ZrB和SiC组合）的高温耐腐蚀和抗侵蚀特性，以及含碳陶瓷（含石墨）在电刷和润滑中的应用。",
+    "keywords": [
+      "硼化物基陶瓷",
+      "ZrB",
+      "SiC",
+      "高温耐腐蚀",
+      "抗侵蚀",
+      "含碳陶瓷",
+      "石墨",
+      "电刷"
+    ]
+  }
+]

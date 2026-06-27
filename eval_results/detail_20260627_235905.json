@@ -1,0 +1,2975 @@
+{
+  "timestamp": "20260627_235905",
+  "config": {
+    "top_k": 10,
+    "hybrid": true
+  },
+  "metrics": {
+    "hit_rate_5": 0.27586206896551724,
+    "hit_rate_10": 0.3218390804597701,
+    "mrr": 0.2387566137566137,
+    "precision_5": 0.05517241379310347,
+    "avg_latency_ms": 261.7809690278152,
+    "total_queries": 87
+  },
+  "queries": [
+    {
+      "query": "1145 aluminum foil O temper tensile strength MPa",
+      "expected": [
+        "page-00236"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01005-02",
+          "page": 1005,
+          "score": 0.7709
+        },
+        {
+          "chunk_id": "table-01128-01",
+          "page": 1128,
+          "score": 0.7601
+        },
+        {
+          "chunk_id": "table-01040-01",
+          "page": 1040,
+          "score": 0.7601
+        },
+        {
+          "chunk_id": "table-00373-02",
+          "page": 373,
+          "score": 0.7596
+        },
+        {
+          "chunk_id": "table-00364-01",
+          "page": 364,
+          "score": 0.7578
+        }
+      ],
+      "latency_ms": 10872.849464416504
+    },
+    {
+      "query": "C82500铜合金的铸造温度和固溶温度是多少？",
+      "expected": [
+        "page-01192"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00944",
+          "page": 944,
+          "score": 0.56
+        },
+        {
+          "chunk_id": "table-01712-02",
+          "page": 1712,
+          "score": 0.552
+        },
+        {
+          "chunk_id": "page-01244",
+          "page": 1244,
+          "score": 0.5481
+        },
+        {
+          "chunk_id": "table-02371-02",
+          "page": 2371,
+          "score": 0.545
+        },
+        {
+          "chunk_id": "page-01718",
+          "page": 1718,
+          "score": 0.5368
+        }
+      ],
+      "latency_ms": 122.04909324645996
+    },
+    {
+      "query": "internal tin process MJR superconductor wire heat treatment 210°C 340°C 650°C",
+      "expected": [
+        "page-02880"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00944",
+          "page": 944,
+          "score": 0.7145
+        },
+        {
+          "chunk_id": "page-03169",
+          "page": 3169,
+          "score": 0.7124
+        },
+        {
+          "chunk_id": "ci_table-00109-02",
+          "page": 109,
+          "score": 0.6988
+        },
+        {
+          "chunk_id": "table-02505-02",
+          "page": 2505,
+          "score": 0.696
+        },
+        {
+          "chunk_id": "table-01605-01",
+          "page": 1605,
+          "score": 0.6954
+        }
+      ],
+      "latency_ms": 128.4005641937256
+    },
+    {
+      "query": "Iridium crucibles for high-temperature reactions and single crystal growth",
+      "expected": [
+        "page-03015"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03015",
+          "page": 3015,
+          "score": 0.8034
+        },
+        {
+          "chunk_id": "page-02016",
+          "page": 2016,
+          "score": 0.7881
+        },
+        {
+          "chunk_id": "page-01790",
+          "page": 1790,
+          "score": 0.7394
+        },
+        {
+          "chunk_id": "page-02065",
+          "page": 2065,
+          "score": 0.7345
+        },
+        {
+          "chunk_id": "page-03277",
+          "page": 3277,
+          "score": 0.732
+        }
+      ],
+      "latency_ms": 124.22633171081543
+    },
+    {
+      "query": "C42500 OS035 tensile strength MPa",
+      "expected": [
+        "page-01066"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01066",
+          "page": 1066,
+          "score": 0.7049
+        },
+        {
+          "chunk_id": "page-01027",
+          "page": 1027,
+          "score": 0.6414
+        },
+        {
+          "chunk_id": "table-02463-01",
+          "page": 2463,
+          "score": 0.6207
+        },
+        {
+          "chunk_id": "table-01005-02",
+          "page": 1005,
+          "score": 0.6178
+        },
+        {
+          "chunk_id": "table-00862-01",
+          "page": 862,
+          "score": 0.6177
+        }
+      ],
+      "latency_ms": 119.07839775085449
+    },
+    {
+      "query": "thermal neutron capture cross section of natural uranium at 0.025 eV",
+      "expected": [
+        "page-03302"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-03302-02",
+          "page": 3302,
+          "score": 0.7635
+        },
+        {
+          "chunk_id": "table-01957-01",
+          "page": 1957,
+          "score": 0.7587
+        },
+        {
+          "chunk_id": "table-02724-01",
+          "page": 2724,
+          "score": 0.7544
+        },
+        {
+          "chunk_id": "table-02744-02",
+          "page": 2744,
+          "score": 0.7487
+        },
+        {
+          "chunk_id": "page-03118",
+          "page": 3118,
+          "score": 0.7273
+        }
+      ],
+      "latency_ms": 126.36137008666992
+    },
+    {
+      "query": "C36000 mechanical properties tensile yield elongation",
+      "expected": [
+        "page-01051"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01037",
+          "page": 1037,
+          "score": 0.7416
+        },
+        {
+          "chunk_id": "table-00599-01",
+          "page": 599,
+          "score": 0.6812
+        },
+        {
+          "chunk_id": "table-00585-02",
+          "page": 585,
+          "score": 0.6812
+        },
+        {
+          "chunk_id": "table-00651-01",
+          "page": 651,
+          "score": 0.6812
+        },
+        {
+          "chunk_id": "page-00952",
+          "page": 952,
+          "score": 0.6735
+        }
+      ],
+      "latency_ms": 145.33734321594238
+    },
+    {
+      "query": "FeAl alloy fatigue resistance 23.7% vs 28.7% Al room temperature 500°C",
+      "expected": [
+        "page-02578"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02215-01",
+          "page": 2215,
+          "score": 0.7768
+        },
+        {
+          "chunk_id": "page-00567",
+          "page": 567,
+          "score": 0.7484
+        },
+        {
+          "chunk_id": "table-02523-02",
+          "page": 2523,
+          "score": 0.7289
+        },
+        {
+          "chunk_id": "page-00742",
+          "page": 742,
+          "score": 0.7263
+        },
+        {
+          "chunk_id": "page-01906",
+          "page": 1906,
+          "score": 0.7258
+        }
+      ],
+      "latency_ms": 140.2440071105957
+    },
+    {
+      "query": "tungsten carbide tricone bits heavy impact loading abrasion button size shape oil gas drilling",
+      "expected": [
+        "page-02687"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02687",
+          "page": 2687,
+          "score": 0.8298
+        },
+        {
+          "chunk_id": "page-02685",
+          "page": 2685,
+          "score": 0.7155
+        },
+        {
+          "chunk_id": "page-01416",
+          "page": 1416,
+          "score": 0.6974
+        },
+        {
+          "chunk_id": "page-02683",
+          "page": 2683,
+          "score": 0.6842
+        },
+        {
+          "chunk_id": "page-02686",
+          "page": 2686,
+          "score": 0.6826
+        }
+      ],
+      "latency_ms": 127.84147262573242
+    },
+    {
+      "query": "铌在25°C和870°C下的拉伸弹性模量是多少？",
+      "expected": [
+        "page-03120"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02121-02",
+          "page": 2121,
+          "score": 0.5695
+        },
+        {
+          "chunk_id": "table-02991-02",
+          "page": 2991,
+          "score": 0.5505
+        },
+        {
+          "chunk_id": "table-02923-01",
+          "page": 2923,
+          "score": 0.5476
+        },
+        {
+          "chunk_id": "table-03188-03",
+          "page": 3188,
+          "score": 0.5436
+        },
+        {
+          "chunk_id": "table-02990-03",
+          "page": 2990,
+          "score": 0.543
+        }
+      ],
+      "latency_ms": 131.63042068481445
+    },
+    {
+      "query": "MA 956 ODS合金的Y2O3含量是多少？",
+      "expected": [
+        "page-02114"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02618-01",
+          "page": 2618,
+          "score": 0.597
+        },
+        {
+          "chunk_id": "table-02630-01",
+          "page": 2630,
+          "score": 0.5777
+        },
+        {
+          "chunk_id": "table-02216-01",
+          "page": 2216,
+          "score": 0.5632
+        },
+        {
+          "chunk_id": "table-02652-01",
+          "page": 2652,
+          "score": 0.5388
+        },
+        {
+          "chunk_id": "ci_table-00430-02",
+          "page": 430,
+          "score": 0.5221
+        }
+      ],
+      "latency_ms": 127.23064422607422
+    },
+    {
+      "query": "ASM手册 直径D与圆角半径r1 r2对应表",
+      "expected": [
+        "page-01460"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00954",
+          "page": 954,
+          "score": 0.5776
+        },
+        {
+          "chunk_id": "ci_page-00115",
+          "page": 115,
+          "score": 0.5721
+        },
+        {
+          "chunk_id": "ci_page-00225",
+          "page": 225,
+          "score": 0.5676
+        },
+        {
+          "chunk_id": "page-02421",
+          "page": 2421,
+          "score": 0.5642
+        },
+        {
+          "chunk_id": "page-01077",
+          "page": 1077,
+          "score": 0.5632
+        }
+      ],
+      "latency_ms": 159.41095352172852
+    },
+    {
+      "query": "铜在Cu2+状态下的电化学当量是多少mg/C？",
+      "expected": [
+        "page-02989"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02476-01",
+          "page": 2476,
+          "score": 0.5852
+        },
+        {
+          "chunk_id": "table-02119-01",
+          "page": 2119,
+          "score": 0.5603
+        },
+        {
+          "chunk_id": "table-01210-01",
+          "page": 1210,
+          "score": 0.5557
+        },
+        {
+          "chunk_id": "ci_page-00039",
+          "page": 39,
+          "score": 0.5541
+        },
+        {
+          "chunk_id": "table-03081-01",
+          "page": 3081,
+          "score": 0.5502
+        }
+      ],
+      "latency_ms": 133.2073211669922
+    },
+    {
+      "query": "90Ag-10Mo PSR density 10.38 g/cm3 electrical conductivity 65-68 IACS hardness 35-40 HRB",
+      "expected": [
+        "page-02394"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02399",
+          "page": 2399,
+          "score": 0.7589
+        },
+        {
+          "chunk_id": "table-00183-02",
+          "page": 183,
+          "score": 0.7581
+        },
+        {
+          "chunk_id": "page-02396",
+          "page": 2396,
+          "score": 0.741
+        },
+        {
+          "chunk_id": "table-02399-01",
+          "page": 2399,
+          "score": 0.7408
+        },
+        {
+          "chunk_id": "table-02396-01",
+          "page": 2396,
+          "score": 0.7375
+        }
+      ],
+      "latency_ms": 139.4674777984619
+    },
+    {
+      "query": "5454 铝合金密度 g/cm3",
+      "expected": [
+        "page-00186"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01114",
+          "page": 1114,
+          "score": 0.5681
+        },
+        {
+          "chunk_id": "page-00111",
+          "page": 111,
+          "score": 0.5675
+        },
+        {
+          "chunk_id": "table-03151-01",
+          "page": 3151,
+          "score": 0.5662
+        },
+        {
+          "chunk_id": "table-00183-02",
+          "page": 183,
+          "score": 0.5596
+        },
+        {
+          "chunk_id": "page-02324",
+          "page": 2324,
+          "score": 0.5574
+        }
+      ],
+      "latency_ms": 133.74876976013184
+    },
+    {
+      "query": "C68800 H02 temper tensile strength yield strength MPa ksi",
+      "expected": [
+        "page-01124"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00373-02",
+          "page": 373,
+          "score": 0.8509
+        },
+        {
+          "chunk_id": "table-00393-01",
+          "page": 393,
+          "score": 0.828
+        },
+        {
+          "chunk_id": "table-00364-01",
+          "page": 364,
+          "score": 0.828
+        },
+        {
+          "chunk_id": "table-00371-01",
+          "page": 371,
+          "score": 0.8182
+        },
+        {
+          "chunk_id": "table-00999-02",
+          "page": 999,
+          "score": 0.811
+        }
+      ],
+      "latency_ms": 131.01863861083984
+    },
+    {
+      "query": "manganese density at 1400°C gamma phase solid",
+      "expected": [
+        "page-03092"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02507-01",
+          "page": 2507,
+          "score": 0.6318
+        },
+        {
+          "chunk_id": "table-02923-01",
+          "page": 2923,
+          "score": 0.6269
+        },
+        {
+          "chunk_id": "page-03095",
+          "page": 3095,
+          "score": 0.6223
+        },
+        {
+          "chunk_id": "page-03081",
+          "page": 3081,
+          "score": 0.6165
+        },
+        {
+          "chunk_id": "table-02504-01",
+          "page": 2504,
+          "score": 0.6148
+        }
+      ],
+      "latency_ms": 138.7465000152588
+    },
+    {
+      "query": "40K half-life decay mode beta EC branching ratio",
+      "expected": [
+        "page-03135"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02996-03",
+          "page": 2996,
+          "score": 0.751
+        },
+        {
+          "chunk_id": "table-03134-02",
+          "page": 3134,
+          "score": 0.6618
+        },
+        {
+          "chunk_id": "table-03051-02",
+          "page": 3051,
+          "score": 0.6609
+        },
+        {
+          "chunk_id": "table-03070-01",
+          "page": 3070,
+          "score": 0.6384
+        },
+        {
+          "chunk_id": "table-03179-01",
+          "page": 3179,
+          "score": 0.6249
+        }
+      ],
+      "latency_ms": 143.0978775024414
+    },
+    {
+      "query": "6061-T6 sheet axial fatigue -1.0 stress ratio",
+      "expected": [
+        "page-00222"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00221-01",
+          "page": 221,
+          "score": 0.7018
+        },
+        {
+          "chunk_id": "table-00222-01",
+          "page": 222,
+          "score": 0.6772
+        },
+        {
+          "chunk_id": "page-01514",
+          "page": 1514,
+          "score": 0.6727
+        },
+        {
+          "chunk_id": "table-00418-01",
+          "page": 418,
+          "score": 0.664
+        },
+        {
+          "chunk_id": "table-00626-01",
+          "page": 626,
+          "score": 0.6435
+        }
+      ],
+      "latency_ms": 133.3913803100586
+    },
+    {
+      "query": "1% cobalt copper alloy substitute for C82400 C82500 thin section casting high temperature",
+      "expected": [
+        "page-01273"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00780",
+          "page": 780,
+          "score": 0.7469
+        },
+        {
+          "chunk_id": "table-00780-01",
+          "page": 780,
+          "score": 0.743
+        },
+        {
+          "chunk_id": "page-00830",
+          "page": 830,
+          "score": 0.7361
+        },
+        {
+          "chunk_id": "page-00835",
+          "page": 835,
+          "score": 0.7347
+        },
+        {
+          "chunk_id": "table-01333-01",
+          "page": 1333,
+          "score": 0.7345
+        }
+      ],
+      "latency_ms": 132.3697566986084
+    },
+    {
+      "query": "C28000 Muntz metal annealing temperature range",
+      "expected": [
+        "page-01033"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02358-01",
+          "page": 2358,
+          "score": 0.777
+        },
+        {
+          "chunk_id": "page-01027",
+          "page": 1027,
+          "score": 0.7268
+        },
+        {
+          "chunk_id": "table-00421-01",
+          "page": 421,
+          "score": 0.692
+        },
+        {
+          "chunk_id": "table-01712-02",
+          "page": 1712,
+          "score": 0.6864
+        },
+        {
+          "chunk_id": "table-03229-01",
+          "page": 3229,
+          "score": 0.6853
+        }
+      ],
+      "latency_ms": 131.08420372009277
+    },
+    {
+      "query": "Zinc melting point 420°C boiling point 906°C coefficient of thermal expansion",
+      "expected": [
+        "page-03220"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03220",
+          "page": 3220,
+          "score": 0.878
+        },
+        {
+          "chunk_id": "page-02124",
+          "page": 2124,
+          "score": 0.7639
+        },
+        {
+          "chunk_id": "page-03002",
+          "page": 3002,
+          "score": 0.7562
+        },
+        {
+          "chunk_id": "table-02124-01",
+          "page": 2124,
+          "score": 0.7476
+        },
+        {
+          "chunk_id": "page-03098",
+          "page": 3098,
+          "score": 0.7368
+        }
+      ],
+      "latency_ms": 133.09168815612793
+    },
+    {
+      "query": "铁基和镍基高温合金中各元素对固溶强化和碳化物形成的作用",
+      "expected": [
+        "page-01367"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01725",
+          "page": 1725,
+          "score": 0.5987
+        },
+        {
+          "chunk_id": "page-01724",
+          "page": 1724,
+          "score": 0.5579
+        },
+        {
+          "chunk_id": "page-03312",
+          "page": 3312,
+          "score": 0.5567
+        },
+        {
+          "chunk_id": "page-03277",
+          "page": 3277,
+          "score": 0.5561
+        },
+        {
+          "chunk_id": "page-03308",
+          "page": 3308,
+          "score": 0.5552
+        }
+      ],
+      "latency_ms": 130.0220489501953
+    },
+    {
+      "query": "lead electrical resistivity at 20°C in nΩ·m",
+      "expected": [
+        "page-03066"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01605-01",
+          "page": 1605,
+          "score": 0.7575
+        },
+        {
+          "chunk_id": "page-02392",
+          "page": 2392,
+          "score": 0.7484
+        },
+        {
+          "chunk_id": "table-02392-01",
+          "page": 2392,
+          "score": 0.7476
+        },
+        {
+          "chunk_id": "table-03009-01",
+          "page": 3009,
+          "score": 0.7467
+        },
+        {
+          "chunk_id": "page-03168",
+          "page": 3168,
+          "score": 0.7308
+        }
+      ],
+      "latency_ms": 115.75913429260254
+    },
+    {
+      "query": "AuCd形状记忆效应是哪一年首次发现的",
+      "expected": [
+        "page-02525"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-03362-01",
+          "page": 3362,
+          "score": 0.4519
+        },
+        {
+          "chunk_id": "page-03362",
+          "page": 3362,
+          "score": 0.4479
+        },
+        {
+          "chunk_id": "page-02525",
+          "page": 2525,
+          "score": 0.4365
+        },
+        {
+          "chunk_id": "table-02531-01",
+          "page": 2531,
+          "score": 0.4324
+        },
+        {
+          "chunk_id": "page-02119",
+          "page": 2119,
+          "score": 0.4289
+        }
+      ],
+      "latency_ms": 131.72268867492676
+    },
+    {
+      "query": "合金含71%Cu 11-14%Mn 7-8.5%Al 密度7.53 g/cm3 液相线990°C 固相线950°C",
+      "expected": [
+        "page-01262"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02531-02",
+          "page": 2531,
+          "score": 0.6759
+        },
+        {
+          "chunk_id": "table-03140-01",
+          "page": 3140,
+          "score": 0.6753
+        },
+        {
+          "chunk_id": "table-02652-01",
+          "page": 2652,
+          "score": 0.67
+        },
+        {
+          "chunk_id": "table-02969-01",
+          "page": 2969,
+          "score": 0.6699
+        },
+        {
+          "chunk_id": "table-02216-01",
+          "page": 2216,
+          "score": 0.6665
+        }
+      ],
+      "latency_ms": 129.29773330688477
+    },
+    {
+      "query": "C24000 tensile strength vs annealing temperature grain size cold drawn 37%",
+      "expected": [
+        "page-01022"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01026",
+          "page": 1026,
+          "score": 0.8229
+        },
+        {
+          "chunk_id": "table-00659-01",
+          "page": 659,
+          "score": 0.7608
+        },
+        {
+          "chunk_id": "table-01081-01",
+          "page": 1081,
+          "score": 0.7605
+        },
+        {
+          "chunk_id": "table-00651-01",
+          "page": 651,
+          "score": 0.7555
+        },
+        {
+          "chunk_id": "table-00599-01",
+          "page": 599,
+          "score": 0.7555
+        }
+      ],
+      "latency_ms": 119.81868743896484
+    },
+    {
+      "query": "AZ31B-H24热处理后强度损失的原因及解决方法",
+      "expected": [
+        "page-01501"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00115-01",
+          "page": 115,
+          "score": 0.5686
+        },
+        {
+          "chunk_id": "page-00330",
+          "page": 330,
+          "score": 0.5671
+        },
+        {
+          "chunk_id": "table-00330-01",
+          "page": 330,
+          "score": 0.5546
+        },
+        {
+          "chunk_id": "page-00203",
+          "page": 203,
+          "score": 0.5491
+        },
+        {
+          "chunk_id": "page-00200",
+          "page": 200,
+          "score": 0.5229
+        }
+      ],
+      "latency_ms": 134.8738670349121
+    },
+    {
+      "query": "5086-O铝合金抗拉强度130MPa(19ksi)对应的是什么屈服强度?",
+      "expected": [
+        "page-00213"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02324",
+          "page": 2324,
+          "score": 0.506
+        },
+        {
+          "chunk_id": "table-02590-01",
+          "page": 2590,
+          "score": 0.4971
+        },
+        {
+          "chunk_id": "page-01540",
+          "page": 1540,
+          "score": 0.4945
+        },
+        {
+          "chunk_id": "table-02508-01",
+          "page": 2508,
+          "score": 0.4932
+        },
+        {
+          "chunk_id": "page-01000",
+          "page": 1000,
+          "score": 0.4922
+        }
+      ],
+      "latency_ms": 136.69681549072266
+    },
+    {
+      "query": "tantalum addition effect on high field properties of NbTi superconductor",
+      "expected": [
+        "page-02818"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02861",
+          "page": 2861,
+          "score": 0.7305
+        },
+        {
+          "chunk_id": "page-02797",
+          "page": 2797,
+          "score": 0.7258
+        },
+        {
+          "chunk_id": "page-02316",
+          "page": 2316,
+          "score": 0.7067
+        },
+        {
+          "chunk_id": "page-01696",
+          "page": 1696,
+          "score": 0.6998
+        },
+        {
+          "chunk_id": "page-03229",
+          "page": 3229,
+          "score": 0.6996
+        }
+      ],
+      "latency_ms": 160.74156761169434
+    },
+    {
+      "query": "C11000铜合金在还原气氛中加热到多少度会发生脆化？",
+      "expected": [
+        "page-00929"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00944",
+          "page": 944,
+          "score": 0.5357
+        },
+        {
+          "chunk_id": "table-00761-01",
+          "page": 761,
+          "score": 0.5308
+        },
+        {
+          "chunk_id": "page-00761",
+          "page": 761,
+          "score": 0.5295
+        },
+        {
+          "chunk_id": "table-02508-01",
+          "page": 2508,
+          "score": 0.5231
+        },
+        {
+          "chunk_id": "table-01712-02",
+          "page": 1712,
+          "score": 0.5143
+        }
+      ],
+      "latency_ms": 144.00410652160645
+    },
+    {
+      "query": "干袋冷等静压如何实现自动化并提高生产率？",
+      "expected": [
+        "page-02697"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02707",
+          "page": 2707,
+          "score": 0.4807
+        },
+        {
+          "chunk_id": "page-02697",
+          "page": 2697,
+          "score": 0.4733
+        },
+        {
+          "chunk_id": "page-01345",
+          "page": 1345,
+          "score": 0.466
+        },
+        {
+          "chunk_id": "page-02096",
+          "page": 2096,
+          "score": 0.4631
+        },
+        {
+          "chunk_id": "page-00115",
+          "page": 115,
+          "score": 0.4627
+        }
+      ],
+      "latency_ms": 139.23048973083496
+    },
+    {
+      "query": "C72500 合金 应力松弛 各向异性 弯曲 冷轧",
+      "expected": [
+        "page-00906"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01233",
+          "page": 1233,
+          "score": 0.4987
+        },
+        {
+          "chunk_id": "page-01514",
+          "page": 1514,
+          "score": 0.4924
+        },
+        {
+          "chunk_id": "page-01244",
+          "page": 1244,
+          "score": 0.491
+        },
+        {
+          "chunk_id": "page-01245",
+          "page": 1245,
+          "score": 0.4906
+        },
+        {
+          "chunk_id": "page-01370",
+          "page": 1370,
+          "score": 0.4889
+        }
+      ],
+      "latency_ms": 145.7991600036621
+    },
+    {
+      "query": "GaAs 300K 电子迁移率 8500 cm2/V·s",
+      "expected": [
+        "page-02137"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "ci_page-00233",
+          "page": 233,
+          "score": 0.5871
+        },
+        {
+          "chunk_id": "table-03151-01",
+          "page": 3151,
+          "score": 0.5743
+        },
+        {
+          "chunk_id": "table-02935-01",
+          "page": 2935,
+          "score": 0.5637
+        },
+        {
+          "chunk_id": "table-02937-03",
+          "page": 2937,
+          "score": 0.5637
+        },
+        {
+          "chunk_id": "table-02936-02",
+          "page": 2936,
+          "score": 0.5566
+        }
+      ],
+      "latency_ms": 137.43162155151367
+    },
+    {
+      "query": "EZ33A-T5 isochronous stress-strain curves at 371°C",
+      "expected": [
+        "page-01559"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01558",
+          "page": 1558,
+          "score": 0.7485
+        },
+        {
+          "chunk_id": "page-01516",
+          "page": 1516,
+          "score": 0.7205
+        },
+        {
+          "chunk_id": "page-01514",
+          "page": 1514,
+          "score": 0.7071
+        },
+        {
+          "chunk_id": "page-01567",
+          "page": 1567,
+          "score": 0.673
+        },
+        {
+          "chunk_id": "page-01521",
+          "page": 1521,
+          "score": 0.6714
+        }
+      ],
+      "latency_ms": 134.2628002166748
+    },
+    {
+      "query": "Nb-46.5Ti composite wire critical current density at 5T 4.2K",
+      "expected": [
+        "page-02802"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02551-01",
+          "page": 2551,
+          "score": 0.7004
+        },
+        {
+          "chunk_id": "page-02883",
+          "page": 2883,
+          "score": 0.6697
+        },
+        {
+          "chunk_id": "table-01616-01",
+          "page": 1616,
+          "score": 0.6696
+        },
+        {
+          "chunk_id": "page-01244",
+          "page": 1244,
+          "score": 0.6637
+        },
+        {
+          "chunk_id": "table-01761-01",
+          "page": 1761,
+          "score": 0.6622
+        }
+      ],
+      "latency_ms": 135.13875007629395
+    },
+    {
+      "query": "metallic glasses rapid quenching cooling rates suppress nucleation growth crystalline phases",
+      "expected": [
+        "page-02287"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02287",
+          "page": 2287,
+          "score": 0.89
+        },
+        {
+          "chunk_id": "table-02957-01",
+          "page": 2957,
+          "score": 0.7792
+        },
+        {
+          "chunk_id": "page-01799",
+          "page": 1799,
+          "score": 0.7667
+        },
+        {
+          "chunk_id": "page-02019",
+          "page": 2019,
+          "score": 0.7587
+        },
+        {
+          "chunk_id": "page-02313",
+          "page": 2313,
+          "score": 0.7537
+        }
+      ],
+      "latency_ms": 150.8173942565918
+    },
+    {
+      "query": "Inconel 718 持久强度 温度 应力 数据表",
+      "expected": [
+        "page-00475"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02943-02",
+          "page": 2943,
+          "score": 0.5586
+        },
+        {
+          "chunk_id": "table-00575-01",
+          "page": 575,
+          "score": 0.5533
+        },
+        {
+          "chunk_id": "table-03140-01",
+          "page": 3140,
+          "score": 0.5471
+        },
+        {
+          "chunk_id": "table-02216-01",
+          "page": 2216,
+          "score": 0.543
+        },
+        {
+          "chunk_id": "page-00944",
+          "page": 944,
+          "score": 0.5394
+        }
+      ],
+      "latency_ms": 145.75767517089844
+    },
+    {
+      "query": "硬态铜合金弹性模量110 GPa 剪切模量41 GPa",
+      "expected": [
+        "page-01060"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01995-01",
+          "page": 1995,
+          "score": 0.6672
+        },
+        {
+          "chunk_id": "table-02744-01",
+          "page": 2744,
+          "score": 0.6559
+        },
+        {
+          "chunk_id": "table-02544-01",
+          "page": 2544,
+          "score": 0.6427
+        },
+        {
+          "chunk_id": "table-02310-01",
+          "page": 2310,
+          "score": 0.6423
+        },
+        {
+          "chunk_id": "table-02552-01",
+          "page": 2552,
+          "score": 0.6374
+        }
+      ],
+      "latency_ms": 149.05929565429688
+    },
+    {
+      "query": "ENiCrCoMo-1 617合金 化学成分 焊接 温度范围 760°C",
+      "expected": [
+        "page-01401"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00761",
+          "page": 761,
+          "score": 0.6164
+        },
+        {
+          "chunk_id": "table-00761-01",
+          "page": 761,
+          "score": 0.5983
+        },
+        {
+          "chunk_id": "page-02324",
+          "page": 2324,
+          "score": 0.591
+        },
+        {
+          "chunk_id": "table-00861-01",
+          "page": 861,
+          "score": 0.5895
+        },
+        {
+          "chunk_id": "page-00944",
+          "page": 944,
+          "score": 0.5882
+        }
+      ],
+      "latency_ms": 144.7010040283203
+    },
+    {
+      "query": "Fatigue strength comparison of fully dense extra-low chloride Ti-6Al-4V BE compacts with I/M alloy at room temperature",
+      "expected": [
+        "page-01927"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01927",
+          "page": 1927,
+          "score": 0.8748
+        },
+        {
+          "chunk_id": "page-01937",
+          "page": 1937,
+          "score": 0.8272
+        },
+        {
+          "chunk_id": "page-01926",
+          "page": 1926,
+          "score": 0.8233
+        },
+        {
+          "chunk_id": "page-01906",
+          "page": 1906,
+          "score": 0.7779
+        },
+        {
+          "chunk_id": "page-01854",
+          "page": 1854,
+          "score": 0.7772
+        }
+      ],
+      "latency_ms": 153.8989543914795
+    },
+    {
+      "query": "Haynes alloy 6B steam turbine erosion shield liquid droplet erosion resistance",
+      "expected": [
+        "page-01416"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01416",
+          "page": 1416,
+          "score": 0.7708
+        },
+        {
+          "chunk_id": "table-01414-01",
+          "page": 1414,
+          "score": 0.7057
+        },
+        {
+          "chunk_id": "table-02774-01",
+          "page": 2774,
+          "score": 0.6805
+        },
+        {
+          "chunk_id": "table-01416-01",
+          "page": 1416,
+          "score": 0.6786
+        },
+        {
+          "chunk_id": "table-00530-01",
+          "page": 530,
+          "score": 0.6771
+        }
+      ],
+      "latency_ms": 134.31906700134277
+    },
+    {
+      "query": "铱铑热电偶最高使用温度 2000°C 空气",
+      "expected": [
+        "page-02465"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-03069-01",
+          "page": 3069,
+          "score": 0.5718
+        },
+        {
+          "chunk_id": "page-01036",
+          "page": 1036,
+          "score": 0.5554
+        },
+        {
+          "chunk_id": "table-03169-01",
+          "page": 3169,
+          "score": 0.5516
+        },
+        {
+          "chunk_id": "table-00820-01",
+          "page": 820,
+          "score": 0.5486
+        },
+        {
+          "chunk_id": "table-02370-01",
+          "page": 2370,
+          "score": 0.5444
+        }
+      ],
+      "latency_ms": 123.8393783569336
+    },
+    {
+      "query": "DIN 17851 WL3.7165 化学成分 C Fe Al V 限制",
+      "expected": [
+        "page-01805"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02526-01",
+          "page": 2526,
+          "score": 0.655
+        },
+        {
+          "chunk_id": "page-00766",
+          "page": 766,
+          "score": 0.6484
+        },
+        {
+          "chunk_id": "table-00766-01",
+          "page": 766,
+          "score": 0.6346
+        },
+        {
+          "chunk_id": "page-00767",
+          "page": 767,
+          "score": 0.6336
+        },
+        {
+          "chunk_id": "page-00330",
+          "page": 330,
+          "score": 0.6305
+        }
+      ],
+      "latency_ms": 135.29562950134277
+    },
+    {
+      "query": "tungsten ductile-to-brittle transition temperature vs annealing temperature 4t bend",
+      "expected": [
+        "page-03212"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03212",
+          "page": 3212,
+          "score": 0.8303
+        },
+        {
+          "chunk_id": "table-00651-01",
+          "page": 651,
+          "score": 0.7224
+        },
+        {
+          "chunk_id": "table-00585-02",
+          "page": 585,
+          "score": 0.7224
+        },
+        {
+          "chunk_id": "table-00599-01",
+          "page": 599,
+          "score": 0.7224
+        },
+        {
+          "chunk_id": "page-01759",
+          "page": 1759,
+          "score": 0.7145
+        }
+      ],
+      "latency_ms": 131.51979446411133
+    },
+    {
+      "query": "M-6 electrical steel thickness for voltage regulator and welding transformer",
+      "expected": [
+        "page-02230"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02230",
+          "page": 2230,
+          "score": 0.6881
+        },
+        {
+          "chunk_id": "table-01605-01",
+          "page": 1605,
+          "score": 0.6747
+        },
+        {
+          "chunk_id": "page-02049",
+          "page": 2049,
+          "score": 0.6533
+        },
+        {
+          "chunk_id": "page-02201",
+          "page": 2201,
+          "score": 0.648
+        },
+        {
+          "chunk_id": "page-00736",
+          "page": 736,
+          "score": 0.6476
+        }
+      ],
+      "latency_ms": 132.5380802154541
+    },
+    {
+      "query": "α phase rhombohedral lattice parameters a=0.89834 nm α=23.311° at 24°C",
+      "expected": [
+        "page-03261"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03261",
+          "page": 3261,
+          "score": 0.7876
+        },
+        {
+          "chunk_id": "table-03282-02",
+          "page": 3282,
+          "score": 0.7789
+        },
+        {
+          "chunk_id": "table-03038-01",
+          "page": 3038,
+          "score": 0.7742
+        },
+        {
+          "chunk_id": "table-03137-01",
+          "page": 3137,
+          "score": 0.7701
+        },
+        {
+          "chunk_id": "page-03300",
+          "page": 3300,
+          "score": 0.7627
+        }
+      ],
+      "latency_ms": 126.20997428894043
+    },
+    {
+      "query": "I-70A beryllium 99.0% Be 0.7% BeO mechanical properties 700 700 1000",
+      "expected": [
+        "page-02001"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02272",
+          "page": 2272,
+          "score": 0.7082
+        },
+        {
+          "chunk_id": "page-01144",
+          "page": 1144,
+          "score": 0.6976
+        },
+        {
+          "chunk_id": "page-01034",
+          "page": 1034,
+          "score": 0.6934
+        },
+        {
+          "chunk_id": "table-01849-01",
+          "page": 1849,
+          "score": 0.6913
+        },
+        {
+          "chunk_id": "table-02000-01",
+          "page": 2000,
+          "score": 0.6891
+        }
+      ],
+      "latency_ms": 138.75198364257812
+    },
+    {
+      "query": "2090-T84纵向拉伸强度与温度关系",
+      "expected": [
+        "page-00689"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00694-01",
+          "page": 694,
+          "score": 0.5393
+        },
+        {
+          "chunk_id": "table-02121-02",
+          "page": 2121,
+          "score": 0.5242
+        },
+        {
+          "chunk_id": "table-02991-02",
+          "page": 2991,
+          "score": 0.5201
+        },
+        {
+          "chunk_id": "table-00575-01",
+          "page": 575,
+          "score": 0.5073
+        },
+        {
+          "chunk_id": "table-00418-01",
+          "page": 418,
+          "score": 0.5025
+        }
+      ],
+      "latency_ms": 155.65037727355957
+    },
+    {
+      "query": "What are the major market segments for aluminum in the United States according to the ASM handbook?",
+      "expected": [
+        "page-00029"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00029",
+          "page": 29,
+          "score": 0.7064
+        },
+        {
+          "chunk_id": "page-03333",
+          "page": 3333,
+          "score": 0.6526
+        },
+        {
+          "chunk_id": "page-03371",
+          "page": 3371,
+          "score": 0.6508
+        },
+        {
+          "chunk_id": "page-03335",
+          "page": 3335,
+          "score": 0.633
+        },
+        {
+          "chunk_id": "table-03371-01",
+          "page": 3371,
+          "score": 0.6314
+        }
+      ],
+      "latency_ms": 212.31961250305176
+    },
+    {
+      "query": "pure cobalt elastic modulus 210 GPa tension compression",
+      "expected": [
+        "page-01405"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01995-01",
+          "page": 1995,
+          "score": 0.7956
+        },
+        {
+          "chunk_id": "table-03302-03",
+          "page": 3302,
+          "score": 0.7619
+        },
+        {
+          "chunk_id": "page-00991",
+          "page": 991,
+          "score": 0.7447
+        },
+        {
+          "chunk_id": "table-02742-01",
+          "page": 2742,
+          "score": 0.7432
+        },
+        {
+          "chunk_id": "page-02742",
+          "page": 2742,
+          "score": 0.7404
+        }
+      ],
+      "latency_ms": 179.8412799835205
+    },
+    {
+      "query": "美国银供应中来自主要银矿的比例是多少？",
+      "expected": [
+        "page-02007"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-03380-01",
+          "page": 3380,
+          "score": 0.5106
+        },
+        {
+          "chunk_id": "page-02054",
+          "page": 2054,
+          "score": 0.4784
+        },
+        {
+          "chunk_id": "page-02256",
+          "page": 2256,
+          "score": 0.4768
+        },
+        {
+          "chunk_id": "table-00039-01",
+          "page": 39,
+          "score": 0.4752
+        },
+        {
+          "chunk_id": "table-01499-01",
+          "page": 1499,
+          "score": 0.4748
+        }
+      ],
+      "latency_ms": 151.0469913482666
+    },
+    {
+      "query": "7050 plate toughness effect of AlCuMg constituent",
+      "expected": [
+        "page-00162"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "ci_page-00492",
+          "page": 492,
+          "score": 0.6746
+        },
+        {
+          "chunk_id": "page-00162",
+          "page": 162,
+          "score": 0.6595
+        },
+        {
+          "chunk_id": "page-00672",
+          "page": 672,
+          "score": 0.6383
+        },
+        {
+          "chunk_id": "page-00161",
+          "page": 161,
+          "score": 0.636
+        },
+        {
+          "chunk_id": "page-01552",
+          "page": 1552,
+          "score": 0.6349
+        }
+      ],
+      "latency_ms": 144.43373680114746
+    },
+    {
+      "query": "8090-T651与2024铝合金的疲劳裂纹扩展速率对比",
+      "expected": [
+        "page-00719"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02324",
+          "page": 2324,
+          "score": 0.5628
+        },
+        {
+          "chunk_id": "table-02324-01",
+          "page": 2324,
+          "score": 0.5335
+        },
+        {
+          "chunk_id": "page-00669",
+          "page": 669,
+          "score": 0.5332
+        },
+        {
+          "chunk_id": "page-00767",
+          "page": 767,
+          "score": 0.5302
+        },
+        {
+          "chunk_id": "page-01114",
+          "page": 1114,
+          "score": 0.5262
+        }
+      ],
+      "latency_ms": 138.89551162719727
+    },
+    {
+      "query": "2419 aluminum alloy cold work effect on yield strength at 149°C aging with Mg addition",
+      "expected": [
+        "page-00168"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00168",
+          "page": 168,
+          "score": 0.8326
+        },
+        {
+          "chunk_id": "page-02272",
+          "page": 2272,
+          "score": 0.7812
+        },
+        {
+          "chunk_id": "table-00705-01",
+          "page": 705,
+          "score": 0.7702
+        },
+        {
+          "chunk_id": "page-01873",
+          "page": 1873,
+          "score": 0.7643
+        },
+        {
+          "chunk_id": "page-01389",
+          "page": 1389,
+          "score": 0.7621
+        }
+      ],
+      "latency_ms": 139.5738124847412
+    },
+    {
+      "query": "Ti-6Al-4V PA compacts fatigue crack growth rate vs I/M alloy at room temperature",
+      "expected": [
+        "page-01938"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01906",
+          "page": 1906,
+          "score": 0.7673
+        },
+        {
+          "chunk_id": "page-01842",
+          "page": 1842,
+          "score": 0.7514
+        },
+        {
+          "chunk_id": "table-01811-01",
+          "page": 1811,
+          "score": 0.744
+        },
+        {
+          "chunk_id": "page-01811",
+          "page": 1811,
+          "score": 0.7401
+        },
+        {
+          "chunk_id": "page-01937",
+          "page": 1937,
+          "score": 0.739
+        }
+      ],
+      "latency_ms": 144.0105438232422
+    },
+    {
+      "query": "H08状态铍铜的拉伸强度和屈服强度是多少？",
+      "expected": [
+        "page-01090"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02465-01",
+          "page": 2465,
+          "score": 0.4918
+        },
+        {
+          "chunk_id": "table-01751-01",
+          "page": 1751,
+          "score": 0.4828
+        },
+        {
+          "chunk_id": "table-01712-02",
+          "page": 1712,
+          "score": 0.4755
+        },
+        {
+          "chunk_id": "table-00660-01",
+          "page": 660,
+          "score": 0.474
+        },
+        {
+          "chunk_id": "page-03254",
+          "page": 3254,
+          "score": 0.4728
+        }
+      ],
+      "latency_ms": 143.2027816772461
+    },
+    {
+      "query": "extruded 202 alloy Young's modulus 29.3",
+      "expected": [
+        "page-03303"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02601-01",
+          "page": 2601,
+          "score": 0.7172
+        },
+        {
+          "chunk_id": "table-03303-01",
+          "page": 3303,
+          "score": 0.6945
+        },
+        {
+          "chunk_id": "table-02629-03",
+          "page": 2629,
+          "score": 0.6656
+        },
+        {
+          "chunk_id": "table-01763-02",
+          "page": 1763,
+          "score": 0.6614
+        },
+        {
+          "chunk_id": "table-00040-01",
+          "page": 40,
+          "score": 0.6568
+        }
+      ],
+      "latency_ms": 133.98289680480957
+    },
+    {
+      "query": "What is the latent heat of fusion of mercury in kJ/kg?",
+      "expected": [
+        "page-03101"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03101",
+          "page": 3101,
+          "score": 0.796
+        },
+        {
+          "chunk_id": "page-03104",
+          "page": 3104,
+          "score": 0.6914
+        },
+        {
+          "chunk_id": "page-03207",
+          "page": 3207,
+          "score": 0.6806
+        },
+        {
+          "chunk_id": "page-03065",
+          "page": 3065,
+          "score": 0.6779
+        },
+        {
+          "chunk_id": "page-02979",
+          "page": 2979,
+          "score": 0.6774
+        }
+      ],
+      "latency_ms": 128.99470329284668
+    },
+    {
+      "query": "Massalski Binary Alloy Phase Diagrams 1986 reference",
+      "expected": [
+        "page-03328"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02842",
+          "page": 2842,
+          "score": 0.6518
+        },
+        {
+          "chunk_id": "ci_page-00730",
+          "page": 730,
+          "score": 0.6408
+        },
+        {
+          "chunk_id": "page-01890",
+          "page": 1890,
+          "score": 0.6398
+        },
+        {
+          "chunk_id": "page-00749",
+          "page": 749,
+          "score": 0.6324
+        },
+        {
+          "chunk_id": "ci_page-00685",
+          "page": 685,
+          "score": 0.6264
+        }
+      ],
+      "latency_ms": 131.87456130981445
+    },
+    {
+      "query": "TM02 copper strip formability R/t ratio",
+      "expected": [
+        "page-01328"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01327",
+          "page": 1327,
+          "score": 0.7476
+        },
+        {
+          "chunk_id": "table-00864-01",
+          "page": 864,
+          "score": 0.6394
+        },
+        {
+          "chunk_id": "table-00834-01",
+          "page": 834,
+          "score": 0.639
+        },
+        {
+          "chunk_id": "table-01359-02",
+          "page": 1359,
+          "score": 0.6272
+        },
+        {
+          "chunk_id": "page-03347",
+          "page": 3347,
+          "score": 0.6229
+        }
+      ],
+      "latency_ms": 134.86361503601074
+    },
+    {
+      "query": "油断路器弧触头常用材料 Cu-W 与 Ag-W 的性能对比",
+      "expected": [
+        "page-02432"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01718-01",
+          "page": 1718,
+          "score": 0.5021
+        },
+        {
+          "chunk_id": "page-02229",
+          "page": 2229,
+          "score": 0.4945
+        },
+        {
+          "chunk_id": "table-02227-01",
+          "page": 2227,
+          "score": 0.494
+        },
+        {
+          "chunk_id": "page-01717",
+          "page": 1717,
+          "score": 0.4922
+        },
+        {
+          "chunk_id": "table-02805-01",
+          "page": 2805,
+          "score": 0.4882
+        }
+      ],
+      "latency_ms": 150.65717697143555
+    },
+    {
+      "query": "ASM手册 超导态 宏观序参量 波函数 电子对",
+      "expected": [
+        "page-02812"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02991-02",
+          "page": 2991,
+          "score": 0.5689
+        },
+        {
+          "chunk_id": "table-01298-02",
+          "page": 1298,
+          "score": 0.5613
+        },
+        {
+          "chunk_id": "page-02866",
+          "page": 2866,
+          "score": 0.5582
+        },
+        {
+          "chunk_id": "page-02861",
+          "page": 2861,
+          "score": 0.5572
+        },
+        {
+          "chunk_id": "table-02990-03",
+          "page": 2990,
+          "score": 0.5567
+        }
+      ],
+      "latency_ms": 142.6985263824463
+    },
+    {
+      "query": "材料在800°C下氢、氧、氮的扩散系数是多少？",
+      "expected": [
+        "page-03228"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02371-02",
+          "page": 2371,
+          "score": 0.5812
+        },
+        {
+          "chunk_id": "table-01712-02",
+          "page": 1712,
+          "score": 0.5657
+        },
+        {
+          "chunk_id": "table-00652-02",
+          "page": 652,
+          "score": 0.5546
+        },
+        {
+          "chunk_id": "table-02933-01",
+          "page": 2933,
+          "score": 0.5523
+        },
+        {
+          "chunk_id": "table-00279-01",
+          "page": 279,
+          "score": 0.5513
+        }
+      ],
+      "latency_ms": 137.08949089050293
+    },
+    {
+      "query": "Silicon elastic modulus 53.82 GPa tension",
+      "expected": [
+        "page-03139"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03139",
+          "page": 3139,
+          "score": 0.8481
+        },
+        {
+          "chunk_id": "table-01995-01",
+          "page": 1995,
+          "score": 0.8144
+        },
+        {
+          "chunk_id": "table-03302-03",
+          "page": 3302,
+          "score": 0.7691
+        },
+        {
+          "chunk_id": "table-02390-01",
+          "page": 2390,
+          "score": 0.762
+        },
+        {
+          "chunk_id": "page-01234",
+          "page": 1234,
+          "score": 0.7612
+        }
+      ],
+      "latency_ms": 137.7575397491455
+    },
+    {
+      "query": "UBC briquettes density 500 kg/m3 recycling process",
+      "expected": [
+        "page-03339"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03107",
+          "page": 3107,
+          "score": 0.6251
+        },
+        {
+          "chunk_id": "page-01244",
+          "page": 1244,
+          "score": 0.6249
+        },
+        {
+          "chunk_id": "page-03378",
+          "page": 3378,
+          "score": 0.6242
+        },
+        {
+          "chunk_id": "page-01233",
+          "page": 1233,
+          "score": 0.6229
+        },
+        {
+          "chunk_id": "page-00985",
+          "page": 985,
+          "score": 0.6211
+        }
+      ],
+      "latency_ms": 141.39437675476074
+    },
+    {
+      "query": "85% HPO 100°C 212°F 5.56 mpy brittle corrosion test",
+      "expected": [
+        "page-01727"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01136-01",
+          "page": 1136,
+          "score": 0.708
+        },
+        {
+          "chunk_id": "table-01073-01",
+          "page": 1073,
+          "score": 0.7022
+        },
+        {
+          "chunk_id": "page-02212",
+          "page": 2212,
+          "score": 0.6914
+        },
+        {
+          "chunk_id": "table-02465-01",
+          "page": 2465,
+          "score": 0.6878
+        },
+        {
+          "chunk_id": "page-00434",
+          "page": 434,
+          "score": 0.6873
+        }
+      ],
+      "latency_ms": 137.94469833374023
+    },
+    {
+      "query": "BAg-9 P07650 固相线液相线钎焊温度范围 671°C 718°C 718-843°C",
+      "expected": [
+        "page-02042"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01716-01",
+          "page": 1716,
+          "score": 0.5964
+        },
+        {
+          "chunk_id": "table-01717-01",
+          "page": 1717,
+          "score": 0.594
+        },
+        {
+          "chunk_id": "table-00982-01",
+          "page": 982,
+          "score": 0.5918
+        },
+        {
+          "chunk_id": "table-00745-01",
+          "page": 745,
+          "score": 0.5912
+        },
+        {
+          "chunk_id": "table-01761-01",
+          "page": 1761,
+          "score": 0.5877
+        }
+      ],
+      "latency_ms": 126.47390365600586
+    },
+    {
+      "query": "electrical resistivity of silver at 0°C 14.7 nΩ·m",
+      "expected": [
+        "page-03152"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01605-01",
+          "page": 1605,
+          "score": 0.7706
+        },
+        {
+          "chunk_id": "page-03168",
+          "page": 3168,
+          "score": 0.7391
+        },
+        {
+          "chunk_id": "page-02986",
+          "page": 2986,
+          "score": 0.7345
+        },
+        {
+          "chunk_id": "page-03203",
+          "page": 3203,
+          "score": 0.7301
+        },
+        {
+          "chunk_id": "page-02392",
+          "page": 2392,
+          "score": 0.7188
+        }
+      ],
+      "latency_ms": 129.84275817871094
+    },
+    {
+      "query": "2014铝合金的化学成分范围是多少？",
+      "expected": [
+        "page-00249"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02372",
+          "page": 2372,
+          "score": 0.5379
+        },
+        {
+          "chunk_id": "page-01657",
+          "page": 1657,
+          "score": 0.5276
+        },
+        {
+          "chunk_id": "page-02337",
+          "page": 2337,
+          "score": 0.5259
+        },
+        {
+          "chunk_id": "table-01657-01",
+          "page": 1657,
+          "score": 0.5208
+        },
+        {
+          "chunk_id": "table-02628-01",
+          "page": 2628,
+          "score": 0.5199
+        }
+      ],
+      "latency_ms": 133.6042881011963
+    },
+    {
+      "query": "C10400  C10500  C10700 的ASTM规范有哪些？",
+      "expected": [
+        "page-00920"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00761",
+          "page": 761,
+          "score": 0.5919
+        },
+        {
+          "chunk_id": "page-00772",
+          "page": 772,
+          "score": 0.5892
+        },
+        {
+          "chunk_id": "table-00772-01",
+          "page": 772,
+          "score": 0.5862
+        },
+        {
+          "chunk_id": "table-00907-01",
+          "page": 907,
+          "score": 0.5815
+        },
+        {
+          "chunk_id": "page-00907",
+          "page": 907,
+          "score": 0.5773
+        }
+      ],
+      "latency_ms": 137.41517066955566
+    },
+    {
+      "query": "How does molten salt distillation separate hafnium from zirconium at 500°C using potassium chloroaluminate?",
+      "expected": [
+        "page-01949"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01678",
+          "page": 1678,
+          "score": 0.715
+        },
+        {
+          "chunk_id": "page-00984",
+          "page": 984,
+          "score": 0.709
+        },
+        {
+          "chunk_id": "page-03289",
+          "page": 3289,
+          "score": 0.7071
+        },
+        {
+          "chunk_id": "page-01436",
+          "page": 1436,
+          "score": 0.7067
+        },
+        {
+          "chunk_id": "table-01678-01",
+          "page": 1678,
+          "score": 0.703
+        }
+      ],
+      "latency_ms": 137.75873184204102
+    },
+    {
+      "query": "铝合金 O temper 230 W/m·K 导热系数 H18 227 W/m·K",
+      "expected": [
+        "page-00237"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00329-03",
+          "page": 329,
+          "score": 0.6682
+        },
+        {
+          "chunk_id": "table-03141-02",
+          "page": 3141,
+          "score": 0.6587
+        },
+        {
+          "chunk_id": "table-00329-01",
+          "page": 329,
+          "score": 0.649
+        },
+        {
+          "chunk_id": "table-03101-01",
+          "page": 3101,
+          "score": 0.6473
+        },
+        {
+          "chunk_id": "table-03012-02",
+          "page": 3012,
+          "score": 0.6427
+        }
+      ],
+      "latency_ms": 164.6585464477539
+    },
+    {
+      "query": "2219 aluminum alloy weldability comparison with Weldalite 049",
+      "expected": [
+        "page-00669"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01414-01",
+          "page": 1414,
+          "score": 0.7285
+        },
+        {
+          "chunk_id": "page-00667",
+          "page": 667,
+          "score": 0.7172
+        },
+        {
+          "chunk_id": "table-02774-01",
+          "page": 2774,
+          "score": 0.7116
+        },
+        {
+          "chunk_id": "table-02383-01",
+          "page": 2383,
+          "score": 0.7095
+        },
+        {
+          "chunk_id": "table-00039-01",
+          "page": 39,
+          "score": 0.708
+        }
+      ],
+      "latency_ms": 121.71411514282227
+    },
+    {
+      "query": "C51000磷青铜冷轧93%后260°C热处理2小时的应力松弛各向异性数据",
+      "expected": [
+        "page-00904"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00761-01",
+          "page": 761,
+          "score": 0.5755
+        },
+        {
+          "chunk_id": "page-00761",
+          "page": 761,
+          "score": 0.5738
+        },
+        {
+          "chunk_id": "table-00766-01",
+          "page": 766,
+          "score": 0.5733
+        },
+        {
+          "chunk_id": "page-00909",
+          "page": 909,
+          "score": 0.5691
+        },
+        {
+          "chunk_id": "page-00903",
+          "page": 903,
+          "score": 0.5684
+        }
+      ],
+      "latency_ms": 131.12401962280273
+    },
+    {
+      "query": "Praseodymium elastic constants at 27°C c11 c12 c13 c33 c44 values",
+      "expected": [
+        "page-03257"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-03312-01",
+          "page": 3312,
+          "score": 0.7019
+        },
+        {
+          "chunk_id": "table-01957-01",
+          "page": 1957,
+          "score": 0.7005
+        },
+        {
+          "chunk_id": "table-01970-01",
+          "page": 1970,
+          "score": 0.6946
+        },
+        {
+          "chunk_id": "page-03257",
+          "page": 3257,
+          "score": 0.6939
+        },
+        {
+          "chunk_id": "table-03308-01",
+          "page": 3308,
+          "score": 0.6914
+        }
+      ],
+      "latency_ms": 131.34121894836426
+    },
+    {
+      "query": "O60 temper 825 MPa compressive strength 13 mm plate",
+      "expected": [
+        "page-01097"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00329-03",
+          "page": 329,
+          "score": 0.7399
+        },
+        {
+          "chunk_id": "table-01005-02",
+          "page": 1005,
+          "score": 0.7379
+        },
+        {
+          "chunk_id": "table-01128-01",
+          "page": 1128,
+          "score": 0.7307
+        },
+        {
+          "chunk_id": "table-00991-01",
+          "page": 991,
+          "score": 0.7218
+        },
+        {
+          "chunk_id": "table-00483-03",
+          "page": 483,
+          "score": 0.7212
+        }
+      ],
+      "latency_ms": 126.47271156311035
+    },
+    {
+      "query": "Charpy V-notch impact energy of electron-beam-melted tantalum with <44 ppm C+N",
+      "expected": [
+        "page-03175"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03175",
+          "page": 3175,
+          "score": 0.8917
+        },
+        {
+          "chunk_id": "table-01596-02",
+          "page": 1596,
+          "score": 0.7481
+        },
+        {
+          "chunk_id": "page-01105",
+          "page": 1105,
+          "score": 0.7205
+        },
+        {
+          "chunk_id": "page-02925",
+          "page": 2925,
+          "score": 0.7202
+        },
+        {
+          "chunk_id": "page-03014",
+          "page": 3014,
+          "score": 0.7191
+        }
+      ],
+      "latency_ms": 132.71093368530273
+    },
+    {
+      "query": "C92200 compressive strength 0.1% permanent set",
+      "expected": [
+        "page-01233"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01233",
+          "page": 1233,
+          "score": 0.9049
+        },
+        {
+          "chunk_id": "page-01244",
+          "page": 1244,
+          "score": 0.7532
+        },
+        {
+          "chunk_id": "page-01245",
+          "page": 1245,
+          "score": 0.6491
+        },
+        {
+          "chunk_id": "page-01115",
+          "page": 1115,
+          "score": 0.6491
+        },
+        {
+          "chunk_id": "ci_table-00424-01",
+          "page": 424,
+          "score": 0.6485
+        }
+      ],
+      "latency_ms": 152.94408798217773
+    },
+    {
+      "query": "How does quench rate affect the properties of U-0.75Ti alloy? (Fig. 16)",
+      "expected": [
+        "page-01990"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01991",
+          "page": 1991,
+          "score": 0.8351
+        },
+        {
+          "chunk_id": "table-00142-02",
+          "page": 142,
+          "score": 0.7844
+        },
+        {
+          "chunk_id": "page-01990",
+          "page": 1990,
+          "score": 0.7681
+        },
+        {
+          "chunk_id": "table-00721-01",
+          "page": 721,
+          "score": 0.7674
+        },
+        {
+          "chunk_id": "page-01992",
+          "page": 1992,
+          "score": 0.7642
+        }
+      ],
+      "latency_ms": 125.85878372192383
+    },
+    {
+      "query": "355.0-T51 tensile strength at -80°C permanent mold",
+      "expected": [
+        "page-00612"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00659-01",
+          "page": 659,
+          "score": 0.7275
+        },
+        {
+          "chunk_id": "table-00651-01",
+          "page": 651,
+          "score": 0.7142
+        },
+        {
+          "chunk_id": "table-00585-02",
+          "page": 585,
+          "score": 0.7142
+        },
+        {
+          "chunk_id": "table-00599-01",
+          "page": 599,
+          "score": 0.7142
+        },
+        {
+          "chunk_id": "page-00358",
+          "page": 358,
+          "score": 0.7121
+        }
+      ],
+      "latency_ms": 129.39810752868652
+    },
+    {
+      "query": "51123 lead-tellurium-copper alloy HB hardness",
+      "expected": [
+        "page-01671"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01671",
+          "page": 1671,
+          "score": 0.7067
+        },
+        {
+          "chunk_id": "table-01671-01",
+          "page": 1671,
+          "score": 0.6942
+        },
+        {
+          "chunk_id": "table-00778-01",
+          "page": 778,
+          "score": 0.673
+        },
+        {
+          "chunk_id": "table-01657-01",
+          "page": 1657,
+          "score": 0.6724
+        },
+        {
+          "chunk_id": "table-00830-01",
+          "page": 830,
+          "score": 0.671
+        }
+      ],
+      "latency_ms": 123.4581470489502
+    },
+    {
+      "query": "C17510 TD04 temper electrical conductivity unaged vs peak aged IACS",
+      "expected": [
+        "page-01312"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02392-01",
+          "page": 2392,
+          "score": 0.7388
+        },
+        {
+          "chunk_id": "page-02392",
+          "page": 2392,
+          "score": 0.7367
+        },
+        {
+          "chunk_id": "table-00417-02",
+          "page": 417,
+          "score": 0.7246
+        },
+        {
+          "chunk_id": "table-00483-02",
+          "page": 483,
+          "score": 0.7207
+        },
+        {
+          "chunk_id": "table-00616-03",
+          "page": 616,
+          "score": 0.6906
+        }
+      ],
+      "latency_ms": 159.3034267425537
+    },
+    {
+      "query": "Titanium closed-die forging temperature range 95-480°C for hammers presses",
+      "expected": [
+        "page-01839"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-02923-01",
+          "page": 2923,
+          "score": 0.7171
+        },
+        {
+          "chunk_id": "page-01799",
+          "page": 1799,
+          "score": 0.7092
+        },
+        {
+          "chunk_id": "page-01839",
+          "page": 1839,
+          "score": 0.7041
+        },
+        {
+          "chunk_id": "table-01838-01",
+          "page": 1838,
+          "score": 0.7012
+        },
+        {
+          "chunk_id": "page-00566",
+          "page": 566,
+          "score": 0.7001
+        }
+      ],
+      "latency_ms": 170.1219081878662
+    },
+    {
+      "query": "铝板厚度大于等于6.25 mm，铝箔厚度小于0.15 mm的分类标准",
+      "expected": [
+        "page-00023"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01712",
+          "page": 1712,
+          "score": 0.5848
+        },
+        {
+          "chunk_id": "table-01134-01",
+          "page": 1134,
+          "score": 0.5728
+        },
+        {
+          "chunk_id": "page-03082",
+          "page": 3082,
+          "score": 0.571
+        },
+        {
+          "chunk_id": "page-01910",
+          "page": 1910,
+          "score": 0.5691
+        },
+        {
+          "chunk_id": "table-01464-01",
+          "page": 1464,
+          "score": 0.5686
+        }
+      ],
+      "latency_ms": 145.6162929534912
+    },
+    {
+      "query": "titanium-gettered iron yield stress temperature dependence 2.5e-4 s-1 ASTM grain size 5-6",
+      "expected": [
+        "page-03056"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-03056",
+          "page": 3056,
+          "score": 0.7849
+        },
+        {
+          "chunk_id": "table-00659-01",
+          "page": 659,
+          "score": 0.7696
+        },
+        {
+          "chunk_id": "page-03173",
+          "page": 3173,
+          "score": 0.7649
+        },
+        {
+          "chunk_id": "page-03055",
+          "page": 3055,
+          "score": 0.7648
+        },
+        {
+          "chunk_id": "table-01751-01",
+          "page": 1751,
+          "score": 0.7613
+        }
+      ],
+      "latency_ms": 131.7768096923828
+    },
+    {
+      "query": "ZrB SiC cermet rocket propulsion gas erosion resistance",
+      "expected": [
+        "page-02692"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01695",
+          "page": 1695,
+          "score": 0.6277
+        },
+        {
+          "chunk_id": "table-01695-01",
+          "page": 1695,
+          "score": 0.6268
+        },
+        {
+          "chunk_id": "page-01389",
+          "page": 1389,
+          "score": 0.626
+        },
+        {
+          "chunk_id": "table-01389-01",
+          "page": 1389,
+          "score": 0.6256
+        },
+        {
+          "chunk_id": "page-03375",
+          "page": 3375,
+          "score": 0.6247
+        }
+      ],
+      "latency_ms": 141.72673225402832
+    }
+  ]
+}

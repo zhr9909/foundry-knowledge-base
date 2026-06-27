@@ -1,0 +1,115 @@
+[
+  {
+    "query": "224.2铝合金（UNS A02242）的化学成分是什么？",
+    "expected_chunk_ids": [
+      "page-00081"
+    ],
+    "page": 81,
+    "source_id": 2,
+    "all_queries": [
+      "224.2铝合金（UNS A02242）的化学成分是什么？",
+      "240.0铝合金（UNS A02400）的成分中Cu、Mg、Ni含量范围？",
+      "242.0 AlCu4Ni2Mg2铝合金的元素组成及允许杂质"
+    ],
+    "summary": "该文本列出了224.2、240.0、240.1和242.0等铸造铝合金的牌号、UNS编号和化学成分（Si、Fe、Cu等元素含量）。",
+    "keywords": [
+      "224.2铝合金",
+      "240.0铝合金",
+      "242.0铝合金",
+      "AlCu4Ni2Mg2",
+      "化学成分",
+      "UNS编号"
+    ]
+  },
+  {
+    "query": "directional dependence of Young's modulus and shear modulus along crystal axes",
+    "expected_chunk_ids": [
+      "page-03058"
+    ],
+    "page": 3058,
+    "source_id": 2,
+    "all_queries": [
+      "directional dependence of Young's modulus and shear modulus along crystal axes",
+      "First-, second-, and third-order elastic stiffness values for single crystal",
+      "Poisson's ratio directional dependence along crystal axes Fig 49"
+    ],
+    "summary": "给出了沿晶体轴方向的弹性模量（杨氏模量、剪切模量、泊松比）的方向依赖性和一至三阶弹性刚度值，引用自Ref 149，并附有图示。",
+    "keywords": [
+      "elastic stiffness",
+      "Young's modulus",
+      "shear modulus",
+      "Poisson's ratio",
+      "directional dependence",
+      "crystal axes"
+    ]
+  },
+  {
+    "query": "Cu-Cd contact material for tap changers 10-100A arc erosion failure cause",
+    "expected_chunk_ids": [
+      "page-02429"
+    ],
+    "page": 2429,
+    "source_id": 2,
+    "all_queries": [
+      "Cu-Cd contact material for tap changers 10-100A arc erosion failure cause",
+      "Bronze wiper against brass no-load make-break 100kV wear resistance",
+      "Contact alloy with less sticking welding tendency for power circuit breakers"
+    ],
+    "summary": "电力电路通断接触材料推荐表，列出不同合金（如青铜/黄铜、铜镉）在分接开关（10-100A，100-100,000V，最多10,000次操作）中的优势及失效原因，强调耐磨、抗电弧、高强度、易加工等性能。",
+    "keywords": [
+      "青铜/黄铜接触对",
+      "Cu-Cd合金",
+      "分接开关",
+      "无载开断",
+      "电弧侵蚀",
+      "耐磨性",
+      "抗粘着性",
+      "10-100A",
+      "100-100,000V"
+    ]
+  },
+  {
+    "query": "jet engine material usage trends Figure from Titanium Development Association",
+    "expected_chunk_ids": [
+      "page-00012"
+    ],
+    "page": 12,
+    "source_id": 2,
+    "all_queries": [
+      "jet engine material usage trends Figure from Titanium Development Association",
+      "airframe materials usage trends for naval aircraft source Naval Air Development Center",
+      "Fig.1 aircraft industry materials usage trends engine and airframe sources"
+    ],
+    "summary": "飞机工业材料使用趋势图，包括喷气发动机和海军飞机机身材料来源说明",
+    "keywords": [
+      "材料使用趋势",
+      "飞机工业",
+      "喷气发动机",
+      "海军飞机",
+      "钛合金"
+    ]
+  },
+  {
+    "query": "WC-6Co 真空烧结 横向断裂强度 315 MPa",
+    "expected_chunk_ids": [
+      "page-02711"
+    ],
+    "page": 2711,
+    "source_id": 2,
+    "all_queries": [
+      "WC-6Co 真空烧结 横向断裂强度 315 MPa",
+      "12%Co 硬质合金 压力烧结 密度 14.11 g/cm3",
+      "Vacuum sintering and HIP 对 WC-Co 硬质合金 性能 影响"
+    ],
+    "summary": "硬质合金（WC-Co）在不同烧结工艺（真空烧结、真空烧结+HIP、压力烧结）和钴含量（6%、12%）下的密度、硬度、横向断裂强度等性能数据",
+    "keywords": [
+      "WC-Co 硬质合金",
+      "真空烧结",
+      "热等静压",
+      "压力烧结",
+      "横向断裂强度",
+      "密度",
+      "钴含量"
+    ]
+  }
+]

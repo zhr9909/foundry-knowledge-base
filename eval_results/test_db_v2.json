@@ -1,0 +1,70 @@
+[
+  {
+    "query": "structural ceramics processing steps flow chart",
+    "expected_chunk_ids": [
+      "page-02777"
+    ],
+    "page": 2777,
+    "source_id": 2,
+    "all_queries": [
+      "structural ceramics processing steps flow chart",
+      "陶瓷加工原料准备成型热处理精加工步骤",
+      "ASM handbook ceramic processing categories raw material forming thermal finishing"
+    ],
+    "summary": "结构陶瓷的加工步骤包括原料准备、成型制造、热处理和精加工四大类，附有流程图。",
+    "keywords": [
+      "结构陶瓷",
+      "加工步骤",
+      "原料准备",
+      "成型",
+      "热处理",
+      "精加工",
+      "流程图"
+    ]
+  },
+  {
+    "query": "甲基汞剂量反应关系中血液汞浓度与感觉异常的对应关系",
+    "expected_chunk_ids": [
+      "page-03419"
+    ],
+    "page": 3419,
+    "source_id": 2,
+    "all_queries": [
+      "甲基汞剂量反应关系中血液汞浓度与感觉异常的对应关系",
+      "Methyl mercury dose response relationship using blood mercury concentration and paresthesia",
+      "头发汞水平与甲基汞体负荷的相关性研究"
+    ],
+    "summary": "本段描述了甲基汞的剂量反应关系，以血液中汞浓度作为剂量、感觉异常作为反应，并提及头发中汞水平的相关性。",
+    "keywords": [
+      "甲基汞",
+      "剂量反应关系",
+      "血液汞浓度",
+      "感觉异常",
+      "体负荷",
+      "头发汞水平"
+    ]
+  },
+  {
+    "query": "343.1铝合金 (UNS A03431) 的化学成分范围是什么？",
+    "expected_chunk_ids": [
+      "page-00087"
+    ],
+    "page": 87,
+    "source_id": 2,
+    "all_queries": [
+      "343.1铝合金 (UNS A03431) 的化学成分范围是什么？",
+      "355.0铝合金 (AlSi5Cu1Mg) 中Si和Cu的允许含量是多少？",
+      "354.0与354.1铸造铝合金在Fe含量上有何差异？"
+    ],
+    "summary": "ASM手册中列出了343.1、354.0、354.1、355.0等铸造铝合金的化学成分（wt%），包括Si、Fe、Cu、Mg等元素的范围。",
+    "keywords": [
+      "343.1铝合金",
+      "354.0铝合金",
+      "355.0铝合金",
+      "化学成分",
+      "Si含量",
+      "Cu含量",
+      "Mg含量"
+    ]
+  }
+]

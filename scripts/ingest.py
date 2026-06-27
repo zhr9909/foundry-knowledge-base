@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -100,7 +100,7 @@ def _table_to_description(table_text: str, shape: str) -> str:
     return table_text
 
 
-def import_to_pg(chunks, batch_size=32, dry_run=False):
+def import_to_pg(chunks, batch_size=32, dry_run=False, source_id=None, source_title=None):
     """Import cleaned chunks into PostgreSQL with embeddings."""
     try:
         import psycopg2
@@ -145,16 +145,20 @@ def import_to_pg(chunks, batch_size=32, dry_run=False):
         sys.exit(1)
 
     # Get source document ID
-    source_name = chunks[0].get("source_file", "unknown")
-    total_pages = max(c["page"] for c in chunks)
-    cur.execute(
-        "INSERT INTO document_sources (title, file_name, total_pages) "
-        "VALUES (%s, %s, %s) RETURNING id",
-        (source_name.replace(".pdf", "").replace("_", " ").title(),
-         source_name, total_pages),
-    )
-    source_id = cur.fetchone()[0]
-    conn.commit()
+    if source_id is None:
+        source_name = source_title or chunks[0].get("source_file", "unknown")
+        total_pages = max(c["page"] for c in chunks)
+        cur.execute(
+            "INSERT INTO document_sources (title, file_name, total_pages) "
+            "VALUES (%s, %s, %s) RETURNING id",
+            (source_name.replace(".pdf", "").replace("_", " ").title(),
+             source_name, total_pages),
+        )
+        source_id = cur.fetchone()[0]
+        conn.commit()
+        print(f"  Registered new source: id={source_id}")
+    else:
+        print(f"  Using existing source: id={source_id}")
 
     # Batch insert
     total = len(chunks)
@@ -210,9 +214,12 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Import JSONL into pgvector")
     parser.add_argument("jsonl_path", help="Path to extracted JSONL file")
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--rebuild", action="store_true")
+    parser.add_argument("--batch-size", type=int, default=32, help="Batch size for embedding (default: 32)")
+    parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
+    parser.add_argument("--rebuild", action="store_true", help="Drop all data before import")
+    parser.add_argument("--mode", choices=["full", "increment"], default="full", help="full=new source | increment=append to existing")
+    parser.add_argument("--title", help="Source document title (used for increment mode)")
+    parser.add_argument("--source-id", type=int, help="Existing source_id to append to (increment mode)")
     args = parser.parse_args()
 
     print("=== Ingest: JSONL -> pgvector ===")
@@ -237,9 +244,28 @@ def main():
         except ImportError:
             pass
 
+    # Determine mode
+    src_id = args.source_id
+    src_title = args.title
+    if args.mode == "increment":
+        print("\n[MODE: Increment] Appending to existing source")
+        if src_id is None and src_title is None:
+            try:
+                import psycopg2
+                c2 = psycopg2.connect(**CONFIG)
+                c2r = c2.cursor()
+                c2r.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM document_sources")
+                src_id = c2r.fetchone()[0]
+                c2.close()
+                print(f"  Auto-assigned source_id={src_id}")
+            except Exception as ex:
+                print(f"  Auto-assign failed: {ex}")
+    else:
+        print("\n[MODE: Full] New source registration")
+
     # Import
     print("\n2. Embedding & importing...")
-    import_to_pg(chunks, args.batch_size, args.dry_run)
+    import_to_pg(chunks, args.batch_size, args.dry_run, source_id=src_id, source_title=src_title)
 
     print("\nDone!")
 

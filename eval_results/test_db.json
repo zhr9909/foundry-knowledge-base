@@ -1,0 +1,68 @@
+[
+  {
+    "query": "Y-Ba-Cu-O 123相 211相 熔融淬火生长 MQG 温度 1270°C",
+    "expected_chunk_ids": [
+      "page-02905"
+    ],
+    "page": 2905,
+    "source_id": 2,
+    "all_queries": [
+      "Y-Ba-Cu-O 123相 211相 熔融淬火生长 MQG 温度 1270°C",
+      "YBa2Cu3O7 211相 熔融淬火 相图 伪二元",
+      "Murakami melt-quench growth Y-Ba-Cu-O phase diagram 1270°C"
+    ],
+    "summary": "Murakami等人采用熔融淬火生长（MQG）技术制备Y-Ba-Cu-O高温超导体，通过先熔融进入(Y₂O₃+L)区（>1270°C）再快速淬火形成细弥散Y₂O₃，随后加热至(211+L)区并缓慢冷却得到含211相弥散的123块材。",
+    "keywords": [
+      "Y-Ba-Cu-O",
+      "熔融淬火生长(MQG)",
+      "123相",
+      "211相",
+      "相图",
+      "1270°C"
+    ]
+  },
+  {
+    "query": "38mK的半衰期和β+衰变能量是多少？",
+    "expected_chunk_ids": [
+      "page-03135"
+    ],
+    "page": 3135,
+    "source_id": 2,
+    "all_queries": [
+      "38mK的半衰期和β+衰变能量是多少？",
+      "钾40的衰变分支比和能量数据？",
+      "钾同位素β-衰变能量和半衰期列表？"
+    ],
+    "summary": "钾同位素放射性衰变数据，包括半衰期、衰变类型、能量和分支比。",
+    "keywords": [
+      "钾同位素",
+      "半衰期",
+      "β衰变",
+      "衰变能量",
+      "分支比"
+    ]
+  },
+  {
+    "query": "钛合金高比强度疲劳抗性蠕变寿命断裂韧性航空应用",
+    "expected_chunk_ids": [
+      "page-01776"
+    ],
+    "page": 1776,
+    "source_id": 2,
+    "all_queries": [
+      "钛合金高比强度疲劳抗性蠕变寿命断裂韧性航空应用",
+      "titanium high specific strength fatigue resistance creep life fracture toughness aerospace",
+      "1952年钛合金首次用于飞机舱室防火墙DC-7"
+    ],
+    "summary": "钛合金因高比强度、良好疲劳抗性、蠕变寿命和断裂韧性而成为航空航天首选金属，1952年首次应用于道格拉斯DC-7飞机的舱室和防火墙。",
+    "keywords": [
+      "钛合金",
+      "高比强度",
+      "疲劳抗性",
+      "蠕变寿命",
+      "断裂韧性",
+      "航空应用",
+      "DC-7"
+    ]
+  }
+]

@@ -1,0 +1,357 @@
+{
+  "timestamp": "20260627_222925",
+  "config": {
+    "top_k": 10,
+    "hybrid": true
+  },
+  "metrics": {
+    "hit_rate_5": 0.4,
+    "hit_rate_10": 0.4,
+    "mrr": 0.4,
+    "precision_5": 0.08,
+    "avg_latency_ms": 1334.804916381836,
+    "total_queries": 10
+  },
+  "queries": [
+    {
+      "query": "46104 Tensile Tensile",
+      "expected": [
+        "page-00414"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-01040-01",
+          "page": 1040,
+          "score": 0.6714
+        },
+        {
+          "chunk_id": "page-01115",
+          "page": 1115,
+          "score": 0.6588
+        },
+        {
+          "chunk_id": "table-00373-02",
+          "page": 373,
+          "score": 0.6472
+        },
+        {
+          "chunk_id": "table-01128-01",
+          "page": 1128,
+          "score": 0.6392
+        },
+        {
+          "chunk_id": "table-02463-01",
+          "page": 2463,
+          "score": 0.6297
+        }
+      ],
+      "latency_ms": 12181.223630905151
+    },
+    {
+      "query": "• A. Levy Lawrence Berkeley Laboratory",
+      "expected": [
+        "page-00008"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00008",
+          "page": 8,
+          "score": 0.7463
+        },
+        {
+          "chunk_id": "page-00006",
+          "page": 6,
+          "score": 0.6343
+        },
+        {
+          "chunk_id": "page-00005",
+          "page": 5,
+          "score": 0.6338
+        },
+        {
+          "chunk_id": "page-00004",
+          "page": 4,
+          "score": 0.633
+        },
+        {
+          "chunk_id": "page-00003",
+          "page": 3,
+          "score": 0.6329
+        }
+      ],
+      "latency_ms": 139.95957374572754
+    },
+    {
+      "query": "7607 corrosion strength",
+      "expected": [
+        "page-01784"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01762",
+          "page": 1762,
+          "score": 0.6346
+        },
+        {
+          "chunk_id": "table-01713-01",
+          "page": 1713,
+          "score": 0.6324
+        },
+        {
+          "chunk_id": "page-01357",
+          "page": 1357,
+          "score": 0.6178
+        },
+        {
+          "chunk_id": "table-03100-01",
+          "page": 3100,
+          "score": 0.6151
+        },
+        {
+          "chunk_id": "table-00626-01",
+          "page": 626,
+          "score": 0.5994
+        }
+      ],
+      "latency_ms": 121.64950370788574
+    },
+    {
+      "query": "H04 510 74 405 59 7 82 HRB 71 295 43",
+      "expected": [
+        "page-01021"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01021",
+          "page": 1021,
+          "score": 0.9004
+        },
+        {
+          "chunk_id": "table-01034-01",
+          "page": 1034,
+          "score": 0.84
+        },
+        {
+          "chunk_id": "table-01007-01",
+          "page": 1007,
+          "score": 0.8126
+        },
+        {
+          "chunk_id": "table-01150-01",
+          "page": 1150,
+          "score": 0.8117
+        },
+        {
+          "chunk_id": "table-00999-01",
+          "page": 999,
+          "score": 0.804
+        }
+      ],
+      "latency_ms": 131.2258243560791
+    },
+    {
+      "query": "Fig. 13 Comparison of (a) notch yield ratio and (b) unit propagation energy vers",
+      "expected": [
+        "page-00565"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00565",
+          "page": 565,
+          "score": 0.7437
+        },
+        {
+          "chunk_id": "page-03146",
+          "page": 3146,
+          "score": 0.7374
+        },
+        {
+          "chunk_id": "page-01937",
+          "page": 1937,
+          "score": 0.7365
+        },
+        {
+          "chunk_id": "page-03147",
+          "page": 3147,
+          "score": 0.7362
+        },
+        {
+          "chunk_id": "page-01217",
+          "page": 1217,
+          "score": 0.7266
+        }
+      ],
+      "latency_ms": 137.04967498779297
+    },
+    {
+      "query": "0.250-0.499 in. thick 517 75 448 65 9",
+      "expected": [
+        "page-00457"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00303",
+          "page": 303,
+          "score": 0.8277
+        },
+        {
+          "chunk_id": "page-00270",
+          "page": 270,
+          "score": 0.8255
+        },
+        {
+          "chunk_id": "page-00455",
+          "page": 455,
+          "score": 0.8214
+        },
+        {
+          "chunk_id": "page-00269",
+          "page": 269,
+          "score": 0.8199
+        },
+        {
+          "chunk_id": "page-00272",
+          "page": 272,
+          "score": 0.8163
+        }
+      ],
+      "latency_ms": 129.3160915374756
+    },
+    {
+      "query": "Precautions in melting. Stir well after melt-down Precautions in casting. Strict",
+      "expected": [
+        "page-01637"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01637",
+          "page": 1637,
+          "score": 0.8607
+        },
+        {
+          "chunk_id": "page-01639",
+          "page": 1639,
+          "score": 0.745
+        },
+        {
+          "chunk_id": "page-01638",
+          "page": 1638,
+          "score": 0.7312
+        },
+        {
+          "chunk_id": "page-01792",
+          "page": 1792,
+          "score": 0.7008
+        },
+        {
+          "chunk_id": "page-01361",
+          "page": 1361,
+          "score": 0.6976
+        }
+      ],
+      "latency_ms": 127.02465057373047
+    },
+    {
+      "query": "7050 corrosion strength",
+      "expected": [
+        "page-00162"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-01762",
+          "page": 1762,
+          "score": 0.6622
+        },
+        {
+          "chunk_id": "table-02463-01",
+          "page": 2463,
+          "score": 0.6294
+        },
+        {
+          "chunk_id": "table-02001-02",
+          "page": 2001,
+          "score": 0.6145
+        },
+        {
+          "chunk_id": "table-00626-01",
+          "page": 626,
+          "score": 0.6137
+        },
+        {
+          "chunk_id": "table-00733-02",
+          "page": 733,
+          "score": 0.6121
+        }
+      ],
+      "latency_ms": 135.0691318511963
+    },
+    {
+      "query": "24 75 230 33 165 24 3.5",
+      "expected": [
+        "page-00621"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00621-01",
+          "page": 621,
+          "score": 0.8791
+        },
+        {
+          "chunk_id": "table-00425-01",
+          "page": 425,
+          "score": 0.795
+        },
+        {
+          "chunk_id": "table-01167-01",
+          "page": 1167,
+          "score": 0.789
+        },
+        {
+          "chunk_id": "table-00614-01",
+          "page": 614,
+          "score": 0.7581
+        },
+        {
+          "chunk_id": "table-00637-01",
+          "page": 637,
+          "score": 0.7539
+        }
+      ],
+      "latency_ms": 118.49832534790039
+    },
+    {
+      "query": "1930 strength",
+      "expected": [
+        "page-01889"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00732",
+          "page": 732,
+          "score": 0.6042
+        },
+        {
+          "chunk_id": "table-02689-01",
+          "page": 2689,
+          "score": 0.6003
+        },
+        {
+          "chunk_id": "page-01762",
+          "page": 1762,
+          "score": 0.5915
+        },
+        {
+          "chunk_id": "page-00353",
+          "page": 353,
+          "score": 0.5775
+        },
+        {
+          "chunk_id": "ci_table-00127-04",
+          "page": 127,
+          "score": 0.577
+        }
+      ],
+      "latency_ms": 127.03275680541992
+    }
+  ]
+}

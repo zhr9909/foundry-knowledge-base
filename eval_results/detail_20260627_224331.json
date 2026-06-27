@@ -1,0 +1,119 @@
+{
+  "timestamp": "20260627_224331",
+  "config": {
+    "top_k": 10,
+    "hybrid": true
+  },
+  "metrics": {
+    "hit_rate_5": 0.3333333333333333,
+    "hit_rate_10": 0.3333333333333333,
+    "mrr": 0.3333333333333333,
+    "precision_5": 0.06666666666666667,
+    "avg_latency_ms": 3754.5437018076577,
+    "total_queries": 3
+  },
+  "queries": [
+    {
+      "query": "structural ceramics processing steps flow chart",
+      "expected": [
+        "page-02777"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-02777",
+          "page": 2777,
+          "score": 0.8958
+        },
+        {
+          "chunk_id": "page-02778",
+          "page": 2778,
+          "score": 0.7925
+        },
+        {
+          "chunk_id": "page-02714",
+          "page": 2714,
+          "score": 0.6601
+        },
+        {
+          "chunk_id": "page-01945",
+          "page": 1945,
+          "score": 0.6539
+        },
+        {
+          "chunk_id": "page-02871",
+          "page": 2871,
+          "score": 0.6533
+        }
+      ],
+      "latency_ms": 10999.20392036438
+    },
+    {
+      "query": "甲基汞剂量反应关系中血液汞浓度与感觉异常的对应关系",
+      "expected": [
+        "page-03419"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "page-00482",
+          "page": 482,
+          "score": 0.5201
+        },
+        {
+          "chunk_id": "page-00656",
+          "page": 656,
+          "score": 0.5142
+        },
+        {
+          "chunk_id": "page-00467",
+          "page": 467,
+          "score": 0.5058
+        },
+        {
+          "chunk_id": "page-00276",
+          "page": 276,
+          "score": 0.5045
+        },
+        {
+          "chunk_id": "page-02580",
+          "page": 2580,
+          "score": 0.5008
+        }
+      ],
+      "latency_ms": 138.08846473693848
+    },
+    {
+      "query": "343.1铝合金 (UNS A03431) 的化学成分范围是什么？",
+      "expected": [
+        "page-00087"
+      ],
+      "top_results": [
+        {
+          "chunk_id": "table-00861-01",
+          "page": 861,
+          "score": 0.5619
+        },
+        {
+          "chunk_id": "table-02371-02",
+          "page": 2371,
+          "score": 0.56
+        },
+        {
+          "chunk_id": "page-02337",
+          "page": 2337,
+          "score": 0.557
+        },
+        {
+          "chunk_id": "page-01657",
+          "page": 1657,
+          "score": 0.5551
+        },
+        {
+          "chunk_id": "page-02958",
+          "page": 2958,
+          "score": 0.5504
+        }
+      ],
+      "latency_ms": 126.33872032165527
+    }
+  ]
+}

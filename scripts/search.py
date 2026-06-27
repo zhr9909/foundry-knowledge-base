@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -55,7 +55,7 @@ def get_embedding_model():
                 print(f"  All models failed: {e2}")
                 sys.exit(1)
     return get_embedding_model._model
-def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None) -> dict:
+def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None, alpha: float = 0.5) -> dict:
     """Search the knowledge base with optional section filter."""
     model = get_embedding_model()
     query_vec = model.encode(query).tolist()
@@ -89,7 +89,7 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
             SELECT c.id, c.chunk_id, c.page, c.chunk_type,
                 c.content_text, c.table_shape,
                 ds.title as source_title, c.metadata,
-                ts_rank(c.tsv, plainto_tsquery('english', %(query)s)) AS score,
+                ts_rank(c.tsv, plainto_tsquery('english', %(query)s)) / NULLIF(MAX(ts_rank(c.tsv, plainto_tsquery('english', %(query)s))) OVER (), 0) AS score,
                 ROW_NUMBER() OVER (ORDER BY ts_rank(c.tsv, plainto_tsquery('english', %(query)s)) DESC) AS rn
             FROM chunks c
             JOIN document_sources ds ON ds.id = c.source_id
@@ -98,19 +98,25 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
             LIMIT %(limit)s
         ),
         combined AS (
-            SELECT vr.id, vr.chunk_id, vr.page, vr.chunk_type, vr.content_text,
-                vr.table_shape, vr.source_title, vr.metadata,
-                vr.score AS vec_score,
+            SELECT COALESCE(vr.id, fr.id) AS id,
+                COALESCE(vr.chunk_id, fr.chunk_id) AS chunk_id,
+                COALESCE(vr.page, fr.page) AS page,
+                COALESCE(vr.chunk_type, fr.chunk_type) AS chunk_type,
+                COALESCE(vr.content_text, fr.content_text) AS content_text,
+                COALESCE(vr.table_shape, fr.table_shape) AS table_shape,
+                COALESCE(vr.source_title, fr.source_title) AS source_title,
+                COALESCE(vr.metadata, '{{}}'::jsonb) AS metadata,
+                COALESCE(vr.score, 0) AS vec_score,
                 COALESCE(fr.score, 0) AS fts_score
             FROM vector_results vr
-            LEFT JOIN fts_results fr ON vr.id = fr.id AND vr.chunk_id = fr.chunk_id
+            FULL OUTER JOIN fts_results fr ON vr.id = fr.id
         )
         SELECT id, chunk_id, page, chunk_type, content_text, table_shape, source_title, metadata,
-            ROUND((vec_score + CASE WHEN fts_score > 0 THEN 0.1 ELSE 0 END)::numeric, 4) AS score
+            ROUND((%(alpha)s * vec_score + %(one_minus_alpha)s * fts_score)::numeric, 4) AS score
         FROM combined
         ORDER BY score DESC LIMIT %(top_k)s
         """
-        params = {"query_vec": query_vec, "query": query, "limit": top_k * 2, "top_k": top_k}
+        params = {"query_vec": query_vec, "query": query, "limit": top_k * 2, "top_k": top_k, "alpha": alpha, "one_minus_alpha": 1.0 - alpha}
         if section:
             params["section_filter"] = section
     else:
@@ -156,11 +162,27 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
             "score": round(float(row["score"]), 4),
         })
     
+    # Apply cross-encoder reranker (re-rank results for better precision)
+    try:
+        if len(results) >= 2:
+            from agent import rerank
+            before = [r["chunk_id"] for r in results[:5]]
+            results = rerank(query, results, top_k=len(results))
+            after = [r["chunk_id"] for r in results[:5]]
+            changes = sum(1 for i in range(min(5, len(before))) if before[i] != after[i])
+            _log.info("  Reranked: top-5 order changed for %d positions" % changes)
+            for r in results:
+                r["score"] = float(round(float(r["score"]), 4))
+                if "rerank_score" in r:
+                    del r["rerank_score"]
+    except Exception as rere:
+        _sqllog.info("  Reranker not available: %s" % rere)
+
     # Log
     log_query = query + (f" [section:{section}]" if section else "") + (" [hybrid]" if hybrid else "")
     cur.execute(
         "INSERT INTO retrieval_log (query, top_k, results, latency_ms) VALUES (%s, %s, %s, %s)",
-        (log_query, top_k, json.dumps(results[:5]), int(elapsed)),
+        (log_query, top_k, json.dumps(results[:5], default=str), int(elapsed)),
     )
     conn.commit()
     conn.close()
