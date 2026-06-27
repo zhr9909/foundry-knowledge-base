@@ -351,6 +351,277 @@ API 端点：http://127.0.0.1:8002
 
 ---
 
+
+---
+
+## 四、Step 3：Agent 智能调度系统（agent.py）
+
+### 为什么需要 Agent？
+
+单纯的"检索 → 拼接 Prompt → 生成回答"在工程材料领域不够用：
+
+1. **中文提问 ≠ 英文索引** — 用户用中文问"铝合金6061的力学性能"，但手册索引是英文。需要 query rewriting
+2. **一门多表** — 一条检索可能命中多个相关段落/表格，需要精选上下文
+3. **质量参差** — LLM 生成可能遗漏数据、编造引用，需要自动质检 + 重试
+4. **边界不清** — 用户可能问知识库以外的问题，需要兜底机制
+
+### 4.1 整体流程
+
+```
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│  Query   │───▶│ Parallel │───▶│ Context  │───▶│   LLM    │───▶│ Quality  │
+│ Rewrite  │    │  Search  │    │ Select   │    │ Generate │    │  Check   │
+└──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+     │               │               │               │               │
+     ▼               ▼               ▼               ▼               ▼
+ 1~3条英文        多线程并发        动态Top-K      结构化Prompt     三维评分
+ 检索语句        RRF合并结果       +关键词加权       +引用标记       ≥7分通过
+                                                                       │
+                                                            ┌──────────┘
+                                                            ▼
+                                                    低于7分→修改查询→重试
+                                                    (max_retries=1, 共2轮)
+                                                                       │
+                                                            ┌──────────┘
+                                                            ▼
+                                                    全部失败→LLM兜底+免责声明
+```
+
+### 4.2 Query Rewrite（查询改写）
+
+```python
+def rewrite_query(query: str) -> list:
+    # 纯英文/短查询 → 直接使用，不走 LLM
+    if re.match(r'^[a-zA-Z0-9\s\-]+$', query) and len(query.split()) <= 10:
+        return [query.strip()]
+    # 中文 → LLM 改写为 1~3 条英文专业检索语句
+    result = _call_llm([{"role": "system", "content": QUERY_REWRITE_PROMPT}, ...])
+```
+
+**Prompt 核心约束：**
+- 过滤无关合金（铝系统不提铜合金、永磁材料）
+- 保留牌号+热处理状态（6061-T6、7075-T651）
+- 多性能复合提问 → 拆为多条独立 query
+- 关键词前置（便于命中表格标题）
+
+### 4.3 Parallel Search（并行检索）
+
+```python
+def search_parallel(sub_queries, section, top_k=12):
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(search_single, q, section, 12): q for q in sub_queries}
+        # ... 收集结果 + RRF 交叉合并
+```
+
+- 每个子查询独立提交给混合检索
+- 结果按「轮次交错」合并（Round-Robin），再按分数补全
+- 去重（基于 chunk_id）
+
+### 4.4 Dynamic Top-K（动态精选）
+
+不再固定返回 top_k=6，而是根据最高分动态调整：
+
+| 最高相似度 | 精选数 | 策略 |
+|-----------|--------|------|
+| ≥ 0.75 | 4 | 高置信度，少而精 |
+| ≥ 0.6 | 6 | 中等 |
+| ≥ 0.4 | 8 | 一般 |
+| < 0.4 | 8 | 低置信度，多召回 |
+
+**关键词 Boosting：** 从 query 中提取材料牌号（如 6061、T6），对包含这些关键词的 chunk 额外 +0.08 分。
+
+### 4.5 Answer Generation & Quality Check
+
+**Prompt 三件套（面试亮点）：**
+
+| Prompt | 用途 | 特殊规则 |
+|--------|------|---------|
+| IMPROVED_SYSTEM_PROMPT | 正常回答生成 | 4 场景模板、冲突数据并列、单位强制、引用格式 |
+| FALLBACK_SYSTEM_PROMPT | 知识库兜底 | 明确告知"手册无此数据，以下为 LLM 自身知识" |
+| Quality Check Prompt | 质量评分 | 三维：0-4 数据 / 0-3 引用 / 0-3 结构，≥7 通过 |
+
+**质量检查 3 维度：**
+1. 数据完整性（0-4）— 是否给出具体数值 + 单位，有无无关合金内容
+2. 引用规范性（0-3）— 每个数据点是否标记 [序号] 来源
+3. 结构逻辑（0-3）— 分层清晰 / 对比用表格 / 无编造数据
+
+### 4.6 Retry & Fallback
+
+```
+Attempt 1: 改写 → 检索 → 生成 → 质检
+  ├── 分数 ≥ 7 → ✅ 返回
+  └── 分数 < 7 → 查询追加 ' data' 重试
+Attempt 2: 改写 → 检索 → 生成 → 质检
+  ├── 分数 ≥ 7 → ✅ 返回
+  └── 分数 < 7 或回答过短或含"未找到"
+       → 切换 FALLBACK_SYSTEM_PROMPT，使用 LLM 自身知识
+       → 返回（含免责声明）
+```
+
+### 4.7 SSE 流式进度
+
+```python
+@app.get("/chat/stream")
+def chat_stream(query, section):
+    # 后台线程运行 agent_chat，通过 Queue 推送进度事件
+    yield {"type": "log", "message": "正在进行查询语义拆解..."}
+    yield {"step": "rewritten", "queries": [...]}
+    yield {"type": "log", "message": "正在检索知识库..."}
+    yield {"step": "searched", "count": 12}
+    yield {"type": "result", "data": {...}}
+```
+
+前端通过 `EventSource` 消费，驱动 5 步进度条 + 实时日志面板。
+
+---
+
+## 五、Step 4：前端 Chat UI
+
+### 5.1 技术选型
+
+| 选项 | 选择 | 理由 |
+|------|------|------|
+| 框架 | 原生 HTML/CSS/JS | 无网络依赖，零构建 |
+| CSS 变量 | 双主题（light/dark） | `data-theme` 属性切换 |
+| 后端渲染 | FastAPI StaticFiles | 前后端同端口，无 CORS |
+| 实时通信 | SSE / POST 兜底 | EventSource + fetch fallback |
+
+### 5.2 页面结构
+
+```
+┌──────────────────────────────────────────────┐
+│ 🏭 铸造知识库      [模型名]  5849chunks 🌙 ℹ️│  ← 顶栏
+├──────────┬───────────────────────────────────┤
+│ 📂 章节  │  [聊天消息区域]                   │
+│ 筛选     │  🤖 回答内容 + 引用卡片            │
+│          │     📋 处理日志（折叠）            │
+│          │     [引用1] [引用2]                │
+│          │  ─────────────────────────────    │
+│          │  🔍 📡 📚 🤖 ✅  进度步骤条       │
+│          │  [输入框........................] │
+│          │  [发送]                           │
+└──────────┴───────────────────────────────────┘
+```
+
+### 5.3 进度步骤 + 实时日志
+
+**5 步进度指示器：**
+```
+🔍 分析问题 → 📡 检索知识库 → 📚 精选上下文 → 🤖 生成回答 → ✅ 质量检查
+   (修改查询)    (并行检索)    (动态筛选)     (LLM生成)     (自动评分)
+```
+
+**实时日志面板（可折叠）：**
+```
+[12:30:56] ▶ 开始处理查询...
+[12:30:56] 🔍 正在进行查询语义拆解...
+[12:30:57] 🔍 查询拆解完成：["6061 aluminum alloy mechanical properties"]
+[12:30:57] 📡 正在检索知识库...
+[12:30:59] 📡 检索完成，共12条候选
+[12:31:00] 📚 正在精选相关上下文...
+[12:31:02] 🤖 正在构建提示词并生成回答...
+[12:31:05] ✅ 质量评分8/10，通过！
+[12:31:05] ✨ 回答生成完成 (耗时 8542ms)
+```
+
+- 每个问答对独立日志面板（不会串到下一轮对话）
+- 不同级别颜色：info（默认）、retry（橙色）、fallback（红橙）、done（绿色）
+- 日志在回答正文之前显示，用户先看到处理过程，再看结果
+
+### 5.4 SSE vs POST 双路径
+
+```javascript
+// 优先尝试 SSE（实时进度 + 低延迟）
+async function sendMessageSSE(query) {
+    const es = new EventSource('/chat/stream?query=' + encodeURIComponent(query));
+    es.onmessage = (event) => { /* 更新进度 + 日志 */ };
+    es.onerror = () => { close(); resolve(false); }; // 降级到 POST
+}
+
+// SSE 失败 → 自动降级 POST
+async function sendMessagePOST(query) {
+    const resp = await fetch('/chat', { method: 'POST', body: JSON.stringify({query}) });
+    // ... 传统请求 + 加载动画
+}
+```
+
+---
+
+## 六、Step 5：PDF.js 文档查看器
+
+### 6.1 为什么选择 PDF.js
+
+| 方案 | 结论 | 理由 |
+|------|------|------|
+| 浏览器 `<embed>` | ❌ 无法高亮 | 不能精确跳转页码，#page=N 不生效 |
+| 下载后本地看 | ❌ 体验断裂 | 用户需要在对话上下文中查看 |
+| **PDF.js** | ✅ **采用** | 可控渲染、支持文字层叠加高亮 |
+
+### 6.2 架构
+
+```
+用户点击引用卡片 → openPDF(sourceId, pageNum)
+     → sessionStorage.setItem('pdfHighlight', citationText)
+     → iframe.src = '/static/pdf-viewer.html?file=/pdf/2&page=143'
+
+pdf-viewer.html (自包含，无外部依赖)
+├── <script src="pdfjs/pdf.min.js">     ← PDF.js v3 UMD 构建
+├── <script>
+│   ├── fetch(worker) → blob → createObjectURL  ← 绕过 MIME 限制
+│   ├── pdfjsLib.getDocument(url)                ← 加载 PDF
+│   └── 渲染循环：renderPage → canvas + textLayer
+```
+
+### 6.3 关键决策
+
+**Worker 加载策略：**
+
+```
+问题：Starlette 将 .js 文件以 text/plain 提供 → Worker() 拒绝执行
+方案：fetch → blob → URL.createObjectURL → workerSrc
+       (blob 的 MIME 类型不受服务器限制)
+```
+
+**版本选择：**
+
+```
+pdfjs-dist v4 → 仅 ES Module（需要 type="module"，但 .mjs 被 404）
+pdfjs-dist v3 → 有 UMD 构建（直接 <script>，兼容性好）✅
+```
+
+**连续滚动（非分页）：**
+
+- 一次渲染 ~10 页窗口（当前页 ±5）
+- 滚动到底部 → 加载下一页（保持滚动位置偏移补偿）
+- 纯 CSS 无虚拟滚动，延迟加载即可
+- 页码通过计算视口中心的 `.pdf-page` 元素确定，比 IntersectionObserver 稳定
+
+### 6.4 引用高亮算法
+
+```
+之前（关键词）：提取"6061""aluminum" → 页面上所有出现处标黄 → 整页都是黄的 ❌
+现在（精确匹配）：
+  1. 获取 .citation-text 的文本内容（~200 字符）
+  2. 标准化空白字符
+  3. 在 PDF 页面文字层中搜索完全匹配
+  4. 找不到 → 尝试逐段/逐句回退匹配
+  5. 只高亮匹配到的文字区域
+```
+
+### 6.5 浮动面板功能
+
+| 功能 | 实现 |
+|------|------|
+| 显示/隐藏 | 顶栏 📄 按钮 / 点击引用卡片自动弹出 |
+| 拖拽 | mousedown 监听标题栏 → 计算偏移 → transform |
+| 缩放 | CSS resize: both + 右下角拖拽手柄 |
+| 翻页 | ▲/▼ 按钮、键盘方向键、鼠标滚轮 |
+| 缩放 +/− | 清空缓存 → 重新渲染窗口（保持当前页位置） |
+| 适合宽度 | 计算容器宽度 → 设置 scale → 重渲染 |
+| 跳转 | 输入页码 + 点击"跳转"（支持未渲染页自动加载） |
+
+
+
 ## 九、后续扩展方向
 
 ### 短期（可面试时主动聊到）

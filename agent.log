@@ -1230,3 +1230,124 @@ Traceback (most recent call last):
   File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
     self._sock.shutdown(socket.SHUT_RDWR)
 ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+18:24:21 [AGENT] ==================================================
+18:24:21 [AGENT] Query: 铝合金6061的性能和出处
+18:24:21 [AGENT] Attempt 1/2
+18:24:21 [AGENT] Rewritten: ['铝合金6061的性能和出处']
+18:24:21 [AGENT] SQL [hybrid] query='铝合金6061的性能和出处' top_k=12 section=all
+18:24:21 [AGENT]   params: limit=24, top_k=12
+18:24:22 [AGENT]   returned 12 rows in 849ms
+18:24:22 [AGENT]   Query [铝合金6061的性能和出处]: 12 results
+18:24:22 [AGENT]     Top: pg.767 score=0.5223
+18:24:22 [AGENT]   Merged: 12 candidates -> returning top 12
+18:24:22 [AGENT] Candidates: 12
+18:24:22 [AGENT] Dynamic k: 8 (top_score=0.522)
+18:24:22 [AGENT]   Boost keywords: ['6061']
+18:24:22 [AGENT]     pg.222: 0.5150 -> 0.5950 [+0.08]
+18:24:22 [AGENT]     pg.221: 0.5118 -> 0.5918 [+0.08]
+18:24:22 [AGENT]     pg.222: 0.5066 -> 0.5866 [+0.08]
+18:24:22 [AGENT] Context: 8 chunks
+18:24:31 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+18:24:34 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+18:24:34 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+18:24:34 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+18:24:35 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+18:24:37 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+18:24:37 [AGENT]   Resp (2294ms): 
+18:24:37 [AGENT] Quality: 7/10
+18:24:37 [AGENT] Done: 15969ms
+18:24:54 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+19:05:56 [AGENT] ==================================================
+19:05:56 [AGENT] Query: 6061铝合金
+19:06:07 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+19:06:07 [AGENT] SQL [hybrid] query='6061铝合金' top_k=12 section=all
+19:06:07 [AGENT]   params: limit=24, top_k=12
+19:06:08 [AGENT]   returned 12 rows in 661ms
+19:06:08 [AGENT]   Query [6061铝合金]: 12 results
+19:06:08 [AGENT]     Top: pg.1963 score=0.5112
+19:06:08 [AGENT]   Merged: 12 candidates -> returning top 12
+19:06:08 [AGENT]   Boost keywords: ['6061']
+19:06:08 [AGENT]     pg.143: 0.4880 -> 0.5680 [+0.08]
+19:06:08 [AGENT]     pg.111: 0.4770 -> 0.5570 [+0.08]
+19:06:18 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:06:28 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:06:44 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+19:06:44 [AGENT] SQL [hybrid] query='test' top_k=12 section=all
+19:06:44 [AGENT]   params: limit=24, top_k=12
+19:06:44 [AGENT]   returned 12 rows in 222ms
+19:06:44 [AGENT]   Query [test]: 12 results
+19:06:44 [AGENT]     Top: pg.2645 score=0.7130
+19:06:44 [AGENT]   Merged: 12 candidates -> returning top 12
+19:06:47 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:06:54 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:07:04 [AGENT] ==================================================
+19:07:04 [AGENT] Query: 6061铝合金的力学性能
+19:07:04 [AGENT] SQL [hybrid] query='6061铝合金的力学性能' top_k=12 section=all
+19:07:04 [AGENT]   params: limit=24, top_k=12
+19:07:04 [AGENT]   returned 12 rows in 101ms
+19:07:04 [AGENT]   Query [6061铝合金的力学性能]: 12 results
+19:07:04 [AGENT]     Top: pg.767 score=0.5007
+19:07:04 [AGENT]   Merged: 12 candidates -> returning top 12
+19:07:04 [AGENT]   Boost keywords: ['6061']
+19:07:04 [AGENT]     pg.222: 0.5001 -> 0.5801 [+0.08]
+19:07:04 [AGENT]     pg.111: 0.4984 -> 0.5784 [+0.08]
+19:07:11 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:07:19 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:07:19 [AGENT] ==================================================
+19:07:19 [AGENT] Query: test
+19:07:19 [AGENT] SQL [hybrid] query='test' top_k=12 section=all
+19:07:19 [AGENT]   params: limit=24, top_k=12
+19:07:20 [AGENT]   returned 12 rows in 133ms
+19:07:20 [AGENT]   Query [test]: 12 results
+19:07:20 [AGENT]     Top: pg.2645 score=0.7130
+19:07:20 [AGENT]   Merged: 12 candidates -> returning top 12
+19:07:22 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:07:31 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:24:21 [AGENT] ==================================================
+19:24:21 [AGENT] Query: 钛合金的抗拉强度
+19:24:21 [AGENT] SQL [hybrid] query='钛合金的抗拉强度' top_k=12 section=all
+19:24:21 [AGENT]   params: limit=24, top_k=12
+19:24:21 [AGENT]   returned 12 rows in 110ms
+19:24:21 [AGENT]   Query [钛合金的抗拉强度]: 12 results
+19:24:21 [AGENT]     Top: pg.1603 score=0.5021
+19:24:21 [AGENT]   Merged: 12 candidates -> returning top 12
+19:24:23 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:24:28 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+19:24:36 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+19:24:39 [AGENT] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\学习资料\Python\Python3.9.6\lib\asyncio\proactor_events.py", line 162, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。

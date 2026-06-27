@@ -11,6 +11,8 @@ Usage: from agent import agent_chat
 import os, sys, json, time, re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import TypedDict, Optional, List, Any
+from langgraph.graph import StateGraph, START, END
 
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -240,76 +242,153 @@ Output ONLY a JSON: {{"score": N, "reason": "one sentence", "missing": "what spe
     except:
         return {"score": 8, "reason": "eval failed", "missing": ""}
 
+
+# ===== LangGraph State & Node Definitions =====
+class AgentState(TypedDict):
+    query: str
+    section: Optional[str]
+    history: Optional[list]
+    current_query: str
+    sub_queries: list
+    search_results: list
+    context: list
+    answer: str
+    citations: list
+    score: float
+    attempts: int
+    max_retries: int
+    start_time: float
+    progress_callback: Optional[callable]
+
+def _rewrite_node(state: AgentState) -> dict:
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": "正在进行查询语义拆解..."})
+    sq = rewrite_query(state["current_query"])
+    if state.get("progress_callback"):
+        state["progress_callback"]({"step": "rewritten", "queries": sq})
+        state["progress_callback"]({"type": "log", "message": f"查询拆解完成：{sq}"})
+    return {"sub_queries": sq}
+
+def _search_node(state: AgentState) -> dict:
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": "正在检索知识库..."})
+    rs = search_parallel(state["sub_queries"], state.get("section"), top_k=12)
+    if state.get("progress_callback"):
+        state["progress_callback"]({"step": "searched", "count": len(rs)})
+        state["progress_callback"]({"type": "log", "message": f"检索完成，共{len(rs)}条候选"})
+    return {"search_results": rs}
+
+def _select_context_node(state: AgentState) -> dict:
+    rs = state["search_results"]
+    if not rs:
+        return {"context": []}
+    top_score = rs[0].get("score", 0)
+    if top_score >= 0.75: dk = 4
+    elif top_score >= 0.6: dk = 6
+    else: dk = 8
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": "正在精选相关上下文..."})
+    ctx = select_context(rs, top_k=dk, original_query=" ".join(state["sub_queries"]),
+                         search_query=state["sub_queries"][0] if state["sub_queries"] else state["current_query"])
+    if state.get("progress_callback"):
+        state["progress_callback"]({"step": "context_ready", "count": len(ctx)})
+        state["progress_callback"]({"type": "log", "message": f"精选{len(ctx)}条上下文"})
+    return {"context": ctx}
+
+def _generate_node(state: AgentState) -> dict:
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": "正在构建提示词并生成回答..."})
+    ad = generate_answer(state["current_query"], state["context"], state.get("history"))
+    return {"answer": ad.get("answer", ""), "citations": ad.get("citations", state["context"][:5])}
+
+def _check_node(state: AgentState) -> dict:
+    ans = state["answer"]
+    if state["attempts"] < state["max_retries"] and len(ans) > 30:
+        if state.get("progress_callback"):
+            state["progress_callback"]({"type": "log", "message": "正在进行质量检查和评估..."})
+        qc = quality_check(state["current_query"], ans)
+        sc = qc["score"]
+        if state.get("progress_callback"):
+            state["progress_callback"]({"step": "checked", "score": sc})
+        return {"score": sc}
+    return {"score": 10}
+
+def _decide_next(state: AgentState) -> str:
+    ans, sc = state["answer"], state["score"]
+    if state["attempts"] < state["max_retries"] and len(ans) > 30 and sc < 7:
+        return "retry"
+    if len(ans) < 50 or "没有找到" in ans or "未找到" in ans:
+        return "fallback"
+    return "output"
+
+def _retry_node(state: AgentState) -> dict:
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": f"质量评分{state['score']}/10，偏低，进行新一轮检索...", "level": "retry"})
+    return {"current_query": state["query"] + " data", "attempts": state["attempts"] + 1}
+
+def _fallback_node(state: AgentState) -> dict:
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": "知识库中未找到相关信息，切换到大模型知识兜底...", "level": "fallback"})
+    ad = generate_answer(state["current_query"], state["context"], state.get("history"), system_prompt=FALLBACK_SYSTEM_PROMPT)
+    return {"answer": ad.get("answer", state["answer"])}
+
+def _output_node(state: AgentState) -> dict:
+    elapsed = int((time.time() - state["start_time"]) * 1000)
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": f"回答生成完成 (耗时 {elapsed}ms)", "level": "done"})
+    return {"answer": state["answer"], "citations": state.get("citations", state.get("context", [])[:5]),
+            "model": "", "sub_queries": state["sub_queries"], "attempts": state["attempts"], "latency_ms": elapsed}
+
+_agent_graph = None
+def _get_graph():
+    global _agent_graph
+    if _agent_graph is not None:
+        return _agent_graph
+    wf = StateGraph(AgentState)
+    wf.add_node("rewrite", _rewrite_node)
+    wf.add_node("search", _search_node)
+    wf.add_node("select_ctx", _select_context_node)
+    wf.add_node("generate", _generate_node)
+    wf.add_node("check", _check_node)
+    wf.add_node("retry", _retry_node)
+    wf.add_node("fallback", _fallback_node)
+    wf.add_node("output", _output_node)
+    wf.add_edge(START, "rewrite")
+    wf.add_edge("rewrite", "search")
+    wf.add_edge("search", "select_ctx")
+    wf.add_edge("select_ctx", "generate")
+    wf.add_edge("generate", "check")
+    wf.add_conditional_edges("check", _decide_next, {"retry": "retry", "fallback": "fallback", "output": "output"})
+    wf.add_edge("retry", "rewrite")
+    wf.add_edge("fallback", "output")
+    wf.add_edge("output", END)
+    _agent_graph = wf.compile()
+    return _agent_graph
+
 def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None) -> dict:
+
     _log.info('=' * 50)
     _log.info(f'Query: {query}')
-    start = time.time()
-    max_retries = 1
-    current_query = query
-    if progress_callback: progress_callback({'type': 'log', 'message': '开始处理查询...'})
-    if progress_callback: progress_callback({'type': 'log', 'message': f'原始查询：{query}'})
-    for attempt in range(max_retries + 1):
-        _log.info(f'Attempt {attempt + 1}/{max_retries + 1}')
-        if attempt > 0:
-            if progress_callback: progress_callback({'type': 'log', 'message': f'开始第{attempt+1}轮尝试...', 'level': 'retry'})
-        if progress_callback: progress_callback({'type': 'log', 'message': '正在进行查询语义拆解...'})
-        sub_queries = rewrite_query(current_query)
-        _log.info(f'Rewritten: {sub_queries}')
-        if progress_callback: progress_callback({'step': 'rewritten', 'queries': sub_queries})
-        if progress_callback: progress_callback({'type': 'log', 'message': f'查询拆解完成：{sub_queries}'})
-        if progress_callback: progress_callback({'type': 'log', 'message': '正在检索知识库...'})
-        results = search_parallel(sub_queries, section, top_k=12)
-        _log.info(f'Candidates: {len(results)}')
-        if progress_callback: progress_callback({'step': 'searched', 'count': len(results)})
-        if progress_callback: progress_callback({'type': 'log', 'message': f'检索完成，共{len(results)}条候选'})
-        if results:
-            top_score = results[0].get("score", 0)
-            if top_score >= 0.75:
-                dynamic_k = 4
-            elif top_score >= 0.6:
-                dynamic_k = 6
-            elif top_score >= 0.4:
-                dynamic_k = 8
-            else:
-                dynamic_k = 8
-            _log.info(f'Dynamic k: {dynamic_k} (top_score={top_score:.3f})')
-        else:
-            dynamic_k = 6
-        if not results:
-            if attempt < max_retries:
-                current_query = query + ' properties data'
-                continue
-            return {'answer': 'No relevant information.', 'citations': [], 'latency_ms': int((time.time()-start)*1000), 'attempts': attempt+1}
-        if progress_callback: progress_callback({'type': 'log', 'message': '正在精选相关上下文...'})
-        context = select_context(results, top_k=dynamic_k, original_query=' '.join(sub_queries), search_query=sub_queries[0] if sub_queries else current_query)
-        _log.info(f'Context: {len(context)} chunks')
-        if progress_callback: progress_callback({'step': 'context_ready', 'count': len(context)})
-        if progress_callback: progress_callback({'type': 'log', 'message': f'精选{len(context)}条上下文'})
-        if progress_callback: progress_callback({'type': 'log', 'message': '正在构建提示词并生成回答...'})
-        ad = generate_answer(current_query, context, history)
-        answer = ad.get('answer', '')
-        if attempt < max_retries and len(answer) > 30:
-            if progress_callback: progress_callback({'type': 'log', 'message': '正在进行质量检查和评估...'})
-            qc = quality_check(current_query, answer)
-            _log.info(f'Quality: {qc["score"]}/10')
-            if progress_callback: progress_callback({'step': 'checked', 'score': qc['score']})
-            if qc['score'] >= 7:
-                if progress_callback: progress_callback({'type': 'log', 'message': f'质量评分{qc["score"]}/10，通过！'})
-                elapsed = int((time.time()-start)*1000)
-                _log.info(f'Done: {elapsed}ms')
-                return {'answer': answer, 'citations': ad.get('citations', context[:5]), 'model': ad.get('model', ''), 'sub_queries': sub_queries, 'attempts': attempt+1, 'latency_ms': elapsed}
-            if progress_callback: progress_callback({'type': 'log', 'message': f'质量评分{qc["score"]}/10，偏低，进行新一轮检索...', 'level': 'retry'})
-            current_query = query + ' data'
-        else:
-            if len(answer) < 50 or '没有找到' in answer or '未找到' in answer:
-                if progress_callback: progress_callback({'type': 'log', 'message': '知识库中未找到相关信息，切换到大模型知识兜底...', 'level': 'fallback'})
-                ad = generate_answer(current_query, context, history, system_prompt=FALLBACK_SYSTEM_PROMPT)
-                answer = ad.get('answer', answer)
-            elapsed = int((time.time()-start)*1000)
-            _log.info(f'Done: {elapsed}ms')
-            return {'answer': answer, 'citations': ad.get('citations', context[:5]), 'model': ad.get('model', ''), 'sub_queries': sub_queries, 'attempts': attempt+1, 'latency_ms': elapsed}
-    elapsed = int((time.time()-start)*1000)
-    return {'answer': 'Failed after retries.', 'latency_ms': elapsed, 'attempts': max_retries+1}
+    app = _get_graph()
+    initial = {
+        "query": query, "section": section, "history": history,
+        "current_query": query, "sub_queries": [], "search_results": [],
+        "context": [], "answer": "", "citations": [], "score": 0,
+        "attempts": 1, "max_retries": 1, "start_time": time.time(),
+        "progress_callback": progress_callback,
+    }
+    result = app.invoke(initial)
+    return {
+        "answer": result.get("answer", ""),
+        "citations": result.get("citations", []),
+        "model": result.get("model", ""),
+        "sub_queries": result.get("sub_queries", []),
+        "attempts": result.get("attempts", 1),
+        "latency_ms": result.get("latency_ms", 0),
+        "thinking": "",
+    }
+
+
 def _call_llm(messages, max_tokens=512, timeout=30):
     last_input = (messages[-1]["content"][:200] if messages else "") + "..."
     func = messages[0]["content"][:60] if messages and messages[0]["role"] == "system" else "no system"
