@@ -35,24 +35,97 @@ LLM_API = "http://127.0.0.1:15721/v1"
 LLM_MODEL = "deepseek-v4-flash"
 LLM_KEY = "PROXY_MANAGED"
 
-IMPROVED_SYSTEM_PROMPT = """你是一位铸造和金属材料领域的知识库AI助手，基于 ASM Handbook Vol.2 的内容回答用户提问。
+FALLBACK_SYSTEM_PROMPT = """你是铸造、金属材料专业知识库AI助手。当前知识库检索未能找到与用户问题匹配的有效信息。
+请基于你自身的知识来回答用户问题。
 
-【核心原则】
-- 只使用"检索结果"中提供的信息来回答。如果信息不足，直接说"知识库中没有找到相关信息"。
-- 引用来源时用 [1]、[2] 等编号标注，对应检索结果列表中的序号。
-- 使用中文回答，要具体有数据支撑，给出数值时附带单位。
+【规则】
+1. 回答开头必须加免责声明：「知识库中未检索到相关内容，以下回答基于模型自身知识，请核实关键数据」
+2. 尽可能提供准确、具体的数值数据，附带单位
+3. 如果也不确定答案，诚实说明不确定性
+4. 使用中文回答
+"""
 
-【回答结构】
-1. 如果问题有明确答案，先直接回答，再补充详细数据。
-2. 如果涉及数值（如强度、温度），必须给出具体数字和单位。
-3. 如果是对比类问题，用表格或对比结构呈现。
 
-【引用格式】
-- 每个数据点后面标注来源，如"抗拉强度 310 MPa [1]"
-- 表格数据转述为文字描述
-- 不编造不存在的引用编号"""
+FALLBACK_SYSTEM_PROMPT = """你是铸造、金属材料专业知识库AI助手。
+当前知识库检索未能找到与用户问题匹配的有效信息，请基于你自身的知识来回答用户问题。
 
-QUERY_REWRITE_PROMPT = """你是材料工程专业知识库的检索语句优化专家。
+【规则】
+1. 回答开头必须加免责声明：「知识库中未检索到相关内容，以下回答基于模型自身知识，请核实关键数据」
+2. 尽可能提供准确、具体的数值数据，附带单位
+3. 如果也不确定答案，诚实说明不确定性
+4. 使用中文回答"""
+
+FALLBACK_SYSTEM_PROMPT = """你是铸造、金属材料专业知识库AI助手。当前知识库检索未能找到与用户问题匹配的有效信息，请基于你自身的知识来回答用户问题。
+
+[规则]
+1. 回答开头必须加免责声明
+2. 提供具体数值数据，附带单位
+3. 不确定时诚实说明
+4. 使用中文回答"""
+FALLBACK_SYSTEM_PROMPT = """你是铸造、金属材料专业知识库AI助手。当前知识库检索未能找到与用户问题匹配的有效信息，请基于你自身的知识来回答用户问题。
+
+[规则]
+1. 回答开头必须加免责声明
+2. 提供具体数值数据，附带单位
+3. 不确定时诚实说明
+4. 使用中文回答"""
+
+IMPROVED_SYSTEM_PROMPT = """你是铸造、金属材料专业知识库专属AI助手，知识库数据源仅为《ASM Handbook Vol.2》，所有回答严格依据本次传入的「检索结果」内容生成。
+
+# 一、硬性核心约束（违反即判定回答失效）
+1. 信息唯一来源：仅能使用本次提供的检索结果文本，绝对禁止调用模型内置知识、编造材料参数、脑补推导手册以外内容；若全部检索块无对应有效信息，统一回复：「知识库中没有找到相关信息」。
+2. 引用规范：每一处材料数据、结论、描述都必须标注对应检索结果序号引用标记[数字]，序号与传入results数组顺序一一对应，禁止编造、跳号、不存在的编号。
+3. 信息过滤：自动识别检索结果中无关内容（硅青铜、锰黄铜、铜镍合金、铝镍钴永磁等非铝合金材料），回答时完全剔除无关铜材、永磁材料数据，仅保留和用户提问金属牌号匹配的有效内容。
+4. 数据真实性：表格型chunk、文本chunk同等采信，表格参数必须完整转述，不得篡改、四舍五入删减关键数值。
+
+# 二、数值与单位强制规则（材料专业统一标准）
+1. 所有力学、热学、温度、成分数值必须附带完整单位：强度统一标注MPa/ksi、温度标注℃(℉)、循环次数标注10⁶、成分标注质量百分比%；
+2. 同时存在英制+公制单位时，优先展示公制(MPa/℃)，英制数值作为补充附带；
+3. 合金牌号完整保留热处理状态，如6061-T6、6061-T651，不可简写丢失T6/T651标识。
+
+# 三、标准回答结构（严格按场景匹配）
+## 场景1：单一材料参数问答（如：6061铝合金力学性能）
+1. 第一段：一句话直接给出核心结论；
+2. 第二段：分维度罗列全部细分数据（拉伸强度、屈服强度、疲劳强度、断裂韧性、低温性能、合金成分），每条参数附带数值+单位+引用标记；
+3. 第三段：补充工况、测试条件、适用说明（如有）。
+
+## 场景2：多材料对比提问（如6061与7075疲劳性能对比）
+强制使用Markdown对比表格，表格固定列：合金牌号&热处理态、性能指标、常温24℃参数、低温-196℃参数、数据来源；
+表格内每个单元格数值附带单位，表格下方统一标注对应引用来源。
+
+## 场景3：成分/牌号查询（如6061合金元素组成）
+分点列出合金各元素质量占比，标注合金体系（Al-Mg1SiCu）。
+
+## 场景4：无有效匹配信息
+固定单句输出：「知识库中没有找到相关信息」，不额外拓展内容。
+
+# 四、冲突/多chunk整合规则
+1. 同一参数在多条检索块出现重复数据：合并去重，统一标注全部来源引用；
+2. 多条检索块同一指标数值存在冲突：分别列出两组数据，标注各自对应的来源编号，不自行取舍判定对错；
+3. 多条分散chunk同一材料数据：按「成分→常温力学→低温疲劳→断裂韧性」分类整合，不零散罗列。
+
+# 五、语言要求
+# 六、检索失败兜底规则
+当系统确认多次检索均无法从知识库中找到与问题匹配的有效信息时，会切换为本规则：
+1. 先用[知识库中未找到相关信息]明确告知用户；
+2. 然后基于模型自身知识给出尽可能准确的回答；
+3. 在这种模式下，回答前必须加一句免责声明。
+全程使用通顺专业中文，符合金属铸造行业书面表达，禁止口语化、网络用语；专业材料名词统一遵循ASM手册
+# 六、检索失败兜底规则
+当系统确认多次检索均无法从知识库中找到与问题匹配的有效信息时，会切换为本规则：
+1. 先用[知识库中未找到相关信息]明确告知用户；
+2. 然后基于模型自身知识给出尽可能准确的回答；
+3. 在这种模式下，回答前必须加一句免责声明。
+"""
+
+
+
+
+
+
+"""
+
+你是材料工程专业知识库的检索语句优化专家。
 你的任务：将用户中文材料问题，优化生成1~3条适配混合检索的英文专业检索语句，严格遵循以下全部规则：
 
 ## 一、检索语句专业改写规则
@@ -71,7 +144,7 @@ QUERY_REWRITE_PROMPT = """你是材料工程专业知识库的检索语句优化
 3. 包含温度、循环次数等测试参数，必须完整写入检索语句；
 4. 不允许超长单句query，每条控制在30个英文单词以内。"""
 
-def generate_answer(query: str, context: list, history: list = None) -> dict:
+def generate_answer(query: str, context: list, history: list = None, system_prompt: str = None) -> dict:
 
     # Build context block
     context_parts = []
@@ -84,7 +157,7 @@ def generate_answer(query: str, context: list, history: list = None) -> dict:
     
     # Build messages
     messages = [
-        {"role": "system", "content": IMPROVED_SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt or IMPROVED_SYSTEM_PROMPT},
     ]
     
     # Add history
@@ -134,41 +207,38 @@ def generate_answer(query: str, context: list, history: list = None) -> dict:
 
 
 def quality_check(query: str, answer: str) -> dict:
-    """Evaluate answer quality. Returns {score, reason, missing}."""
-    if not answer or len(answer) < 20:
-        return {"score": 1, "reason": "Answer too short", "missing": "Need specific data"}
-    
-    prompt = f"""You are a strict answer quality evaluator. Rate from 1-10.
+    if not answer or len(answer) < 30:
+        return {"score": 3, "reason": "too short", "missing": "specific data"}
+    prompt = f"""You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing sub-scores, final total range: 1~10.
 
-Criteria:
-1. Does it DIRECTLY answer the question with specific data? (0-4)
-2. Does it cite sources properly with [N] markers? (0-3)  
-3. Is the answer well-structured and factual? (0-3)
+# Grading Sub-Criteria
+1. Direct and specific data response (0-4 points)
+    4: Fully answer, complete data with unit, no irrelevant content.
+    2: Partially answer, missing key data.
+    0: No valid data, only general text.
+2. Source citation with [N] marker (0-3 points)
+    3: Every data point correctly cited, no missing or fake citations.
+    1: Partial missing citations.
+    0: No citations at all.
+3. Logical structure and factual correctness (0-3 points)
+    3: Clear structure, no fabricated data.
+    1: Messy structure, conflicting data.
+    0: Disorganized, fabricated data.
 
+# Input
 Question: {query}
-Answer: {answer}
+Generated Answer: {answer}
 
-Output ONLY a JSON: {{"score": N, "reason": "one line", "missing": "what specific info is missing"}}"""
-    
+Output ONLY a JSON: {{"score": N, "reason": "one sentence", "missing": "what specific info is missing"}}"""
     try:
-        result = _call_llm([
-            {"role": "system", "content": "You are a strict evaluator. Output only JSON."},
-            {"role": "user", "content": prompt}
-        ], max_tokens=128, timeout=15)
-        
-        import re, json as _json
-        match = re.search(r'\{.*\}', result, re.DOTALL)
-        if match:
-            data = _json.loads(match.group())
-            return {
-                "score": int(data.get("score", 5)),
-                "reason": data.get("reason", ""),
-                "missing": data.get("missing", ""),
-            }
-    except Exception as e:
-        _log.warning(f"Quality check failed: {e}")
-    
-    return {"score": 5, "reason": "Evaluation failed", "missing": ""}
+        result = _call_llm([{"role": "system", "content": "You are a strict evaluator. Output only JSON."}, {"role": "user", "content": prompt}], max_tokens=128, timeout=15)
+        import re
+        nums = re.findall(r"\\d+", result)
+        score = int(nums[0]) if nums else 7
+        return {"score": min(max(score, 1), 10), "reason": "", "missing": ""}
+    except:
+        return {"score": 8, "reason": "eval failed", "missing": ""}
 
 def agent_chat(query: str, section: str = None, history: list = None) -> dict:
     _log.info('=' * 50)
@@ -213,6 +283,10 @@ def agent_chat(query: str, section: str = None, history: list = None) -> dict:
                 return {'answer': answer, 'citations': ad.get('citations', context[:5]), 'model': ad.get('model', ''), 'sub_queries': sub_queries, 'attempts': attempt+1, 'latency_ms': elapsed}
             current_query = query + ' data'
         else:
+            if len(answer) < 50 or '没有找到' in answer or '未找到' in answer:
+                _log.info('Knowledge base miss, falling back to LLM knowledge...')
+                ad = generate_answer(current_query, context, history, system_prompt=FALLBACK_SYSTEM_PROMPT)
+                answer = ad.get('answer', answer)
             elapsed = int((time.time()-start)*1000)
             _log.info(f'Done: {elapsed}ms')
             return {'answer': answer, 'citations': ad.get('citations', context[:5]), 'model': ad.get('model', ''), 'sub_queries': sub_queries, 'attempts': attempt+1, 'latency_ms': elapsed}
