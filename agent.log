@@ -236,3 +236,399 @@ Evaluate the answer strictly against the 3 criteria, calculate total score by su
 11:06:44 [AGENT] Context: 8 chunks
 11:06:45 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
 11:06:45 [AGENT] Done: 4487ms
+11:08:38 [AGENT] ==================================================
+11:08:38 [AGENT] Query: 你了解苹果么
+11:08:38 [AGENT] Attempt 1/2
+11:08:38 [AGENT] Rewritten: ['你了解苹果么']
+11:08:52 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+11:08:53 [AGENT] SQL [hybrid] query='你了解苹果么' top_k=12 section=all
+11:08:53 [AGENT]   params: limit=24, top_k=12
+11:08:53 [AGENT]   returned 12 rows in 80ms
+11:08:53 [AGENT]   Query [你了解苹果么]: 12 results
+11:08:53 [AGENT]     Top: pg.839 score=0.4918
+11:08:53 [AGENT]   Merged: 12 candidates -> returning top 12
+11:08:53 [AGENT] Candidates: 12
+11:08:53 [AGENT] Dynamic k: 8 (top_score=0.492)
+11:08:53 [AGENT] Context: 8 chunks
+11:08:54 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+11:08:54 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+11:08:59 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+11:08:59 [AGENT] Done: 20696ms
+11:09:31 [AGENT] SQL [hybrid] query='你了解苹果么？' top_k=6 section=all
+11:09:31 [AGENT]   params: limit=12, top_k=6
+11:09:31 [AGENT]   returned 6 rows in 68ms
+11:09:31 [AGENT] ==================================================
+11:09:31 [AGENT] Query: 你了解苹果么？
+11:09:31 [AGENT] Attempt 1/2
+11:09:31 [AGENT] Rewritten: ['你了解苹果么？']
+11:09:31 [AGENT] SQL [hybrid] query='你了解苹果么？' top_k=12 section=all
+11:09:31 [AGENT]   params: limit=24, top_k=12
+11:09:31 [AGENT]   returned 12 rows in 101ms
+11:09:32 [AGENT]   Query [你了解苹果么？]: 12 results
+11:09:32 [AGENT]     Top: pg.839 score=0.4558
+11:09:32 [AGENT]   Merged: 12 candidates -> returning top 12
+11:09:32 [AGENT] Candidates: 12
+11:09:32 [AGENT] Dynamic k: 8 (top_score=0.456)
+11:09:32 [AGENT] Context: 8 chunks
+11:09:34 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+11:09:34 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+11:09:39 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+11:09:39 [AGENT] Done: 7213ms
+11:21:17 [AGENT] ==================================================
+11:21:17 [AGENT] Query: 灰铸铁的力学性能
+11:21:17 [AGENT] Attempt 1/2
+11:21:17 [AGENT] Rewritten: ['灰铸铁的力学性能']
+11:21:29 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+11:21:30 [AGENT] SQL [hybrid] query='灰铸铁的力学性能' top_k=12 section=all
+11:21:30 [AGENT]   params: limit=24, top_k=12
+11:21:30 [AGENT]   returned 12 rows in 187ms
+11:21:30 [AGENT]   Query [灰铸铁的力学性能]: 12 results
+11:21:30 [AGENT]     Top: pg.2192 score=0.5132
+11:21:30 [AGENT]   Merged: 12 candidates -> returning top 12
+11:21:30 [AGENT] Candidates: 12
+11:21:30 [AGENT] Dynamic k: 8 (top_score=0.513)
+11:21:30 [AGENT] Context: 8 chunks
+11:21:33 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+11:21:33 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+11:21:47 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+11:21:47 [AGENT] Done: 30391ms
+12:07:50 [AGENT] SQL [hybrid] query='你好' top_k=6 section=all
+12:07:50 [AGENT]   params: limit=12, top_k=6
+12:07:51 [AGENT]   returned 6 rows in 1008ms
+12:07:51 [AGENT] ==================================================
+12:07:51 [AGENT] Query: 你好
+12:07:51 [AGENT] Attempt 1/2
+12:07:51 [AGENT] Rewritten: ['你好']
+12:07:51 [AGENT] SQL [hybrid] query='你好' top_k=12 section=all
+12:07:51 [AGENT]   params: limit=24, top_k=12
+12:07:51 [AGENT]   returned 12 rows in 103ms
+12:07:51 [AGENT]   Query [你好]: 12 results
+12:07:51 [AGENT]     Top: pg.637 score=0.5248
+12:07:51 [AGENT]   Merged: 12 candidates -> returning top 12
+12:07:51 [AGENT] Candidates: 12
+12:07:51 [AGENT] Dynamic k: 8 (top_score=0.525)
+12:07:51 [AGENT] Context: 8 chunks
+12:07:53 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:07:53 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+12:07:57 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:07:57 [AGENT] Done: 6016ms
+12:08:16 [AGENT] SQL [hybrid] query='你好' top_k=6 section=all
+12:08:16 [AGENT]   params: limit=12, top_k=6
+12:08:17 [AGENT]   returned 6 rows in 106ms
+12:08:17 [AGENT] ==================================================
+12:08:17 [AGENT] Query: 你好
+12:08:17 [AGENT] Attempt 1/2
+12:08:17 [AGENT] Rewritten: ['你好']
+12:08:17 [AGENT] SQL [hybrid] query='你好' top_k=12 section=all
+12:08:17 [AGENT]   params: limit=24, top_k=12
+12:08:17 [AGENT]   returned 12 rows in 91ms
+12:08:17 [AGENT]   Query [你好]: 12 results
+12:08:17 [AGENT]     Top: pg.637 score=0.5248
+12:08:17 [AGENT]   Merged: 12 candidates -> returning top 12
+12:08:17 [AGENT] Candidates: 12
+12:08:17 [AGENT] Dynamic k: 8 (top_score=0.525)
+12:08:17 [AGENT] Context: 8 chunks
+12:08:19 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:08:19 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+12:08:22 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:08:22 [AGENT] Done: 5777ms
+12:15:18 [AGENT] ==================================================
+12:15:18 [AGENT] Query: test
+12:15:18 [AGENT] Attempt 1/2
+12:15:18 [AGENT] Rewritten: ['test']
+12:15:34 [AGENT] ==================================================
+12:15:34 [AGENT] Query: test
+12:15:34 [AGENT] Attempt 1/2
+12:15:34 [AGENT] Rewritten: ['test']
+12:15:35 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+12:15:35 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+12:15:35 [AGENT] SQL [hybrid] query='test' top_k=12 section=all
+12:15:35 [AGENT]   params: limit=24, top_k=12
+12:15:35 [AGENT] SQL [hybrid] query='test' top_k=12 section=all
+12:15:35 [AGENT]   params: limit=24, top_k=12
+12:15:35 [AGENT]   returned 12 rows in 226ms
+12:15:35 [AGENT]   returned 12 rows in 213ms
+12:15:35 [AGENT]   Query [test]: 12 results
+12:15:35 [AGENT]     Top: pg.68 score=0.0840
+12:15:35 [AGENT]   Merged: 12 candidates -> returning top 12
+12:15:35 [AGENT] Candidates: 12
+12:15:35 [AGENT] Dynamic k: 8 (top_score=0.084)
+12:15:35 [AGENT] Context: 8 chunks
+12:15:35 [AGENT]   Query [test]: 12 results
+12:15:35 [AGENT]     Top: pg.68 score=0.0838
+12:15:35 [AGENT]   Merged: 12 candidates -> returning top 12
+12:15:35 [AGENT] Candidates: 12
+12:15:35 [AGENT] Dynamic k: 8 (top_score=0.084)
+12:15:35 [AGENT] Context: 8 chunks
+12:15:37 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:15:37 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+12:15:38 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:15:38 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+12:15:39 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:15:39 [AGENT] Done: 5389ms
+12:15:40 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:15:40 [AGENT] Done: 21745ms
+12:15:44 [AGENT] ==================================================
+12:15:44 [AGENT] Query: test
+12:15:44 [AGENT] Attempt 1/2
+12:15:44 [AGENT] Rewritten: ['test']
+12:15:44 [AGENT] SQL [hybrid] query='test' top_k=12 section=all
+12:15:44 [AGENT]   params: limit=24, top_k=12
+12:15:44 [AGENT]   returned 12 rows in 134ms
+12:15:45 [AGENT]   Query [test]: 12 results
+12:15:45 [AGENT]     Top: pg.68 score=0.0838
+12:15:45 [AGENT]   Merged: 12 candidates -> returning top 12
+12:15:45 [AGENT] Candidates: 12
+12:15:45 [AGENT] Dynamic k: 8 (top_score=0.084)
+12:15:45 [AGENT] Context: 8 chunks
+12:15:47 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:15:47 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+12:15:49 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:15:49 [AGENT] Done: 5082ms
+12:32:44 [AGENT] ==================================================
+12:32:44 [AGENT] Query: 查找关于铝合金的知识
+12:32:44 [AGENT] Attempt 1/2
+12:32:44 [AGENT] Rewritten: ['查找关于铝合金的知识']
+12:32:57 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+12:32:57 [AGENT] SQL [hybrid] query='查找关于铝合金的知识' top_k=12 section=all
+12:32:57 [AGENT]   params: limit=24, top_k=12
+12:32:58 [AGENT]   returned 12 rows in 131ms
+12:32:58 [AGENT]   Query [查找关于铝合金的知识]: 12 results
+12:32:58 [AGENT]     Top: pg.1657 score=0.5452
+12:32:58 [AGENT]   Merged: 12 candidates -> returning top 12
+12:32:58 [AGENT] Candidates: 12
+12:32:58 [AGENT] Dynamic k: 8 (top_score=0.545)
+12:32:58 [AGENT] Context: 8 chunks
+12:33:33 [AGENT] ==================================================
+12:33:33 [AGENT] Query: 铝合金6061的力学性能
+12:33:33 [AGENT] Attempt 1/2
+12:33:33 [AGENT] Rewritten: ['铝合金6061的力学性能']
+12:33:45 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+12:33:45 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+12:33:45 [AGENT]   params: limit=24, top_k=12
+12:33:45 [AGENT]   returned 12 rows in 122ms
+12:33:45 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+12:33:45 [AGENT]     Top: pg.767 score=0.4977
+12:33:45 [AGENT]   Merged: 12 candidates -> returning top 12
+12:33:45 [AGENT] Candidates: 12
+12:33:45 [AGENT] Dynamic k: 8 (top_score=0.498)
+12:33:45 [AGENT]   Boost keywords: ['6061']
+12:33:45 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+12:33:45 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+12:33:45 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+12:33:45 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+12:33:45 [AGENT] Context: 8 chunks
+12:33:55 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:33:55 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+12:33:55 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+12:33:57 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:33:57 [AGENT]   Resp (2121ms): 
+12:33:57 [AGENT] Quality: 7/10
+12:33:57 [AGENT] Done: 24248ms
+12:40:46 [AGENT] ==================================================
+12:40:46 [AGENT] Query: 铝合金6061的力学性能
+12:40:46 [AGENT] Attempt 1/2
+12:40:46 [AGENT] Rewritten: ['铝合金6061的力学性能']
+12:40:59 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+12:40:59 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+12:40:59 [AGENT]   params: limit=24, top_k=12
+12:40:59 [AGENT]   returned 12 rows in 119ms
+12:40:59 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+12:40:59 [AGENT]     Top: pg.767 score=0.4977
+12:40:59 [AGENT]   Merged: 12 candidates -> returning top 12
+12:40:59 [AGENT] Candidates: 12
+12:40:59 [AGENT] Dynamic k: 8 (top_score=0.498)
+12:40:59 [AGENT]   Boost keywords: ['6061']
+12:40:59 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+12:40:59 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+12:40:59 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+12:40:59 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+12:40:59 [AGENT] Context: 8 chunks
+12:47:47 [AGENT] ==================================================
+12:47:47 [AGENT] Query: test
+12:47:47 [AGENT] Attempt 1/2
+12:47:47 [AGENT] Rewritten: ['test']
+12:47:47 [AGENT] SQL [hybrid] query='test' top_k=12 section=all
+12:47:47 [AGENT]   params: limit=24, top_k=12
+12:47:47 [AGENT]   returned 12 rows in 108ms
+12:47:47 [AGENT]   Query [test]: 12 results
+12:47:47 [AGENT]     Top: pg.2645 score=0.7130
+12:47:47 [AGENT]   Merged: 12 candidates -> returning top 12
+12:47:47 [AGENT] Candidates: 12
+12:47:47 [AGENT] Dynamic k: 6 (top_score=0.713)
+12:47:47 [AGENT] Context: 6 chunks
+12:47:50 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:47:50 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+12:47:56 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:47:56 [AGENT] Done: 8555ms
+12:49:22 [AGENT] ==================================================
+12:49:22 [AGENT] Query: 6061铝合金
+12:49:22 [AGENT] Attempt 1/2
+12:49:22 [AGENT] Rewritten: ['6061铝合金']
+12:49:32 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+12:49:32 [AGENT] SQL [hybrid] query='6061铝合金' top_k=12 section=all
+12:49:32 [AGENT]   params: limit=24, top_k=12
+12:49:33 [AGENT]   returned 12 rows in 95ms
+12:49:33 [AGENT]   Query [6061铝合金]: 12 results
+12:49:33 [AGENT]     Top: pg.1963 score=0.5112
+12:49:33 [AGENT]   Merged: 12 candidates -> returning top 12
+12:49:33 [AGENT] Candidates: 12
+12:49:33 [AGENT] Dynamic k: 8 (top_score=0.511)
+12:49:33 [AGENT]   Boost keywords: ['6061']
+12:49:33 [AGENT]     pg.143: 0.4880 -> 0.5680 [+0.08]
+12:49:33 [AGENT]     pg.111: 0.4770 -> 0.5570 [+0.08]
+12:49:33 [AGENT] Context: 8 chunks
+12:49:37 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:49:37 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+12:49:37 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+12:49:39 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:49:39 [AGENT]   Resp (2264ms): 
+12:49:39 [AGENT] Quality: 7/10
+12:49:39 [AGENT] Done: 17516ms
+12:51:33 [AGENT] ==================================================
+12:51:33 [AGENT] Query: 铝合金6061的力学性能
+12:51:33 [AGENT] Attempt 1/2
+12:51:33 [AGENT] Rewritten: ['铝合金6061的力学性能']
+12:51:33 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+12:51:33 [AGENT]   params: limit=24, top_k=12
+12:51:33 [AGENT]   returned 12 rows in 98ms
+12:51:33 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+12:51:33 [AGENT]     Top: pg.767 score=0.4977
+12:51:33 [AGENT]   Merged: 12 candidates -> returning top 12
+12:51:33 [AGENT] Candidates: 12
+12:51:33 [AGENT] Dynamic k: 8 (top_score=0.498)
+12:51:33 [AGENT]   Boost keywords: ['6061']
+12:51:33 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+12:51:33 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+12:51:33 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+12:51:33 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+12:51:33 [AGENT] Context: 8 chunks
+12:51:41 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:51:41 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+12:51:41 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+12:51:43 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:51:43 [AGENT]   Resp (2014ms): 
+12:51:43 [AGENT] Quality: 7/10
+12:51:43 [AGENT] Done: 9773ms
+12:53:00 [AGENT] ==================================================
+12:53:00 [AGENT] Query: 查看铁
+12:53:00 [AGENT] Attempt 1/2
+12:53:00 [AGENT] Rewritten: ['查看铁']
+12:53:00 [AGENT] SQL [hybrid] query='查看铁' top_k=12 section=all
+12:53:00 [AGENT]   params: limit=24, top_k=12
+12:53:00 [AGENT]   returned 12 rows in 130ms
+12:53:00 [AGENT]   Query [查看铁]: 12 results
+12:53:00 [AGENT]     Top: pg.707 score=0.4908
+12:53:00 [AGENT]   Merged: 12 candidates -> returning top 12
+12:53:00 [AGENT] Candidates: 12
+12:53:00 [AGENT] Dynamic k: 8 (top_score=0.491)
+12:53:00 [AGENT] Context: 8 chunks
+12:53:04 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:53:04 [AGENT] Knowledge base miss, falling back to LLM knowledge...
+12:53:12 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+12:53:12 [AGENT] Done: 12020ms
+13:04:44 [AGENT] ==================================================
+13:04:44 [AGENT] Query: 不锈钢的热处理温度
+13:04:44 [AGENT] Attempt 1/2
+13:04:44 [AGENT] Rewritten: ['不锈钢的热处理温度']
+13:04:55 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+13:04:55 [AGENT] SQL [hybrid] query='不锈钢的热处理温度' top_k=12 section=all
+13:04:55 [AGENT]   params: limit=24, top_k=12
+13:04:56 [AGENT]   returned 12 rows in 85ms
+13:04:56 [AGENT]   Query [不锈钢的热处理温度]: 12 results
+13:04:56 [AGENT]     Top: pg.944 score=0.5746
+13:04:56 [AGENT]   Merged: 12 candidates -> returning top 12
+13:04:56 [AGENT] Candidates: 12
+13:04:56 [AGENT] Dynamic k: 8 (top_score=0.575)
+13:04:56 [AGENT] Context: 8 chunks
+13:04:58 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:05:05 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:05:05 [AGENT] Done: 21390ms
+13:06:16 [AGENT] ==================================================
+13:06:16 [AGENT] Query: 那如果是铝合金呢？
+13:06:16 [AGENT] Attempt 1/2
+13:06:16 [AGENT] Rewritten: ['那如果是铝合金呢？']
+13:06:16 [AGENT] SQL [hybrid] query='那如果是铝合金呢？' top_k=12 section=all
+13:06:16 [AGENT]   params: limit=24, top_k=12
+13:06:16 [AGENT]   returned 12 rows in 75ms
+13:06:16 [AGENT]   Query [那如果是铝合金呢？]: 12 results
+13:06:16 [AGENT]     Top: pg.3369 score=0.4929
+13:06:16 [AGENT]   Merged: 12 candidates -> returning top 12
+13:06:16 [AGENT] Candidates: 12
+13:06:16 [AGENT] Dynamic k: 8 (top_score=0.493)
+13:06:16 [AGENT] Context: 8 chunks
+13:06:24 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:06:24 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+13:06:24 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+13:06:27 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:06:27 [AGENT]   Resp (2538ms): 
+13:06:27 [AGENT] Quality: 7/10
+13:06:27 [AGENT] Done: 11131ms
+13:09:35 [AGENT] ==================================================
+13:09:35 [AGENT] Query: test
+13:09:35 [AGENT] Attempt 1/2
+13:09:35 [AGENT] Rewritten: ['test']
+13:09:46 [AGENT] Load pretrained SentenceTransformer: BAAI/bge-small-zh-v1.5
+13:09:46 [AGENT] SQL [hybrid] query='test' top_k=12 section=all
+13:09:46 [AGENT]   params: limit=24, top_k=12
+13:09:46 [AGENT]   returned 12 rows in 92ms
+13:09:46 [AGENT]   Query [test]: 12 results
+13:09:46 [AGENT]     Top: pg.2645 score=0.7130
+13:09:46 [AGENT]   Merged: 12 candidates -> returning top 12
+13:09:46 [AGENT] Candidates: 12
+13:09:46 [AGENT] Dynamic k: 6 (top_score=0.713)
+13:09:46 [AGENT] Context: 6 chunks
+13:09:50 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:09:54 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:09:54 [AGENT] Done: 19212ms
+13:17:03 [AGENT] ==================================================
+13:17:03 [AGENT] Query: 铝合金6061的力学性能
+13:17:03 [AGENT] Attempt 1/2
+13:17:03 [AGENT] Rewritten: ['铝合金6061的力学性能']
+13:17:03 [AGENT] SQL [hybrid] query='铝合金6061的力学性能' top_k=12 section=all
+13:17:03 [AGENT]   params: limit=24, top_k=12
+13:17:03 [AGENT]   returned 12 rows in 80ms
+13:17:03 [AGENT]   Query [铝合金6061的力学性能]: 12 results
+13:17:03 [AGENT]     Top: pg.767 score=0.4977
+13:17:03 [AGENT]   Merged: 12 candidates -> returning top 12
+13:17:03 [AGENT] Candidates: 12
+13:17:03 [AGENT] Dynamic k: 8 (top_score=0.498)
+13:17:03 [AGENT]   Boost keywords: ['6061']
+13:17:03 [AGENT]     pg.222: 0.4947 -> 0.5747 [+0.08]
+13:17:03 [AGENT]     pg.111: 0.4921 -> 0.5721 [+0.08]
+13:17:03 [AGENT]     pg.221: 0.4806 -> 0.5606 [+0.08]
+13:17:03 [AGENT]     pg.111: 0.4791 -> 0.5591 [+0.08]
+13:17:03 [AGENT] Context: 8 chunks
+13:17:17 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:17:17 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+13:17:17 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+13:17:20 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:17:20 [AGENT]   Resp (2954ms): 
+13:17:20 [AGENT] Quality: 7/10
+13:17:20 [AGENT] Done: 17803ms
+13:18:49 [AGENT] ==================================================
+13:18:49 [AGENT] Query: 钢的呢
+13:18:49 [AGENT] Attempt 1/2
+13:18:49 [AGENT] Rewritten: ['钢的呢']
+13:18:49 [AGENT] SQL [hybrid] query='钢的呢' top_k=12 section=all
+13:18:49 [AGENT]   params: limit=24, top_k=12
+13:18:49 [AGENT]   returned 12 rows in 99ms
+13:18:49 [AGENT]   Query [钢的呢]: 12 results
+13:18:49 [AGENT]     Top: pg.1370 score=0.5046
+13:18:49 [AGENT]   Merged: 12 candidates -> returning top 12
+13:18:49 [AGENT] Candidates: 12
+13:18:49 [AGENT] Dynamic k: 8 (top_score=0.505)
+13:18:49 [AGENT] Context: 8 chunks
+13:18:53 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:18:53 [AGENT] LLM -> 128tok [You are a strict evaluator. Output only JSON.] timeout=15s
+13:18:53 [AGENT]   Input: You are a strict, professional answer quality evaluator for metal material knowledge base based on ASM Handbook.
+Evaluate the answer strictly against the 3 criteria, calculate total score by summing s...
+13:18:56 [AGENT] HTTP Request: POST http://127.0.0.1:15721/v1/chat/completions "HTTP/1.1 200 OK"
+13:18:56 [AGENT]   Resp (2684ms): 
+13:18:56 [AGENT] Quality: 7/10
+13:18:56 [AGENT] Done: 7201ms

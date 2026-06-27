@@ -240,18 +240,28 @@ Output ONLY a JSON: {{"score": N, "reason": "one sentence", "missing": "what spe
     except:
         return {"score": 8, "reason": "eval failed", "missing": ""}
 
-def agent_chat(query: str, section: str = None, history: list = None) -> dict:
+def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None) -> dict:
     _log.info('=' * 50)
     _log.info(f'Query: {query}')
     start = time.time()
     max_retries = 1
     current_query = query
+    if progress_callback: progress_callback({'type': 'log', 'message': '开始处理查询...'})
+    if progress_callback: progress_callback({'type': 'log', 'message': f'原始查询：{query}'})
     for attempt in range(max_retries + 1):
         _log.info(f'Attempt {attempt + 1}/{max_retries + 1}')
+        if attempt > 0:
+            if progress_callback: progress_callback({'type': 'log', 'message': f'开始第{attempt+1}轮尝试...', 'level': 'retry'})
+        if progress_callback: progress_callback({'type': 'log', 'message': '正在进行查询语义拆解...'})
         sub_queries = rewrite_query(current_query)
         _log.info(f'Rewritten: {sub_queries}')
+        if progress_callback: progress_callback({'step': 'rewritten', 'queries': sub_queries})
+        if progress_callback: progress_callback({'type': 'log', 'message': f'查询拆解完成：{sub_queries}'})
+        if progress_callback: progress_callback({'type': 'log', 'message': '正在检索知识库...'})
         results = search_parallel(sub_queries, section, top_k=12)
         _log.info(f'Candidates: {len(results)}')
+        if progress_callback: progress_callback({'step': 'searched', 'count': len(results)})
+        if progress_callback: progress_callback({'type': 'log', 'message': f'检索完成，共{len(results)}条候选'})
         if results:
             top_score = results[0].get("score", 0)
             if top_score >= 0.75:
@@ -270,21 +280,29 @@ def agent_chat(query: str, section: str = None, history: list = None) -> dict:
                 current_query = query + ' properties data'
                 continue
             return {'answer': 'No relevant information.', 'citations': [], 'latency_ms': int((time.time()-start)*1000), 'attempts': attempt+1}
+        if progress_callback: progress_callback({'type': 'log', 'message': '正在精选相关上下文...'})
         context = select_context(results, top_k=dynamic_k, original_query=' '.join(sub_queries), search_query=sub_queries[0] if sub_queries else current_query)
         _log.info(f'Context: {len(context)} chunks')
+        if progress_callback: progress_callback({'step': 'context_ready', 'count': len(context)})
+        if progress_callback: progress_callback({'type': 'log', 'message': f'精选{len(context)}条上下文'})
+        if progress_callback: progress_callback({'type': 'log', 'message': '正在构建提示词并生成回答...'})
         ad = generate_answer(current_query, context, history)
         answer = ad.get('answer', '')
         if attempt < max_retries and len(answer) > 30:
+            if progress_callback: progress_callback({'type': 'log', 'message': '正在进行质量检查和评估...'})
             qc = quality_check(current_query, answer)
             _log.info(f'Quality: {qc["score"]}/10')
+            if progress_callback: progress_callback({'step': 'checked', 'score': qc['score']})
             if qc['score'] >= 7:
+                if progress_callback: progress_callback({'type': 'log', 'message': f'质量评分{qc["score"]}/10，通过！'})
                 elapsed = int((time.time()-start)*1000)
                 _log.info(f'Done: {elapsed}ms')
                 return {'answer': answer, 'citations': ad.get('citations', context[:5]), 'model': ad.get('model', ''), 'sub_queries': sub_queries, 'attempts': attempt+1, 'latency_ms': elapsed}
+            if progress_callback: progress_callback({'type': 'log', 'message': f'质量评分{qc["score"]}/10，偏低，进行新一轮检索...', 'level': 'retry'})
             current_query = query + ' data'
         else:
             if len(answer) < 50 or '没有找到' in answer or '未找到' in answer:
-                _log.info('Knowledge base miss, falling back to LLM knowledge...')
+                if progress_callback: progress_callback({'type': 'log', 'message': '知识库中未找到相关信息，切换到大模型知识兜底...', 'level': 'fallback'})
                 ad = generate_answer(current_query, context, history, system_prompt=FALLBACK_SYSTEM_PROMPT)
                 answer = ad.get('answer', answer)
             elapsed = int((time.time()-start)*1000)
@@ -429,3 +447,30 @@ def select_context(results, top_k=6, original_query="", search_query=""):
             "section": r.get("section", ""),
         })
     return formatted
+
+
+def stream_chat(query: str, section: str = None, history: list = None):
+    """Generator that yields progress events during agent_chat execution."""
+    import queue as _q
+    import threading as _t
+    q = _q.Queue()
+
+    def progress(event):
+        q.put(event)
+
+    def worker():
+        try:
+            result = agent_chat(query, section, history, progress_callback=progress)
+            q.put({"type": "result", "data": result})
+        except Exception as e:
+            q.put({"type": "error", "message": str(e)})
+        finally:
+            q.put(None)
+
+    _t.Thread(target=worker, daemon=True).start()
+
+    while True:
+        event = q.get()
+        if event is None:
+            break
+        yield event

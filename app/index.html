@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -55,10 +55,43 @@
           </div>
         </div>
         <div class="messages" id="messages"></div>
+        <!-- Progress Steps -->
+        <div class="progress-steps" id="progressSteps" style="display:none">
+          <div class="step" data-step="rewrite">
+            <div class="step-icon">🔍</div>
+            <div class="step-label">分析问题</div>
+            <div class="step-status"></div>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step" data-step="search">
+            <div class="step-icon">📡</div>
+            <div class="step-label">检索知识库</div>
+            <div class="step-status"></div>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step" data-step="context">
+            <div class="step-icon">📚</div>
+            <div class="step-label">精选上下文</div>
+            <div class="step-status"></div>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step" data-step="generate">
+            <div class="step-icon">🤖</div>
+            <div class="step-label">生成回答</div>
+            <div class="step-status"></div>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step" data-step="check">
+            <div class="step-icon">✅</div>
+            <div class="step-label">质量检查</div>
+            <div class="step-status"></div>
+          </div>
+        </div>
         <div class="loading" id="loading" style="display:none">
           <div class="loading-dots"><span></span><span></span><span></span></div>
           <span>正在检索知识库...</span>
         </div>
+
       </div>
 
       <!-- Input -->

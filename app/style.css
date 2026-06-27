@@ -1,4 +1,4 @@
-﻿/* ===== CSS Variables & Theme ===== */
+/* ===== CSS Variables & Theme ===== */
 :root, [data-theme="light"] {
   --bg: #f5f5f7;
   --bg-surface: #ffffff;
@@ -286,3 +286,368 @@ body {
   .message-content { max-width: 100%; }
   .input-footer { flex-direction: column; gap: 2px; }
 }
+
+/* ===== Progress Steps ===== */
+.progress-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  gap: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  opacity: 0.35;
+  transition: all 0.4s ease;
+  min-width: 64px;
+}
+
+.step.active {
+  opacity: 1;
+}
+
+.step.done {
+  opacity: 1;
+}
+
+.step-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: var(--bg-hover);
+  border: 2px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.step.active .step-icon {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.step.done .step-icon {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.step-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.step.active .step-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.step.done .step-label {
+  color: var(--text-primary);
+}
+
+.step-status {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  min-height: 14px;
+}
+
+.step-connector {
+  width: 32px;
+  height: 2px;
+  background: var(--border);
+  margin: 0 0 20px 0;
+  transition: background 0.4s ease;
+  flex-shrink: 0;
+}
+
+.step.done + .step-connector {
+  background: var(--accent);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.1); }
+}
+
+/* Step-specific colors for active state */
+.step[data-step="rewrite"].active .step-icon { border-color: #8b5cf6; }
+.step[data-step="rewrite"].active .step-label { color: #8b5cf6; }
+.step[data-step="rewrite"].done .step-icon { background: #8b5cf6; border-color: #8b5cf6; }
+.step[data-step="rewrite"].active .step-icon { animation-name: pulse-purple; }
+@keyframes pulse-purple {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.1); }
+}
+
+.step[data-step="search"].active .step-icon { border-color: #f59e0b; }
+.step[data-step="search"].active .step-label { color: #f59e0b; }
+.step[data-step="search"].done .step-icon { background: #f59e0b; border-color: #f59e0b; }
+.step[data-step="search"].active .step-icon { animation-name: pulse-amber; }
+@keyframes pulse-amber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.1); }
+}
+
+.step[data-step="context"].active .step-icon { border-color: #10b981; }
+.step[data-step="context"].active .step-label { color: #10b981; }
+.step[data-step="context"].done .step-icon { background: #10b981; border-color: #10b981; }
+.step[data-step="context"].active .step-icon { animation-name: pulse-green; }
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.1); }
+}
+
+.step[data-step="generate"].active .step-icon { border-color: #3b82f6; }
+.step[data-step="generate"].active .step-label { color: #3b82f6; }
+.step[data-step="generate"].done .step-icon { background: #3b82f6; border-color: #3b82f6; }
+.step[data-step="generate"].active .step-icon { animation-name: pulse-blue; }
+@keyframes pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1); }
+}
+
+.step[data-step="check"].active .step-icon { border-color: #ec4899; }
+.step[data-step="check"].active .step-label { color: #ec4899; }
+.step[data-step="check"].done .step-icon { background: #ec4899; border-color: #ec4899; }
+.step[data-step="check"].active .step-icon { animation-name: pulse-pink; }
+.step[data-step="check"].done .step-label { color: #10b981; }
+@keyframes pulse-pink {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(236, 72, 153, 0.1); }
+}
+
+[data-theme="dark"] .step.active .step-icon {
+  --accent-light: #1e293b;
+}
+[data-theme="dark"] .step.done .step-icon {
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+/* ===== Log Panel ===== */
+.log-panel {
+  margin: 8px 16px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  overflow: hidden;
+  animation: fadeIn 0.3s ease;
+}
+
+.log-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.log-panel-header:hover {
+  background: var(--bg-hover);
+}
+
+.log-panel-title {
+  flex: 1;
+}
+
+.log-panel-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 500;
+}
+
+.log-panel-body {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  background: #1a1a2e;
+  color: #c9d1d9;
+}
+
+[data-theme="light"] .log-panel-body {
+  background: #f8f8fc;
+  color: #1d1d1f;
+}
+
+.log-entry {
+  display: flex;
+  gap: 6px;
+  padding: 1px 0;
+  opacity: 0;
+  animation: logFadeIn 0.2s ease forwards;
+}
+
+@keyframes logFadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.log-entry .log-time {
+  color: #636d83;
+  flex-shrink: 0;
+  min-width: 64px;
+}
+
+[data-theme="light"] .log-entry .log-time {
+  color: #8b8b95;
+}
+
+.log-entry .log-icon {
+  flex-shrink: 0;
+  min-width: 16px;
+  text-align: center;
+}
+
+.log-entry .log-msg {
+  flex: 1;
+  word-break: break-all;
+}
+
+.log-entry.log-retry .log-msg {
+  color: #f59e0b;
+}
+
+.log-entry.log-fallback .log-msg {
+  color: #f97316;
+}
+
+.log-entry.log-done .log-msg {
+  color: #10b981;
+}
+
+.log-entry.log-error .log-msg {
+  color: #ef4444;
+}
+
+[data-theme="dark"] .log-panel-body::-webkit-scrollbar {
+  width: 4px;
+}
+[data-theme="dark"] .log-panel-body::-webkit-scrollbar-thumb {
+  background: #38383d;
+  border-radius: 2px;
+}
+
+/* Remove the old loading bounce when log is active */
+.log-panel + .loading {
+  display: none !important;
+}
+
+
+/* ===== Inline Log Panel (inside assistant message) ===== */
+.log-panel-inline {
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  overflow: hidden;
+}
+
+.log-panel-inline .log-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.log-panel-inline .log-panel-header:hover {
+  background: var(--bg-hover);
+}
+
+.log-panel-inline .log-panel-title {
+  flex: 1;
+}
+
+.log-panel-inline .log-panel-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 500;
+}
+
+.log-panel-inline .log-panel-body {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 4px 8px;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  background: #1a1a2e;
+  color: #c9d1d9;
+}
+
+[data-theme="light"] .log-panel-inline .log-panel-body {
+  background: #f8f8fc;
+  color: #1d1d1f;
+}
+
+.log-panel-inline .answer-block {
+  margin-top: 4px;
+}
+
+.log-panel-inline .log-entry {
+  display: flex;
+  gap: 6px;
+  padding: 1px 0;
+  opacity: 0;
+  animation: logFadeIn 0.2s ease forwards;
+}
+
+.log-panel-inline .log-entry .log-time {
+  color: #636d83;
+  flex-shrink: 0;
+  min-width: 64px;
+}
+
+[data-theme="light"] .log-panel-inline .log-entry .log-time {
+  color: #8b8b95;
+}
+
+.log-panel-inline .log-entry .log-icon {
+  flex-shrink: 0;
+  min-width: 16px;
+  text-align: center;
+}
+
+.log-panel-inline .log-entry .log-msg {
+  flex: 1;
+  word-break: break-all;
+}
+
+.log-panel-inline .log-entry.log-retry .log-msg { color: #f59e0b; }
+.log-panel-inline .log-entry.log-fallback .log-msg { color: #f97316; }
+.log-panel-inline .log-entry.log-done .log-msg { color: #10b981; }
+.log-panel-inline .log-entry.log-error .log-msg { color: #ef4444; }

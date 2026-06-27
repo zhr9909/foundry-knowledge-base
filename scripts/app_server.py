@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python3
 """app_server.py - FastAPI server with frontend + /chat endpoint."""
-import os, sys, json, time
+import os, sys, json, time, asyncio, threading
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -12,7 +12,7 @@ from search import search, list_sections
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import uvicorn
@@ -41,6 +41,34 @@ def sections():
     return {"sections": list_sections()}
 
 # ── Search endpoint ──
+
+
+@app.get("/chat/stream")
+async def chat_stream(query: str, section: str = None):
+    from agent import stream_chat
+    
+    async def event_gen():
+        loop = asyncio.get_event_loop()
+        q = asyncio.Queue()
+        
+        def worker():
+            try:
+                for event in stream_chat(query, section):
+                    loop.call_soon_threadsafe(q.put_nowait, event)
+            finally:
+                loop.call_soon_threadsafe(q.put_nowait, None)
+        
+        t = threading.Thread(target=worker, daemon=True)
+        t.start()
+        
+        while True:
+            event = await q.get()
+            if event is None:
+                break
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+    
+    return StreamingResponse(event_gen(), media_type="text/event-stream")
+
 @app.get("/search")
 def search_get(query: str = "", top_k: int = 10, hybrid: bool = True, section: Optional[str] = None):
     if not query.strip():
