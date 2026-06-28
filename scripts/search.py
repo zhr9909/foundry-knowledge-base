@@ -5,13 +5,16 @@ os.environ["HF_HUB_OFFLINE"] = "1"
 
 """search.py - RAG Retrieval API with hybrid search + section filtering"""
 
-import json, os, sys, time, urllib.request
+import json, os, sys, time, math, re
 from typing import Optional
+from rank_bm25 import BM25Okapi
+from collections import Counter
 from pathlib import Path
 
 try:
     import psycopg2, psycopg2.extras, logging
     _sqllog = logging.getLogger("agent")
+    elapsed = 0
 except ImportError:
     print("Missing psycopg2. Run: pip install psycopg2-binary")
     sys.exit(1)
@@ -54,6 +57,73 @@ def get_embedding_model():
                 print(f"  All models failed: {e2}")
                 sys.exit(1)
     return get_embedding_model._model
+
+# BM25 index built on startup
+_bm25_idx = None
+_bm25_chunks = None
+
+def _init_bm25():
+    global _bm25_idx, _bm25_chunks
+    if _bm25_idx is not None:
+        return _bm25_idx, _bm25_chunks
+    conn = psycopg2.connect(**CONFIG)
+    cur = conn.cursor()
+    cur.execute("SELECT c.id, c.chunk_id, c.content_text FROM chunks c ORDER BY c.id")
+    rows = cur.fetchall()
+    conn.close()
+    corpus = [(r[2] or "").lower().split() for r in rows]
+    _bm25_chunks = [{"id": r[0], "chunk_id": r[1]} for r in rows]
+    _bm25_idx = BM25Okapi(corpus)
+    return _bm25_idx, _bm25_chunks
+
+def _bm25_search(query, top_k=40):
+    idx, chunks = _init_bm25()
+    tokens = [t.lower() for t in query.split()]
+    scores = idx.get_scores(tokens)
+    ranked = sorted(zip(chunks, scores), key=lambda x: x[1], reverse=True)
+    result = []
+    for chunk, score in ranked[:top_k]:
+        result.append({"chunk_id": chunk["chunk_id"], "bm25_score": round(float(score), 4)})
+    return result
+
+def _rrf_fuse(vec_list, bm25_list, top_k=10):
+    k = 60
+    ranks = {}
+    for rank, r in enumerate(vec_list, 1):
+        ranks.setdefault(r["chunk_id"], {})["vr"] = rank
+    for rank, r in enumerate(bm25_list, 1):
+        ranks.setdefault(r["chunk_id"], {})["br"] = rank
+    scored = []
+    for cid, rd in ranks.items():
+        vr = rd.get("vr", 999)
+        br = rd.get("br", 999)
+        rrf = (1.0 / (k + vr) + 1.0 / (k + br)) / 2.0
+        for r in vec_list:
+            if r["chunk_id"] == cid:
+                d = dict(r)
+                d["score"] = round(rrf, 4)
+                scored.append(d)
+                break
+    scored.sort(key=lambda x: x.get("score", 0), reverse=True)
+    return scored[:top_k]
+
+MATERIAL_FAMILIES = {
+    "aluminum": ["aluminum", "aluminium", "al-", "2xxx", "5xxx", "6xxx", "7xxx"],
+    "copper": ["copper", "brass", "bronze", "cu-", "c1", "c2", "c5"],
+    "steel": ["steel", "stainless", "iron"],
+    "titanium": ["titanium", "ti-6"],
+    "magnesium": ["magnesium", "az31", "az91"],
+    "nickel": ["nickel", "inconel"],
+}
+
+def detect_material_category(query):
+    q = query.lower()
+    for cat, kws in MATERIAL_FAMILIES.items():
+        for kw in kws:
+            if kw.lower() in q:
+                return cat
+    return None
+
 def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None, alpha: float = 0.5) -> dict:
     """Search the knowledge base with optional section filter."""
     model = get_embedding_model()
@@ -70,54 +140,38 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
         section_params["section_filter"] = section
     
     if hybrid:
-        # Hybrid: vector + FTS + section filter
-        sql = f"""
-        WITH vector_results AS (
-            SELECT c.id, c.chunk_id, c.page, c.chunk_type,
-                c.content_text, c.table_shape,
-                ds.title as source_title, c.metadata,
-                1 - (c.embedding <=> %(query_vec)s::vector) AS score,
-                ROW_NUMBER() OVER (ORDER BY c.embedding <=> %(query_vec)s::vector) AS rn
-            FROM chunks c
-            JOIN document_sources ds ON ds.id = c.source_id
-            WHERE 1=1 {section_where}
-            ORDER BY c.embedding <=> %(query_vec)s::vector
-            LIMIT %(limit)s
-        ),
-        fts_results AS (
-            SELECT c.id, c.chunk_id, c.page, c.chunk_type,
-                c.content_text, c.table_shape,
-                ds.title as source_title, c.metadata,
-                ts_rank(c.tsv, plainto_tsquery('english', %(query)s)) / NULLIF(MAX(ts_rank(c.tsv, plainto_tsquery('english', %(query)s))) OVER (), 0) AS score,
-                ROW_NUMBER() OVER (ORDER BY ts_rank(c.tsv, plainto_tsquery('english', %(query)s)) DESC) AS rn
-            FROM chunks c
-            JOIN document_sources ds ON ds.id = c.source_id
-            WHERE c.tsv @@ plainto_tsquery('english', %(query)s) {section_where}
-            ORDER BY ts_rank(c.tsv, plainto_tsquery('english', %(query)s)) DESC
-            LIMIT %(limit)s
-        ),
-        combined AS (
-            SELECT COALESCE(vr.id, fr.id) AS id,
-                COALESCE(vr.chunk_id, fr.chunk_id) AS chunk_id,
-                COALESCE(vr.page, fr.page) AS page,
-                COALESCE(vr.chunk_type, fr.chunk_type) AS chunk_type,
-                COALESCE(vr.content_text, fr.content_text) AS content_text,
-                COALESCE(vr.table_shape, fr.table_shape) AS table_shape,
-                COALESCE(vr.source_title, fr.source_title) AS source_title,
-                COALESCE(vr.metadata, '{{}}'::jsonb) AS metadata,
-                COALESCE(vr.score, 0) AS vec_score,
-                COALESCE(fr.score, 0) AS fts_score
-            FROM vector_results vr
-            FULL OUTER JOIN fts_results fr ON vr.id = fr.id
-        )
-        SELECT id, chunk_id, page, chunk_type, content_text, table_shape, source_title, metadata,
-            ROUND((%(alpha)s * vec_score + %(one_minus_alpha)s * fts_score)::numeric, 4) AS score
-        FROM combined
-        ORDER BY score DESC LIMIT %(top_k)s
+        # BM25 + Vector RRF hybrid (no PostgreSQL ts_rank)
+        vec_sql = f"""
+        SELECT c.id, c.chunk_id, c.page, c.chunk_type,
+            c.content_text, c.table_shape,
+            ds.title as source_title, c.metadata,
+            1 - (c.embedding <=> %(query_vec)s::vector) AS score
+        FROM chunks c
+        JOIN document_sources ds ON ds.id = c.source_id
+        WHERE 1=1 {section_where}
+        ORDER BY c.embedding <=> %(query_vec)s::vector
+        LIMIT %(top_k)s
         """
-        params = {"query_vec": query_vec, "query": query, "limit": top_k * 2, "top_k": top_k, "alpha": alpha, "one_minus_alpha": 1.0 - alpha}
+        vec_params = {"query_vec": query_vec, "top_k": top_k * 2}
         if section:
-            params["section_filter"] = section
+            vec_params["section_filter"] = section
+        cur.execute(vec_sql, vec_params)
+        vec_rows = cur.fetchall()
+        vec_results = []
+        for row in vec_rows:
+            sp = (row["metadata"] or {}).get("section_path", "")
+            vec_results.append({
+                "id": row["id"], "chunk_id": row["chunk_id"], "page": row["page"],
+                "type": row["chunk_type"],
+                "text": (row["content_text"] or "")[:500],
+                "text_full": row["content_text"] or "",
+                "table_shape": row["table_shape"],
+                "source": row["source_title"],
+                "section": sp,
+                "score": round(float(row["score"]), 4),
+            })
+        bm25_res = _bm25_search(query, top_k * 2)
+        results = _rrf_fuse(vec_results, bm25_res, top_k)
     else:
         # Pure vector + section filter
         sql = f"""
@@ -135,49 +189,17 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
         if section:
             params["section_filter"] = section
     
-    _sqllog.info(f"SQL [{'hybrid' if hybrid else 'vec'}] query='{query[:60]}' top_k={top_k} section={section or 'all'}")
-    _sqllog.info(f"  params: limit={params.get('limit','?')}, top_k={params.get('top_k','?')}")
-    start = time.time()
-    cur.execute(sql, params)
-    rows = cur.fetchall()
-    elapsed = (time.time() - start) * 1000
-    _sqllog.info(f"  returned {len(rows)} rows in {elapsed:.0f}ms")
-    
-    results = []
-    for row in rows:
-        section_path = ""
-        if row["metadata"] and "section_path" in row["metadata"]:
-            section_path = row["metadata"]["section_path"]
-        results.append({
-            "id": row["id"],
-            "chunk_id": row["chunk_id"],
-            "page": row["page"],
-            "type": row["chunk_type"],
-            "text": row["content_text"][:500] + ("..." if len(row["content_text"]) > 500 else ""),
-            "text_full": row["content_text"],
-            "table_shape": row["table_shape"],
-            "source": row["source_title"],
-            "section": section_path,
-            "score": round(float(row["score"]), 4),
-        })
-    
-    # Apply cross-encoder reranker (re-rank results for better precision)
-    try:
-        if len(results) >= 2:
-            from agent import rerank
-            before = [r["chunk_id"] for r in results[:5]]
-            results = rerank(query, results, top_k=len(results))
-            after = [r["chunk_id"] for r in results[:5]]
-            changes = sum(1 for i in range(min(5, len(before))) if before[i] != after[i])
-            _log.info("  Reranked: top-5 order changed for %d positions" % changes)
+    # Material category boost
+    if hybrid and results:
+        mat_cat = detect_material_category(query)
+        if mat_cat:
+            pos_kws = MATERIAL_FAMILIES[mat_cat]
             for r in results:
-                r["score"] = float(round(float(r["score"]), 4))
-                if "rerank_score" in r:
-                    del r["rerank_score"]
-    except Exception as rere:
-        _sqllog.info("  Reranker not available: %s" % rere)
-
-    # Log
+                txt = (r.get("text_full", r.get("text", "")) or "").lower()
+                if any(kw.lower() in txt for kw in pos_kws):
+                    r["score"] = min(1.0, (r.get("score", 0) or 0) + 0.15)
+            results.sort(key=lambda x: x.get("score", 0), reverse=True)
+    
     log_query = query + (f" [section:{section}]" if section else "") + (" [hybrid]" if hybrid else "")
     cur.execute(
         "INSERT INTO retrieval_log (query, top_k, results, latency_ms) VALUES (%s, %s, %s, %s)",
