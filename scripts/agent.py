@@ -261,6 +261,9 @@ class AgentState(TypedDict):
     history: Optional[list]
     current_query: str
     sub_queries: list
+    core_entity: list
+    filter_rule: str
+    search_priority: str
     search_results: list
     context: list
     answer: str
@@ -274,11 +277,11 @@ class AgentState(TypedDict):
 def _rewrite_node(state: AgentState) -> dict:
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在进行查询语义拆解..."})
-    sq = rewrite_query(state["current_query"])
+    rw = rewrite_query(state["current_query"])
     if state.get("progress_callback"):
-        state["progress_callback"]({"step": "rewritten", "queries": sq})
-        state["progress_callback"]({"type": "log", "message": f"查询拆解完成：{sq}"})
-    return {"sub_queries": sq}
+        state["progress_callback"]({"step": "rewritten", "queries": rw["search_queries"]})
+        state["progress_callback"]({"type": "log", "message": f"查询拆解完成：{rw['search_queries']}"})
+    return {"sub_queries": rw["search_queries"], "core_entity": rw["core_entity"], "filter_rule": rw["filter_rule"], "search_priority": rw["search_priority"]}
 
 def _search_node(state: AgentState) -> dict:
     if state.get("progress_callback"):
@@ -383,7 +386,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
     app = _get_graph()
     initial = {
         "query": query, "section": section, "history": history,
-        "current_query": query, "sub_queries": [], "search_results": [],
+        "current_query": query, "sub_queries": [], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡", "search_results": [],
         "context": [], "answer": "", "citations": [], "score": 0,
         "attempts": 1, "max_retries": 1, "start_time": time.time(),
         "progress_callback": progress_callback,
@@ -420,9 +423,9 @@ def _call_llm(messages, max_tokens=512, timeout=30):
         _log.warning(f"  Error: {e}")
     return ""
 
-def rewrite_query(query: str) -> list:
+def rewrite_query(query: str) -> dict:
     if False and re.match(r'^[a-zA-Z0-9\s\-\.]+$', query) and len(query.split()) <= 10:
-        return [query.strip()]
+        return {"search_queries": [query], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
     try:
         result = _call_llm([
             {"role": "system", "content": QUERY_REWRITE_PROMPT},
@@ -434,10 +437,10 @@ def rewrite_query(query: str) -> list:
             if match:
                 parsed = _json.loads(match.group())
                 if isinstance(parsed, dict):
-                    return parsed.get("search_queries", [query])[:4]
+                    return {"search_queries": parsed.get("search_queries", [query])[:4], "core_entity": parsed.get("core_entity", []), "filter_rule": parsed.get("filter_rule", "全部"), "search_priority": parsed.get("search_priority", "语义均衡")}
     except:
         pass
-    return [query.strip()]
+    return {"search_queries": [query], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
 
 def search_single(query: str, section: str = None, top_k: int = 8) -> list:
     from search import search
