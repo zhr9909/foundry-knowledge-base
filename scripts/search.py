@@ -98,12 +98,23 @@ def _rrf_fuse(vec_list, bm25_list, top_k=10):
         vr = rd.get("vr", 999)
         br = rd.get("br", 999)
         rrf = (1.0 / (k + vr) + 1.0 / (k + br)) / 2.0
+        found = False
         for r in vec_list:
             if r["chunk_id"] == cid:
                 d = dict(r)
                 d["score"] = round(rrf, 4)
                 scored.append(d)
+                found = True
                 break
+        if not found:
+            for r in bm25_list:
+                if r["chunk_id"] == cid:
+                    d = dict(r)
+                    d.update({"page": 0, "type": "", "text": "", "text_full": "", "source": "", "section": ""})
+                    d["score"] = round(rrf, 4)
+                    scored.append(d)
+                    found = True
+                    break
     scored.sort(key=lambda x: x.get("score", 0), reverse=True)
     return scored[:top_k]
 
