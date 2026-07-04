@@ -118,20 +118,15 @@ def _rrf_fuse(vec_list, bm25_list, top_k=10):
     scored.sort(key=lambda x: x.get("score", 0), reverse=True)
     return scored[:top_k]
 
-MATERIAL_FAMILIES = {
-    "aluminum": ["aluminum", "aluminium", "al-", "2xxx", "5xxx", "6xxx", "7xxx"],
-    "copper": ["copper", "brass", "bronze", "cu-", "c1", "c2", "c5"],
-    "steel": ["steel", "stainless", "iron"],
-    "titanium": ["titanium", "ti-6"],
-    "magnesium": ["magnesium", "az31", "az91"],
-    "nickel": ["nickel", "inconel"],
-}
+MATERIAL_FAMILIES = json.loads(
+    open(Path(__file__).parent / ".." / "processed" / "materials_taxonomy.json", encoding="utf-8").read())
+MATERIAL_FAMILIES = {n: i["patterns"] for n, i in MATERIAL_FAMILIES.items()}
 
 def detect_material_category(query):
     q = query.lower()
-    for cat, kws in MATERIAL_FAMILIES.items():
-        for kw in kws:
-            if kw.lower() in q:
+    for cat, patterns in MATERIAL_FAMILIES.items():
+        for pat in patterns:
+            if re.search(pat, q):
                 return cat
     return None
 
