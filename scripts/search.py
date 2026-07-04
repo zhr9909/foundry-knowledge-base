@@ -34,6 +34,8 @@ def get_embedding_model():
         print("Missing sentence-transformers. Run: pip install sentence-transformers")
         sys.exit(1)
     if not hasattr(get_embedding_model, "_model"):
+        os.environ["TRANSFORMERS_OFFLINE"] = "1"
+        os.environ["HF_HUB_OFFLINE"] = "1"
         print("Loading embedding model...")
         # Monkey-patch torch meta tensor issue
         _orig_to = nn.Module.to
@@ -47,12 +49,12 @@ def get_embedding_model():
                 raise
         nn.Module.to = _safe_to
         try:
-            get_embedding_model._model = SentenceTransformer("BAAI/bge-small-zh-v1.5", device="cpu")
+            get_embedding_model._model = SentenceTransformer(r"E:/AgentProjects/ai-solution-architect-lab/projects/foundry-knowledge-base/processed/models/bge-base-zh-v1.5", device="cuda")
         except Exception as e:
             print(f"  Primary model failed: {e}")
             print("  Trying all-MiniLM-L6-v2...")
             try:
-                get_embedding_model._model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
+                get_embedding_model._model = SentenceTransformer(r"E:/AgentProjects/ai-solution-architect-lab/projects/foundry-knowledge-base/processed/models/bge-base-zh-v1.5", device="cuda")
             except Exception as e2:
                 print(f"  All models failed: {e2}")
                 sys.exit(1)
@@ -238,9 +240,15 @@ def list_sections() -> list:
     conn.close()
     return rows
 
+
+def warmup():
+    """Pre-load embedding model and build BM25 index at startup."""
+    _init_bm25()
+    get_embedding_model()
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--query":
-        q = sys.argv[2] if len(sys.argv) > 2 else "铝合金"
+        q = sys.argv[2] if len(sys.argv) > 2 else "茅聯聺氓聬聢茅聡聭"
         section = None
         if "--section" in sys.argv:
             idx = sys.argv.index("--section")
@@ -259,7 +267,7 @@ def main():
             from typing import Optional, List
             import uvicorn
             
-            app = FastAPI(title="铸造知识库检索 API", version="0.2.0")
+            app = FastAPI(title="茅聯赂茅聙聽莽聼楼猫炉聠氓潞聯忙拢聙莽麓垄 API", version="0.2.0")
             
             class SearchRequest(BaseModel):
                 query: str
@@ -300,7 +308,11 @@ def main():
             uvicorn.run(app, host="0.0.0.0", port=8002)
         except ImportError:
             print("FastAPI not installed. Run: pip install fastapi uvicorn")
-            print("Or use: python search.py --query \"你的问题\"")
+            print("Or use: python search.py --query \"盲陆聽莽職聞茅聴庐茅垄聵\"")
+
+print("Loading search engine (model + BM25)...", flush=True)
+warmup()
+print("Search engine ready\n", flush=True)
 
 if __name__ == "__main__":
     main()
