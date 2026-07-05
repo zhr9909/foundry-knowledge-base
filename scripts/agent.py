@@ -275,24 +275,31 @@ class AgentState(TypedDict):
     progress_callback: Optional[callable]
 
 def _rewrite_node(state: AgentState) -> dict:
+    _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在进行查询语义拆解..."})
     rw = rewrite_query(state["current_query"])
     if state.get("progress_callback"):
         state["progress_callback"]({"step": "rewritten", "queries": rw["search_queries"]})
         state["progress_callback"]({"type": "log", "message": f"查询拆解完成：{rw['search_queries']}"})
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _rewrite_node elapsed=%dms" % _elapsed)
     return {"sub_queries": rw["search_queries"], "core_entity": rw["core_entity"], "filter_rule": rw["filter_rule"], "search_priority": rw["search_priority"]}
 
 def _search_node(state: AgentState) -> dict:
+    _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在检索知识库..."})
-    rs = search_parallel(state["sub_queries"], state.get("section"), top_k=12)
+    rs = search_parallel(state["sub_queries"], state.get("section"), top_k=20)
     if state.get("progress_callback"):
         state["progress_callback"]({"step": "searched", "count": len(rs)})
         state["progress_callback"]({"type": "log", "message": f"检索完成，共{len(rs)}条候选"})
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _search_node elapsed=%dms" % _elapsed)
     return {"search_results": rs}
 
 def _select_context_node(state: AgentState) -> dict:
+    _step_start = time.time()
     rs = state["search_results"]
     if not rs:
         return {"context": []}
@@ -307,15 +314,21 @@ def _select_context_node(state: AgentState) -> dict:
     if state.get("progress_callback"):
         state["progress_callback"]({"step": "context_ready", "count": len(ctx)})
         state["progress_callback"]({"type": "log", "message": f"精选{len(ctx)}条上下文"})
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _select_context_node elapsed=%dms" % _elapsed)
     return {"context": ctx}
 
 def _generate_node(state: AgentState) -> dict:
+    _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在构建提示词并生成回答..."})
     ad = generate_answer(state["current_query"], state["context"], state.get("history"))
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _generate_node elapsed=%dms" % _elapsed)
     return {"answer": ad.get("answer", ""), "citations": ad.get("citations", state["context"][:5])}
 
 def _check_node(state: AgentState) -> dict:
+    _step_start = time.time()
     ans = state["answer"]
     if state["attempts"] < state["max_retries"] and len(ans) > 30:
         if state.get("progress_callback"):
@@ -325,6 +338,8 @@ def _check_node(state: AgentState) -> dict:
         if state.get("progress_callback"):
             state["progress_callback"]({"step": "checked", "score": sc})
         return {"score": sc}
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _check_node elapsed=%dms" % _elapsed)
     return {"score": 10}
 
 def _decide_next(state: AgentState) -> str:
@@ -336,14 +351,20 @@ def _decide_next(state: AgentState) -> str:
     return "output"
 
 def _retry_node(state: AgentState) -> dict:
+    _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": f"质量评分{state['score']}/10，偏低，进行新一轮检索...", "level": "retry"})
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _retry_node elapsed=%dms" % _elapsed)
     return {"current_query": state["query"] + " data", "attempts": state["attempts"] + 1}
 
 def _fallback_node(state: AgentState) -> dict:
+    _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "知识库中未找到相关信息，切换到大模型知识兜底...", "level": "fallback"})
     ad = generate_answer(state["current_query"], state["context"], state.get("history"), system_prompt=FALLBACK_SYSTEM_PROMPT)
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _fallback_node elapsed=%dms" % _elapsed)
     return {"answer": ad.get("answer", state["answer"])}
 
 def _output_node(state: AgentState) -> dict:
@@ -392,6 +413,26 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
         "progress_callback": progress_callback,
     }
     result = app.invoke(initial)
+    
+    # Log to qa_log
+    try:
+        import psycopg2 as _pg
+        _conn = _pg.connect(**{
+            "host": "127.0.0.1", "port": 15432,
+            "dbname": "foundry_kb", "user": "findmyjob",
+            "password": "findmyjob_dev_password",
+        })
+        _cur = _conn.cursor()
+        _cur.execute(
+            "INSERT INTO qa_log (query, answer, retrieved_chunks, model) VALUES (%s, %s, %s, %s)",
+            (query, result.get("answer", ""), json.dumps(result.get("citations", []), default=str),
+             result.get("model", "")),
+        )
+        _conn.commit()
+        _conn.close()
+    except Exception as _e:
+        _log.warning(f"qa_log insert failed: {_e}")
+    
     return {
         "answer": result.get("answer", ""),
         "citations": result.get("citations", []),
@@ -447,11 +488,11 @@ def search_single(query: str, section: str = None, top_k: int = 8) -> list:
     result = search(query, top_k=top_k, hybrid=True, section=section)
     return result.get("results", [])
 
-def search_parallel(sub_queries, section=None, top_k=8):
+def search_parallel(sub_queries, section=None, top_k=20):
     per_query = []
     all_results = []
     with ThreadPoolExecutor(max_workers=min(len(sub_queries), 3)) as executor:
-        futures = {executor.submit(search_single, q, section, 12): q for q in sub_queries}
+        futures = {executor.submit(search_single, q, section, top_k): q for q in sub_queries}
         for future in as_completed(futures):
             q = futures[future]
             results = future.result()
@@ -462,7 +503,7 @@ def search_parallel(sub_queries, section=None, top_k=8):
                 _log.info(f"    Top: pg.{results[0]['page']} score={results[0]['score']:.4f}")
     seen = {}
     interleaved = []
-    for i in range(8):
+    for i in range(top_k):
         for q_results in per_query:
             if i < len(q_results):
                 r = q_results[i]
@@ -484,7 +525,7 @@ def get_reranker():
         import torch
         device = "cuda" if torch.cuda.is_available() else "cpu"
         _log.info(f"  Loading reranker ({device})...")
-        get_reranker._model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", device=device)
+        get_reranker._model = CrossEncoder(r"E:/AgentProjects/ai-solution-architect-lab/projects/foundry-knowledge-base/processed/models/ms-marco-MiniLM-L-6-v2", device=device)
     return get_reranker._model
 
 def rerank(query, candidates, top_k=6):
@@ -526,11 +567,11 @@ def select_context(results, top_k=6, original_query="", search_query=""):
             _log.info(f"    pg.{r['page']}: {original_score:.4f} -> {score:.4f} [+0.08]")
         scored.append((score, r))
     scored.sort(key=lambda x: x[0], reverse=True)
-    candidates_pool = [r for _, r in scored[:max(top_k * 2, 12)]]
+    candidates_pool = [r for _, r in scored[:max(top_k * 3, 12)]]
     # Apply cross-encoder reranker
     try:
         rq = search_query or original_query
-        candidates_pool = rerank(rq, candidates_pool, top_k=max(top_k * 2, 12))
+        candidates_pool = rerank(rq, candidates_pool, top_k=max(top_k * 3, 12))
         _log.info("  Reranked: %d candidates" % len(candidates_pool))
     except Exception as re_err:
         _log.warning("  Reranker failed: %s" % re_err)

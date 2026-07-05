@@ -55,7 +55,7 @@ def sample_chunks(source_id=None, n=50, min_len=200, max_len=3000):
     cur = conn.cursor()
     where_clause = "WHERE source_id = %s" if source_id else "WHERE 1=1"
     params = [source_id] if source_id else []
-    sql = "SELECT c.chunk_id, c.page, c.content_text, c.source_id, COALESCE(ds.title, %s) FROM chunks c LEFT JOIN document_sources ds ON ds.id = c.source_id " + where_clause + " AND chunk_type = 'page_text' AND LENGTH(content_text) > %s AND LENGTH(content_text) < %s ORDER BY RANDOM() LIMIT %s"
+    sql = "SELECT c.chunk_id, c.page, c.content_text, c.source_id, COALESCE(ds.title, %s) FROM chunks c LEFT JOIN document_sources ds ON ds.id = c.source_id " + where_clause + " AND chunk_type = 'text' AND LENGTH(content_text) > %s AND LENGTH(content_text) < %s ORDER BY RANDOM() LIMIT %s"
     cur.execute(sql, ['Unknown'] + params + [min_len, max_len, n])
     rows = cur.fetchall()
     conn.close()

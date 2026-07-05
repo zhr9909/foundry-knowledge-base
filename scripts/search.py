@@ -7,8 +7,6 @@ os.environ["HF_HUB_OFFLINE"] = "1"
 
 import json, os, sys, time, math, re
 from typing import Optional
-from rank_bm25 import BM25Okapi
-from collections import Counter
 from pathlib import Path
 
 try:
@@ -61,32 +59,6 @@ def get_embedding_model():
     return get_embedding_model._model
 
 # BM25 index built on startup
-_bm25_idx = None
-_bm25_chunks = None
-
-def _init_bm25():
-    global _bm25_idx, _bm25_chunks
-    if _bm25_idx is not None:
-        return _bm25_idx, _bm25_chunks
-    conn = psycopg2.connect(**CONFIG)
-    cur = conn.cursor()
-    cur.execute("SELECT c.id, c.chunk_id, c.content_text FROM chunks c ORDER BY c.id")
-    rows = cur.fetchall()
-    conn.close()
-    corpus = [(r[2] or "").lower().split() for r in rows]
-    _bm25_chunks = [{"id": r[0], "chunk_id": r[1]} for r in rows]
-    _bm25_idx = BM25Okapi(corpus)
-    return _bm25_idx, _bm25_chunks
-
-def _bm25_search(query, top_k=40):
-    idx, chunks = _init_bm25()
-    tokens = [t.lower() for t in query.split()]
-    scores = idx.get_scores(tokens)
-    ranked = sorted(zip(chunks, scores), key=lambda x: x[1], reverse=True)
-    result = []
-    for chunk, score in ranked[:top_k]:
-        result.append({"chunk_id": chunk["chunk_id"], "bm25_score": round(float(score), 4)})
-    return result
 
 def _rrf_fuse(vec_list, bm25_list, top_k=10):
     k = 60
@@ -99,12 +71,14 @@ def _rrf_fuse(vec_list, bm25_list, top_k=10):
     for cid, rd in ranks.items():
         vr = rd.get("vr", 999)
         br = rd.get("br", 999)
-        rrf = (1.0 / (k + vr) + 1.0 / (k + br)) / 2.0
+        rrf = 0.3 * (1.0 / (k + vr)) + 0.7 * (1.0 / (k + br))
         found = False
         for r in vec_list:
             if r["chunk_id"] == cid:
                 d = dict(r)
                 d["score"] = round(rrf, 4)
+                d["vr"] = vr
+                d["br"] = br
                 scored.append(d)
                 found = True
                 break
@@ -114,11 +88,46 @@ def _rrf_fuse(vec_list, bm25_list, top_k=10):
                     d = dict(r)
                     d.update({"page": 0, "type": "", "text": "", "text_full": "", "source": "", "section": ""})
                     d["score"] = round(rrf, 4)
+                    d["vr"] = vr
+                    d["br"] = br
                     scored.append(d)
                     found = True
                     break
     scored.sort(key=lambda x: x.get("score", 0), reverse=True)
-    return scored[:top_k]
+    top = scored[:top_k]
+    # Detailed RRF Scoring Breakdown
+    _sqllog.info(f"=== RRF Scoring Breakdown (k={k}, top={top_k}) ===")
+    for i, r in enumerate(top):
+        cid = r.get("chunk_id", "?")
+        vr = r.get("vr", 999)
+        br = r.get("br", 999)
+        term_v = 1.0 / (k + vr)
+        term_b = 1.0 / (k + br)
+        calc_rrf = round((term_v + term_b) / 2.0, 4)
+        _sqllog.info(
+            f"  [{i+1}] chunk={cid[-20:]} "
+            f"VR={vr} -> {k}+{vr} -> 1/({k+vr})={term_v:.6f} | "
+            f"BR={br} -> {k}+{br} -> 1/({k+br})={term_b:.6f} | "
+            f"RRF=({term_v:.6f}+{term_b:.6f})/2={calc_rrf:.4f}"
+        )
+    _sqllog.info("=== End RRF Breakdown ===")
+    return top
+def _tsvector_search(query, top_k=40, cur=None):
+    """PostgreSQL tsvector full-text search using existing DB cursor."""
+    sql = f"""
+        SELECT c.id, c.chunk_id,
+            ts_rank(c.fts, plainto_tsquery('english', %(q)s)) AS score
+        FROM chunks c
+        WHERE c.fts @@ plainto_tsquery('english', %(q)s)
+        ORDER BY score DESC
+        LIMIT %(limit)s
+        """
+    cur.execute(sql, {"q": query, "limit": top_k})
+    rows = cur.fetchall()
+    result = []
+    for row in rows:
+        result.append({"chunk_id": row["chunk_id"], "bm25_score": round(float(row["score"]), 4)})
+    return result
 
 MATERIAL_FAMILIES = json.loads(
     open(Path(__file__).parent / ".." / "processed" / "materials_taxonomy.json", encoding="utf-8").read())
@@ -160,7 +169,7 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
         ORDER BY c.embedding <=> %(query_vec)s::vector
         LIMIT %(top_k)s
         """
-        vec_params = {"query_vec": query_vec, "top_k": top_k * 2}
+        vec_params = {"query_vec": query_vec, "top_k": top_k * 3}
         if section:
             vec_params["section_filter"] = section
         cur.execute(vec_sql, vec_params)
@@ -178,7 +187,8 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
                 "section": sp,
                 "score": round(float(row["score"]), 4),
             })
-        bm25_res = _bm25_search(query, top_k * 2)
+        bm25_res = _tsvector_search(query, top_k * 3, cur)
+        bm25_raw_json = json.dumps([{"chunk_id": r["chunk_id"], "bm25_score": r["bm25_score"]} for r in bm25_res[:20]], default=str)
         results = _rrf_fuse(vec_results, bm25_res, top_k)
     else:
         # Pure vector + section filter
@@ -197,6 +207,24 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
         if section:
             params["section_filter"] = section
     
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        results = []
+        for row in rows:
+            sp = (row["metadata"] or {}).get("section_path", "")
+            results.append({
+                "id": row["id"],
+                "chunk_id": row["chunk_id"],
+                "page": row["page"],
+                "type": row["chunk_type"],
+                "text": (row["content_text"] or "")[:500],
+                "text_full": row["content_text"] or "",
+                "table_shape": row["table_shape"],
+                "source": row["source_title"],
+                "section": sp,
+                "score": round(float(row["score"]), 4),
+            })
+        bm25_raw_json = "[]"
     # Material category boost
     if hybrid and results:
         mat_cat = detect_material_category(query)
@@ -242,8 +270,7 @@ def list_sections() -> list:
 
 
 def warmup():
-    """Pre-load embedding model and build BM25 index at startup."""
-    _init_bm25()
+    """Pre-load embedding model at startup (BM25 uses PostgreSQL tsvector, no preload needed)."""
     get_embedding_model()
 
 def main():
@@ -310,7 +337,7 @@ def main():
             print("FastAPI not installed. Run: pip install fastapi uvicorn")
             print("Or use: python search.py --query \"盲陆聽莽職聞茅聴庐茅垄聵\"")
 
-print("Loading search engine (model + BM25)...", flush=True)
+print("Loading search engine (embedding model + PostgreSQL tsvector)...", flush=True)
 warmup()
 print("Search engine ready\n", flush=True)
 

@@ -16,12 +16,15 @@ foundry-knowledge-base/
 ├── raw/                          ← 源 PDF 存放处
 ├── processed/                    ← 提取后的 JSONL 数据
 ├── scripts/
-│   ├── pdf_extractor.py          Step 1: PDF → JSONL 粗提取
-│   ├── ingest.py                 Step 2: 清洗 + Embedding → pgvector
-│   ├── search.py                 混合检索核心 (向量+全文+RRF)
-│   ├── agent.py                  Agent 智能调度系统
-│   ├── app_server.py             FastAPI 服务入口（含前端静态文件）
-│   └── backfill_metadata.py      PDF TOC → metadata 章节回填
+│   ├── pdf_extractor.py                Step 1: PDF → JSONL 粗提取
+│   ├── ingest.py                       Step 2: 清洗 + Embedding → pgvector
+│   ├── search.py                       混合检索核心 (向量+tsvector+RRF+Reranker)
+│   ├── agent.py                        Agent 智能调度 (LangGraph + Timing)
+│   ├── app_server.py                   FastAPI 服务入口（含前端静态文件）
+│   ├── backfill_metadata.py            PDF TOC → metadata 章节回填
+│   ├── generate_eval_dataset.py        评估测试集生成
+│   ├── eval_retrieval.py               检索评估 (HitRate/MRR)
+│   └── eval_db.py                      评估结果库管理
 ├── db/
 │   └── schema.sql                PostgreSQL + pgvector 完整建表
 ├── docs/
@@ -64,15 +67,19 @@ python scripts/app_server.py
 
 | 能力 | 实现 |
 |------|------|
-| PDF 粗提取 | pdfplumber，~4页/秒 |
+| PDF 解析 | PyMuPDF + Marker OCR（表格/图片兜底） |
 | 清洗去重 | 表格-正文去重 + 空白合并 |
-| 中文 Embedding | BAAI/bge-small-zh-v1.5（512维） |
-| 向量存储 + 检索 | pgvector（余弦距离） |
+| Embedding | BAAI/bge-base-zh-v1.5（768维，GPU CUDA） |
+| 向量存储 + 检索 | pgvector（余弦距离，~15ms） |
 | 全文检索 | PostgreSQL tsvector + GIN 索引 |
-| 混合检索 | RRF 融合（向量 + 全文） |
-| 章节过滤 | PDF TOC → metadata → JSONB GIN 索引 |
-| API 服务 | FastAPI + Swagger 文档 |
-| 数据规模 | 3470 页 → 5849 chunks / 8.8MB / 50ms 延迟 |
+| 混合检索 | RRF 融合（向量 + tsvector） |
+| 精排 Reranker | Cross-Encoder MiniLM-L6（GPU，~100ms/20条） |
+| Agent 编排 | LangGraph（异步节点 + 条件路由 + 重试兜底） |
+| API 服务 | FastAPI + SSE 流式 + Swagger 文档 |
+| LLM | DeepSeek-v4-flash（cc-switch 路由） |
+| 数据规模 | 27 本 ASM 手册，37,317 页，29,585 chunks |
+| 检索时延 | 混合 ~1.5s + Reranker ~0.36s + LLM ~14s |
+| 评估 | HitRate@5 / MRR / Precision@5 |
 
 
 ## 新增功能（2026-06）
@@ -152,7 +159,18 @@ LLM 从 chunks 采样 → 生成真实风格查询  ──▶  逐条调 search(
 eval_queries 表                        eval_runs 表 / eval_results 表
 ```
 
-### 第一次完整评估（基线）
+### 评估历程
+
+#### 基线（纯向量 + ts_rank）
+
+| 指标 | 值 |
+|------|-----|
+| 测试集 | 87 条 LLM 生成查询 |
+| Hit Rate@5 | 0.276 |
+| Hit Rate@10 | 0.322 |
+| MRR | 0.239 |
+
+#### 当前最佳（BM25 + RRF + Reranker）
 
 | 指标 | 值 | 含义 |
 |------|-----|------|
@@ -163,15 +181,17 @@ eval_queries 表                        eval_runs 表 / eval_results 表
 | Precision@5 | 0.055 | 前 5 条结果中仅 5.5% 相关 |
 | 平均延迟 | 276ms | 每次检索耗时 |
 
-**改进方向（按预期收益排序）：**
+**改进历程：**
 
-| # | 方向 | 预期提升 | 状态 |
-|---|------|---------|------|
-| 1 | 启用 Reranker（Cross-Encoder，代码已有） | MRR +0.1~0.2 | ❌ 未启用 |
-| 2 | 调优 RRF 融合权重（当前向量:FTS = 1:1） | Hit Rate +5-10% | ❌ 未调优 |
-| 3 | 合金牌号精确匹配 Boosting | Precision + | ✅ 已开启（+0.08） |
-| 4 | Query Rewrite Prompt 优化 | Hit Rate + | ❌ 未优化 |
-| 5 | Dynamic Top-K 阈值微调 | 小幅度 | ❌ 未调优 |
+| 实验 | 配置 | Hit@5 | MRR |
+|------|------|-------|-----|
+| #2 | 纯向量 + ts_rank RRF（基线） | 0.276 | 0.239 |
+| #4 | +Reranker | 0.310 | 0.297 |
+| #5 | +RRF 融合改造 | 0.448 | 0.428 |
+| #9 | +BM25 替换 ts_rank | 0.471 | 0.310 |
+| #19 | BM25 + RRF + 材料 Boost | 0.575 | 0.347 |
+| #20 | **rank_bm25 → tsvector** | 待评测 | 待评测 |
+| #21 | **+Reranker MiniLM GPU** | 待评测 | 待评测 |
 
 
 

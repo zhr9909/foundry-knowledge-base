@@ -145,8 +145,26 @@ function togglePDF() {
   }
 }
 
-// Drag support for PDF viewer
+// Drag support for PDF viewer (only during drag)
 let pdfDragState = null;
+
+function onDragMove(e) {
+  if (!pdfDragState) return;
+  const dx = e.clientX - pdfDragState.startX;
+  const dy = e.clientY - pdfDragState.startY;
+  pdfDragState.viewer.style.left = (pdfDragState.left + dx) + "px";
+  pdfDragState.viewer.style.top = (pdfDragState.top + dy) + "px";
+  pdfDragState.viewer.style.right = "auto";
+}
+
+function onDragEnd() {
+  if (pdfDragState) {
+    pdfDragState = null;
+    document.removeEventListener("mousemove", onDragMove);
+    document.removeEventListener("mouseup", onDragEnd);
+  }
+}
+
 document.addEventListener("mousedown", function(e) {
   const handle = e.target.closest(".pdf-viewer-header");
   if (!handle) return;
@@ -162,19 +180,9 @@ document.addEventListener("mousedown", function(e) {
     top: rect.top
   };
   e.preventDefault();
-});
-
-document.addEventListener("mousemove", function(e) {
-  if (!pdfDragState) return;
-  const dx = e.clientX - pdfDragState.startX;
-  const dy = e.clientY - pdfDragState.startY;
-  pdfDragState.viewer.style.left = (pdfDragState.left + dx) + "px";
-  pdfDragState.viewer.style.top = (pdfDragState.top + dy) + "px";
-  pdfDragState.viewer.style.right = "auto";
-});
-
-document.addEventListener("mouseup", function() {
-  pdfDragState = null;
+  
+  document.addEventListener("mousemove", onDragMove);
+  document.addEventListener("mouseup", onDragEnd);
 });
 
 // Citation click handler - opens PDF at specific page
@@ -633,7 +641,7 @@ showKnowledgeBtn.addEventListener('click', () => {
 });
 
 // ===== Init =====
-loadSections();
+// loadSections(); // disabled - sections not ready
 
 // PDF viewer toggle
 const pdfToggle = document.getElementById('pdfToggle');
@@ -644,9 +652,9 @@ if (pdfClose) pdfClose.addEventListener('click', closePDF);
 // Init PDF state
 state.pdfState = null;
 
-// Also show chunk count from health endpoint
-fetch('/health').then(r => r.json()).then(d => {
-  const el = document.getElementById('chunkCount');
-  if (d.chunks) el.textContent = `${d.chunks.toLocaleString()} chunks`;
-}).catch(() => {});
+// Also show chunk count from health endpoint (disabled)
+// fetch('/health').then(r => r.json()).then(d => {
+//   const el = document.getElementById('chunkCount');
+//   if (d.chunks) el.textContent = `${d.chunks.toLocaleString()} chunks`;
+// }).catch(() => {});
 
