@@ -604,16 +604,65 @@ function addAssistantMessage(text, citations, thinking) {
 }
 
 function renderAnswer(text, citations) {
-  if (!citations || citations.length === 0) return escapeHtml(text).replace(/\n/g, '<br>');
-  // Replace [N] with citation reference
-  let result = escapeHtml(text);
-  for (let i = 0; i < citations.length; i++) {
-    const page = citations[i].page || '?';
-    result = result.replace(`[${i + 1}]`, `<sup style="color:var(--accent);cursor:pointer" title="pg.${page}">[${i + 1}]</sup>`);
+  if (!text) return "";
+  // Extract pipe tables before HTML escaping
+  const tblBlocks = [];
+  const noTables = text.replace(/((?:\|.*\|(?:\r?\n|$)){2,})/g, function(m) {
+    tblBlocks.push(renderTable(m));
+    return "\x00T" + (tblBlocks.length - 1) + "\x00";
+  });
+  // Escape HTML (table placeholders survive since \x00 is not in the escape list)
+  let result = escapeHtml(noTables);
+  // Process basic markdown formatting (safe after escapeHtml)
+  result = result.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  result = result.replace(/`(.*?)`/g, "<code>$1</code>");
+  result = result.replace(/^### (.*?)$/gm, "<h4>$1</h4>");
+  result = result.replace(/^## (.*?)$/gm, "<h3>$1</h3>");
+  // Restore table HTML
+  result = result.replace(/\x00T(\d+)\x00/g, function(_, id) { return tblBlocks[parseInt(id)]; });
+  // Replace citations
+  if (citations) {
+    for (let i = 0; i < citations.length; i++) {
+      const page = citations[i].page || "?";
+      result = result.replace("[" + (i + 1) + "]", '<sup onclick="openCitation(' + page + ')" style="color:var(--accent);cursor:pointer" title="pg.' + page + '">[' + (i + 1) + ']</sup>');
+    }
   }
-  return result.replace(/\n/g, '<br>');
+  return result.replace(/\n/g, "<br>");
 }
 
+function renderTable(t) {
+  var rows = t.trim().split("\n").filter(function(x) { return x.trim().startsWith("|"); });
+  if (rows.length < 1) return escapeHtml(t);
+  var hasSep = rows.some(function(x) { return x.indexOf("---") >= 0; });
+  var html = '<div style="overflow-x:auto;margin:8px 0"><table style="border-collapse:collapse;width:100%;font-size:13px">';
+  if (hasSep && rows.length >= 2) {
+    // Header row
+    html += "<thead><tr>";
+    rows[0].split("|").filter(function(c) { return c.trim(); }).forEach(function(c) {
+      html += '<th style="background:var(--accent);color:white;padding:4px 8px;border:1px solid var(--border);text-align:left;white-space:nowrap">' + escapeHtml(c.trim()) + "</th>";
+    });
+    html += "</tr></thead><tbody>";
+    for (var i = 2; i < rows.length; i++) {
+      var cells = rows[i].split("|").filter(function(c) { return c.trim(); });
+      if (!cells.length) continue;
+      html += "<tr" + (i % 2 === 0 ? ' style="background:var(--bg)"' : "") + ">";
+      cells.forEach(function(c) { html += '<td style="padding:4px 8px;border:1px solid var(--border)">' + escapeHtml(c.trim()) + "</td>"; });
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
+  } else {
+    html += "<tbody>";
+    for (var i = 0; i < rows.length; i++) {
+      var cells = rows[i].split("|").filter(function(c) { return c.trim(); });
+      if (!cells.length) continue;
+      html += "<tr>";
+      cells.forEach(function(c) { html += '<td style="padding:4px 8px;border:1px solid var(--border)">' + escapeHtml(c.trim()) + "</td>"; });
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
+  }
+  return html;
+}
 
 
 // ===== Utility =====
