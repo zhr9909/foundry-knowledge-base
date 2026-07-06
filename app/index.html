@@ -13,10 +13,9 @@
     <div class="topbar-left">
       <span class="logo">🏭</span>
       <h1 class="title">铸造知识库</h1>
-      <span class="model-badge" id="modelBadge">deepseek-v4-flash</span>
+      <span class="model-badge" id="modelBadge">DeepSeek-v4-Flash</span>
     </div>
     <div class="topbar-right">
-      <span class="chunk-count" id="chunkCount">5849 chunks</span>
       <button class="icon-btn" id="pdfToggle" title="文档查看器">📄</button>
       <button class="icon-btn" id="themeToggle" title="切换主题">🌙</button>
       <button class="icon-btn" id="infoToggle" title="关于">ℹ️</button>
@@ -47,7 +46,7 @@
         <div class="welcome" id="welcome">
           <div class="welcome-icon">🏭</div>
           <h2>铸造知识库 AI 助手</h2>
-          <p>输入问题，从 ASM Handbook Vol.2 中检索相关知识</p>
+          <p>输入金属材料、铸造工艺相关问题，从技术手册知识库中检索答案</p>
           <div class="suggestions">
             <button class="suggestion-chip" data-q="铝合金6061的力学性能">铝合金6061的力学性能</button>
             <button class="suggestion-chip" data-q="不锈钢的热处理温度">不锈钢的热处理温度</button>
@@ -107,7 +106,6 @@
           <button id="sendBtn" disabled>发送</button>
         </div>
         <div class="input-footer">
-          <span>知识库: ASM Handbook Vol.2 (3470页)</span>
           <span>AI 回答可能不准确，请核实关键数据</span>
         </div>
       </div>
@@ -122,14 +120,20 @@
         <button class="icon-btn" id="closeModal">✕</button>
       </div>
       <div class="modal-body">
-        <div class="info-grid">
-          <div class="info-item"><label>知识源</label><span>ASM Handbook Vol.2</span></div>
-          <div class="info-item"><label>总页数</label><span>3,470</span></div>
-          <div class="info-item"><label>Chunks</label><span>5,849</span></div>
-          <div class="info-item"><label>检索引擎</label><span>pgvector + 全文检索</span></div>
-          <div class="info-item"><label>混合策略</label><span>RRF 加权融合</span></div>
-          <div class="info-item"><label>AI 模型</label><span>deepseek-v4-flash</span></div>
-        </div>
+      <div class="modal-body" style="line-height:1.8">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:8px">欢迎使用铸造知识库 AI 助手</h3>
+        <p style="font-size:13px;margin-bottom:12px">基于 ASM 金属材料手册构建，支持自然语言检索技术文档。</p>
+        <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+        <h4 style="font-size:13px;font-weight:600;margin-bottom:6px">使用指南</h4>
+        <ul style="font-size:13px;padding-left:18px;margin:0">
+          <li style="margin-bottom:4px">在输入框输入金属材料、铸造工艺相关问题</li>
+          <li style="margin-bottom:4px">AI 自动从技术手册中检索相关内容并生成回答</li>
+          <li style="margin-bottom:4px">点击回答中的引用标记 [N] 可查看原文</li>
+          <li style="margin-bottom:4px">支持多轮对话，可连续追问</li>
+          <li style="margin-bottom:4px">右侧文档查看器按钮可打开 PDF</li>
+        </ul>
+        <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+        <p style="font-size:12px;color:var(--text-secondary)">AI 回答仅供参考，关键数据请核实原文</p>
       </div>
     </div>
   </div>
