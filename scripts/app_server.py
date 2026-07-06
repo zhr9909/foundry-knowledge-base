@@ -81,6 +81,7 @@ class ChatRequest(BaseModel):
     search_results: Optional[list] = None
     history: Optional[list] = None
     section: Optional[str] = None
+    thread_id: Optional[str] = None
 
 class ChatResponse(BaseModel):
     answer: str
@@ -97,7 +98,7 @@ async def chat(req: ChatRequest):
     
     from agent import agent_chat
     
-    result = agent_chat(req.query, section=req.section or None, history=req.history)
+    result = agent_chat(req.query, section=req.section, history=req.history)
     
     return ChatResponse(
         answer=result.get("answer", ""),

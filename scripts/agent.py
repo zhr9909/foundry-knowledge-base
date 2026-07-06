@@ -278,7 +278,7 @@ def _rewrite_node(state: AgentState) -> dict:
     _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在进行查询语义拆解..."})
-    rw = rewrite_query(state["current_query"])
+    rw = rewrite_query(state["current_query"], state.get("history"))
     if state.get("progress_callback"):
         state["progress_callback"]({"step": "rewritten", "queries": rw["search_queries"]})
         state["progress_callback"]({"type": "log", "message": f"查询拆解完成：{rw['search_queries']}"})
@@ -400,6 +400,15 @@ def _get_graph():
     _agent_graph = wf.compile()
     return _agent_graph
 
+# Manual message store (avoids MemorySaver serialization issues)
+_message_store = {}
+
+def _save_msgs(tid, msgs):
+    _message_store[tid] = msgs
+
+def _load_msgs(tid):
+    return _message_store.get(tid, [])
+
 def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None) -> dict:
 
     _log.info('=' * 50)
@@ -412,7 +421,19 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
         "attempts": 1, "max_retries": 1, "start_time": time.time(),
         "progress_callback": progress_callback,
     }
+    # Merge saved messages with request history
+    saved = _load_msgs("default")
+    if saved and not history:
+        initial["history"] = list(saved)
+    elif saved and history:
+        initial["history"] = list(saved) + list(history)
     result = app.invoke(initial)
+    # Save messages after execution
+    if result.get("answer"):
+        msgs = list(initial.get("history") or [])
+        msgs.append({"role": "user", "content": query})
+        msgs.append({"role": "assistant", "content": result.get("answer", "")})
+        _save_msgs("default", msgs)
     
     # Log to qa_log
     try:
@@ -464,13 +485,22 @@ def _call_llm(messages, max_tokens=512, timeout=30):
         _log.warning(f"  Error: {e}")
     return ""
 
-def rewrite_query(query: str) -> dict:
+def rewrite_query(query: str, history: list = None) -> dict:
     if False and re.match(r'^[a-zA-Z0-9\s\-\.]+$', query) and len(query.split()) <= 10:
         return {"search_queries": [query], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
+    if history:
+        users = [m.get("content", "") for m in history if m.get("role") == "user" and m.get("content")]
+        if users:
+            ctx = "\n".join("User: " + u[:200] for u in users[-3:])
+            user_content = ("[Conversation History]\n" + ctx
+                + "\n\n[Current]\n" + query
+                + "\n\nResolve pronouns via history. Include identifiers from history.")
+    else:
+        user_content = query
     try:
         result = _call_llm([
             {"role": "system", "content": QUERY_REWRITE_PROMPT},
-            {"role": "user", "content": query}
+            {"role": "user", "content": user_content}
         ], max_tokens=1024, timeout=30)
         if result:
             import json as _json
