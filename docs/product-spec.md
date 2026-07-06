@@ -168,3 +168,62 @@
 3. GPU 加速：3060 本地，reranker ~100ms
 4. 导图能力：将知识转化为可视化导图/流程图
 5. 完全可控：开源、可定制、数据不出厂
+
+
+## 九、业界多 Agent RAG 架构调研
+
+### 主流方案汇总
+
+| 方案 | 厂商 | 核心模式 | 适用场景 | 与我们设计对比 |
+|------|------|---------|---------|--------------|
+| **LangGraph Sub-graph** | LangChain | 子图嵌套 + Supervisor 路由 | 复杂工作流编排 | ✅ 最接近，我们就是基于此设计 |
+| **AutoGen** | 微软 | 对话式多 Agent，GroupChat 路由 | 多角色协作 | ❌ 重量级，不适合我们的场景 |
+| **CrewAI** | 开源 | 角色驱动，顺序/层级流程 | 自动化任务编排 | ❌ 偏自动化任务，非知识库场景 |
+| **Semantic Kernel** | 微软 | Planner 自动规划 + 函数调用 | 企业应用集成 | ⚠️ Planner 黑盒，可控性差 |
+| **Dify Workflow** | 开源 | 可视化工作流编排 | 快速原型开发 | ⚠️ 可视化好但灵活性不足 |
+| **OpenAI Assistants** | OpenAI | 单 Agent + 多工具 | 通用助手场景 | ❌ 非多 Agent，工具模式不同 |
+
+### LangGraph Sub-graph 模式详解（我们的参考）
+
+LangGraph 的 sub-graph 模式是目前最适合我们的：
+
+```
+# 主图 (Orchestrator)
+orchestrator = StateGraph(MainState)
+orchestrator.add_node("router", intent_router)     # 意图识别
+orchestrator.add_node("rag_agent", rag_subgraph)   # RAG 子图
+orchestrator.add_node("mindmap_agent", ...)        # 导图子图
+
+# RAG 子图 (封装现有管线)
+rag_subgraph = StateGraph(RAGState)
+rag_subgraph.add_node("rewrite", rewrite_query)
+rag_subgraph.add_node("search", search_parallel)
+rag_subgraph.add_node("select_ctx", select_context)
+rag_subgraph.add_node("generate", generate_answer)
+rag_subgraph.add_edge("rewrite", "search")
+rag_subgraph.add_edge("search", "select_ctx")
+rag_subgraph.add_edge("select_ctx", "generate")
+```
+
+### 关键设计模式对比
+
+| 设计模式 | 说明 | 适用性 |
+|---------|------|--------|
+| **Supervisor (主管)** | 一个主 Agent 路由给子 Agent | ✅ 我们的设计 |
+| **GroupChat (群聊)** | 多个 Agent 对话讨论 | ❌ 太复杂，不适用 |
+| **Tool-based (工具)** | 主 Agent 调用多个工具 | ⚠️ 可做备选 |
+| **Pipeline (管线)** | 固定顺序执行 | ❌ 不够灵活 |
+
+### 业界趋势
+
+1. **LangGraph Sub-graph 成为事实标准** — LangChain 生态最成熟的模式
+2. **从单 Agent 到多 Agent 是自然演进** — 不是推翻重来，而是封装现有管线
+3. **Orchestrator 专注路由，子 Agent 专注能力** — 职责分离
+4. **状态管理是关键** — 每个子 Agent 有独立状态，主图管理全局状态
+
+### 对我们设计的验证
+
+- ✅ LangGraph sub-graph = 业界最佳实践
+- ✅ 我们的 RAG Agent 子图化 = 标准做法
+- ✅ Orchestrator + 子 Agent = Supervisor 模式
+- ✅ 渐进式改造 = 低风险
