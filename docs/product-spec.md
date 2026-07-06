@@ -61,13 +61,42 @@
 
 ## 四、技术架构
 
-### 当前架构（v0.1）
+### 当前架构（v0.1）- 单 Agent
 
-前端 (HTML/CSS/JS) -> FastAPI 后端 -> 检索层 (pgvector + tsvector) -> Reranker (MiniLM) -> LLM (deepseek-v4-flash) -> PostgreSQL 数据库
+```
+前端 (HTML/CSS/JS) → FastAPI
+    → RAG Agent (LangGraph StateGraph)
+        → rewrite → search → select_ctx → generate
+    → PostgreSQL (pgvector + tsvector)
+    → Reranker (MiniLM)
+    → LLM (deepseek-v4-flash)
+```
 
-### 数据流
+### 目标架构（v0.2+）- 多 Agent
 
-用户输入 -> rewrite_query (LLM 重写) -> search_parallel (多路并行) -> pgvector + tsvector -> RRF 融合 -> select_context (reranker) -> generate_answer (LLM) -> 前端展示
+```
+用户 → Web UI
+    → Orchestrator Agent（主控）
+        → RAG Agent（子图）
+            rewrite → search → select_ctx → generate
+        → Mind Map Agent（子图）
+            RAG → 结构化输出 → Mermaid 渲染
+        → Comparison Agent（子图）
+            RAG + 对比逻辑 → 对比表格
+        → Report Agent（子图）
+            RAG → 报告组装 → PDF/Word
+
+各 Agent 职责：
+- Orchestrator: 意图识别、Agent 调度、结果组装
+- RAG Agent: 知识库检索 + 生成回答（现有管线封装）
+- Mind Map Agent: 调 RAG 获取上下文 → 生成导图 JSON → 前端渲染
+- Comparison Agent: 调 RAG 获取多种材料数据 → 对比输出
+- Report Agent: 调 RAG → 结构化报告生成 → 导出
+```
+
+### 数据流（RAG Agent 内部）
+
+用户输入 -> rewrite_query (LLM 重写为英文检索语句) -> search_parallel (多路并行搜索) -> pgvector + tsvector -> RRF 融合 -> select_context (reranker 重排) -> generate_answer (LLM) -> 前端展示
 
 ### 核心指标
 
@@ -86,17 +115,35 @@
 - 已完成：检索问答、多轮对话、引用溯源、混合检索、Reranker
 - 待完成：UI 打磨、错误处理优化
 
-### Phase 2 - 体验提升（2-3周）
-- 流式输出、回答排版美化、重写 prompt 优化、搜索提升
+### Phase 2 - RAG Agent 子图化（1周）
+- 将当前管线封装为 LangGraph 子图（Sub-graph）
+- Orchestrator 主控 Agent 搭建
+- RAG Agent 独立接口定义（输入/输出规范）
+- 确保现有功能不受影响
 
-### Phase 3 - 导图功能（3-4周）
-- Mermaid.js 集成、LLM 导图 prompt 设计、流程问题自动识别
+### Phase 3 - 体验提升（2周）
+- 流式输出（SSE + EventSource）
+- 回答排版美化（表格渲染、引用卡片）
+- 查询重写 prompt 优化
+- 搜索候选池扩大
 
-### Phase 4 - 增强功能（1-2月）
-- 材料元数据过滤、embedding 升级、材料对比分析、多知识库切换、报告导出
+### Phase 4 - 导图 Agent（3周）
+- Mermaid.js 前端集成
+- Mind Map Agent 开发（调 RAG → 结构化输出）
+- 流程型问题自动识别
+- 导图 UI 交互优化
 
-### Phase 5 - 长期
-- 知识图谱、云端部署、用户系统、权限管理
+### Phase 5 - 增强功能（1-2月）
+- Comparison Agent（材料对比）
+- 材料元数据过滤
+- embedding 升级（bge-base → bge-m3）
+- 多知识库切换
+
+### Phase 6 - 长期
+- Report Agent（报告导出）
+- 知识图谱
+- 云端部署
+- 用户系统 + 权限管理
 
 
 ## 七、竞品分析
