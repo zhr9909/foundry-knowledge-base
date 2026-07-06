@@ -74,17 +74,42 @@ def generate_test_queries(source_id=None, n=50, min_text_length=80):
             break
     return queries
 
-def evaluate(queries, top_k=10, hybrid=True):
+def evaluate(queries, top_k=10, hybrid=True, use_rerank=False):
     from search import search
+    raw_top_k = 60 if use_rerank else top_k
+
+    if use_rerank:
+        from sentence_transformers import CrossEncoder
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"Loading reranker ({device})...")
+        _reranker = CrossEncoder(
+            r"E:/AgentProjects/ai-solution-architect-lab/projects/foundry-knowledge-base/processed/models/ms-marco-MiniLM-L-6-v2",
+            device=device
+        )
+
     results_by_query = {}
     print(f"\nEvaluating {len(queries)} queries...")
     for i, q in enumerate(queries):
         start = time.time()
-        result = search(q["query"], top_k=top_k, hybrid=hybrid)
+        result = search(q["query"], top_k=raw_top_k, hybrid=hybrid)
+        candidates = result.get("results", [])
+        if use_rerank and candidates and len(candidates) >= 2:
+            pairs = [(q["query"], c.get("text_full", c.get("text", ""))) for c in candidates]
+            scores = _reranker.predict(pairs, show_progress_bar=False)
+            min_s, max_s = min(scores), max(scores)
+            if max_s > min_s:
+                norm = [(s - min_s) / (max_s - min_s) for s in scores]
+            else:
+                norm = [0.5] * len(scores)
+            for c, s in zip(candidates, norm):
+                c["rerank_score"] = round(s, 4)
+            candidates.sort(key=lambda x: x.get("rerank_score", 0), reverse=True)
+            candidates = candidates[:top_k]
         elapsed = (time.time() - start) * 1000
         results_by_query[f"q{i+1}"] = {
             "query": q["query"], "expected_ids": q["expected_chunk_ids"],
-            "results": result.get("results", []), "latency_ms": elapsed,
+            "results": candidates, "latency_ms": elapsed,
         }
         if (i + 1) % 10 == 0:
             print(f"  [{i+1}/{len(queries)}]")
@@ -139,6 +164,7 @@ def main():
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--source-id", type=int)
     parser.add_argument("--queries", help="JSON file with manual queries")
+    parser.add_argument("--rerank", action="store_true", help="Apply cross-encoder reranker")
     args = parser.parse_args()
     print("=== RAG Retrieval Evaluation ===")
     if args.queries:
@@ -149,12 +175,13 @@ def main():
         print(f"Generating {args.n_queries} test queries from chunks...")
         queries = generate_test_queries(source_id=args.source_id, n=args.n_queries)
         print(f"Generated {len(queries)} queries")
-    metrics, results_by_query = evaluate(queries, top_k=args.top_k)
+    metrics, results_by_query = evaluate(queries, top_k=args.top_k, use_rerank=args.rerank)
     print_report(metrics)
     save_results(metrics, results_by_query, queries)
     try:
         dsn = os.path.basename(args.queries).replace(".json", "") if args.queries else "auto"
-        rid = eval_db.save_run(dsn, {"top_k": args.top_k, "hybrid": True}, metrics, metrics["total_queries"], metrics["avg_latency_ms"])
+        config_dict = {"top_k": args.top_k, "hybrid": True, "rerank": args.rerank}
+        rid = eval_db.save_run(dsn + ("_rerank" if args.rerank else ""), config_dict, metrics, metrics["total_queries"], metrics["avg_latency_ms"])
         rlist = []
         for i, q in enumerate(queries):
             r = results_by_query.get("q" + str(i+1), {})

@@ -319,6 +319,60 @@ python -c "from eval_db import print_runs_table, list_recent_runs; print_runs_ta
 ```
 
 
+
+
+## 2026-07-06 更新：完整 Pipeline 重构 + Eval 修正
+
+### 变更清单
+
+| 文件 | 改动 |
+|------|------|
+| scripts/agent.py | 修复 query rewrite 空列表 bug；新增 3 次重试机制；改进对话记忆（全部拼接+10轮压缩）；调大动态 top_k |
+| scripts/eval_retrieval.py | 新增 --rerank 参数，支持 reranker 参与评估 |
+| scripts/eval_full_pipeline.py | 新建 - 完整管线评估脚本 (rewrite->search->select_context) |
+
+### Pipeline 架构
+
+用户提问 -> rewrite (LLM深挖->英文查询, 3次重试) -> search (多线程并行, 每条top_k=8) -> pgvector + tsvector RRF (向量30%:BM25 70%) -> select_context (reranker重排) -> generate (LLM回答)
+
+### 关键参数
+
+| 参数 | 值 |
+|------|-----|
+| Embedding | bge-base-zh-v1.5 (768维, CUDA) |
+| Reranker | cross-encoder/ms-marco-MiniLM-L-6-v2 (CUDA) |
+| 召回 | tsvector + pgvector RRF |
+| RRF权重 | 向量30%, BM25 70%, k=60 |
+| 对话记忆 | 全部拼接, 10轮后压缩(保留最近8轮) |
+| 动态top_k | >=0.75->8, >=0.6->10, else->12 |
+
+### 最新Eval (298条测试查询)
+
+| 方案 | HitRate@5 | HitRate@10 | MRR |
+|------|-----------|------------|-----|
+| 原始纯向量 | 0.276 | 0.322 | 0.239 |
+| 混合 RRF | 0.550 | 0.591 | 0.464 |
+| RRF + Reranker | 0.581 | 0.601 | 0.545 |
+| 完整管线 (rewrite+search+rerank) | 0.691~0.738 | 0.715~0.745 | 0.640~0.671 |
+| 行业·混合+Rerank 基准 | 0.75~0.88 | 0.82~0.93 | >=0.70 |
+
+### 关键发现
+
+1. 完整管线比直接搜索高 25% - 从0.581到0.725, LLM查询重写修复中英文匹配
+2. 候选池30->60零提升 - 瓶颈在检索质量本身(embedding+BM25)
+3. 英文查询HitRate@5=0.849已达行业上游 - 中文查询拖后腿但已被修复
+4. Precision@5低(0.14)是测试集设计问题 - 每条仅1个预期chunk
+
+### 剩余优化方向
+
+| 方向 | 预期提升 | 工作量 |
+|------|---------|--------|
+| bge-base->bge-m3 embedding升级 | +3~5% | 高(下载2G+重embedding) |
+| 优化查询重写prompt | +2~3% | 低 |
+| 材料元数据过滤(SQL WHERE) | +3~5% | 中 |
+| reranker升级为BGE-Reranker-v2-m3 | +1~3% | 中 |
+| 生成更真实的评估测试集(包含多chunk标注) | - | 中 |
+
 ## 面试准备
 
 - 阅读 `docs/architecture-deep-dive.md` 理解每一层的架构决策

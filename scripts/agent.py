@@ -175,7 +175,7 @@ def generate_answer(query: str, context: list, history: list = None, system_prom
     
     # Add history
     if history:
-        for msg in history[-4:]:
+        for msg in history[-8:]:
             if msg.get("role") in ("user", "assistant"):
                 messages.append({"role": msg["role"], "content": msg["content"]})
     
@@ -304,9 +304,9 @@ def _select_context_node(state: AgentState) -> dict:
     if not rs:
         return {"context": []}
     top_score = rs[0].get("score", 0)
-    if top_score >= 0.75: dk = 4
-    elif top_score >= 0.6: dk = 6
-    else: dk = 8
+    if top_score >= 0.75: dk = 8
+    elif top_score >= 0.6: dk = 10
+    else: dk = 12
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在精选相关上下文..."})
     ctx = select_context(rs, top_k=dk, original_query=" ".join(state["sub_queries"]),
@@ -491,26 +491,46 @@ def rewrite_query(query: str, history: list = None) -> dict:
     if history:
         users = [m.get("content", "") for m in history if m.get("role") == "user" and m.get("content")]
         if users:
-            ctx = "\n".join("User: " + u[:200] for u in users[-3:])
+            if len(users) > 10:
+                old_text = "\n".join("User: " + u[:100] for u in users[:-8])
+                _alloys = set(re.findall(r"\b\d{3,5}[-A-Za-z0-9]*\b", old_text))
+                _props = set(re.findall(r"(strength|tensile|fatigue|hardness|corrosion|thermal|\u70ed\u5904\u7406|\u6297\u62c9|\u5c48\u670d|\u786c\u5ea6|\u529b\u5b66)", old_text, re.I))
+                _parts = []
+                if _alloys: _parts.append("previous alloys: " + ", ".join(sorted(_alloys)[:8]))
+                if _props: _parts.append("topics: " + ", ".join(sorted(_props)[:4]))
+                summary = " | ".join(_parts) if _parts else old_text[:200]
+                recent = "\n".join("User: " + u[:200] for u in users[-8:])
+                ctx = "[Early History Summary]\n" + summary + "\n\n[Recent History]\n" + recent
+            else:
+                ctx = "\n".join("User: " + u[:200] for u in users)
             user_content = ("[Conversation History]\n" + ctx
                 + "\n\n[Current]\n" + query
                 + "\n\nResolve pronouns via history. Include identifiers from history.")
     else:
         user_content = query
-    try:
-        result = _call_llm([
-            {"role": "system", "content": QUERY_REWRITE_PROMPT},
-            {"role": "user", "content": user_content}
-        ], max_tokens=1024, timeout=30)
-        if result:
-            import json as _json
-            match = re.search(r'\{.*?\}', result, re.DOTALL)
-            if match:
-                parsed = _json.loads(match.group())
-                if isinstance(parsed, dict):
-                    return {"search_queries": parsed.get("search_queries", [query])[:4], "core_entity": parsed.get("core_entity", []), "filter_rule": parsed.get("filter_rule", "全部"), "search_priority": parsed.get("search_priority", "语义均衡")}
-    except:
-        pass
+    for attempt in range(3):
+        try:
+            result = _call_llm([
+                {"role": "system", "content": QUERY_REWRITE_PROMPT},
+                {"role": "user", "content": user_content}
+            ], max_tokens=1024, timeout=60)
+            if result:
+                import json as _json
+                match = re.search(r'\{.*?\}', result, re.DOTALL)
+                if match:
+                    parsed = _json.loads(match.group())
+                    if isinstance(parsed, dict):
+                        sq = parsed.get("search_queries", [query])
+                        if not sq:
+                            sq = [query]
+                        return {"search_queries": sq[:4], "core_entity": parsed.get("core_entity", []), "filter_rule": parsed.get("filter_rule", "全部"), "search_priority": parsed.get("search_priority", "语义均衡")}
+            if attempt < 2:
+                _log.warning(f"  Rewrite attempt {attempt+1} failed, retrying...")
+                time.sleep(0.5)
+        except:
+            if attempt < 2:
+                _log.warning(f"  Rewrite attempt {attempt+1} exception, retrying...")
+                time.sleep(0.5)
     return {"search_queries": [query], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
 
 def search_single(query: str, section: str = None, top_k: int = 8) -> list:
