@@ -61,38 +61,54 @@
 
 ## 四、技术架构
 
-### 当前架构（v0.1）- 单 Agent
+### 当前架构（v0.1）- 单体管线
 
 ```
-前端 (HTML/CSS/JS) → FastAPI
-    → RAG Agent (LangGraph StateGraph)
-        → rewrite → search → select_ctx → generate
+前端 (HTML/CSS/JS)
+    → FastAPI (app_server.py)
+        → agent_chat()
+            → rewrite → search → select_ctx → generate
     → PostgreSQL (pgvector + tsvector)
     → Reranker (MiniLM)
     → LLM (deepseek-v4-flash)
 ```
 
-### 目标架构（v0.2+）- 多 Agent
+### 目标架构（v0.2+）- 独立服务多 Agent
 
 ```
-用户 → Web UI
-    → Orchestrator Agent（主控）
-        → RAG Agent（子图）
-            rewrite → search → select_ctx → generate
-        → Mind Map Agent（子图）
-            RAG → 结构化输出 → Mermaid 渲染
-        → Comparison Agent（子图）
-            RAG + 对比逻辑 → 对比表格
-        → Report Agent（子图）
-            RAG → 报告组装 → PDF/Word
-
-各 Agent 职责：
-- Orchestrator: 意图识别、Agent 调度、结果组装
-- RAG Agent: 知识库检索 + 生成回答（现有管线封装）
-- Mind Map Agent: 调 RAG 获取上下文 → 生成导图 JSON → 前端渲染
-- Comparison Agent: 调 RAG 获取多种材料数据 → 对比输出
-- Report Agent: 调 RAG → 结构化报告生成 → 导出
+                                        ┌─────────────────────┐
+                                        │   Frontend           │
+                                        │   (HTML/CSS/JS)      │
+                                        └──────────┬──────────┘
+                                                   │ HTTP/SSE
+                                        ┌──────────▼──────────┐
+                                        │  API Gateway        │
+                                        │  (gateway.py, :8000)│
+                                        │  路由/代理/聚合     │
+                                        └──┬──────┬──────┬───┘
+                                           │      │      │
+                              ┌────────────┘      │      └────────────┐
+                         ┌────▼────┐        ┌─────▼─────┐      ┌─────▼─────┐
+                         │RAG Agent│        │Mind Map   │      │Comparison │
+                         │:8001    │        │Agent:8002 │      │Agent:8003 │
+                         │检索+生成 │        │导图生成   │      │材料对比   │
+                         └────┬────┘        └─────┬─────┘      └─────┬─────┘
+                              │                   │                   │
+                         ┌────▼───────────────────▼───────────────────▼──────┐
+                         │          Shared Platform Layer                     │
+                         │  PostgreSQL+pgvector | Ollama | Embedding Model   │
+                         │  Reranker | Redis Cache                            │
+                         └────────────────────────────────────────────────────┘
 ```
+
+### 各 Agent 职责
+
+| Agent | 独立文件 | 端口 | 职责 |
+|-------|---------|------|------|
+| API Gateway | gateway.py | 8000 | 统一入口、路由分发、结果聚合、前端静态文件 |
+| RAG Agent | agent_rag.py | 8001 | 知识库检索 + LLM 生成回答 |
+| Mind Map Agent | agent_mm.py | 8002 | 调 RAG 获取数据 → 生成 Mermaid 导图 |
+| Comparison Agent | agent_cp.py | 8003 | 多材料对比分析 |
 
 ### 数据流（RAG Agent 内部）
 
@@ -115,11 +131,14 @@
 - 已完成：检索问答、多轮对话、引用溯源、混合检索、Reranker
 - 待完成：UI 打磨、错误处理优化
 
-### Phase 2 - RAG Agent 子图化（1周）
-- 将当前管线封装为 LangGraph 子图（Sub-graph）
-- Orchestrator 主控 Agent 搭建
-- RAG Agent 独立接口定义（输入/输出规范）
+### Phase 2 - 服务化拆分（2周）
+- 从单体拆分为独立服务
+  - gateway.py（API 网关）
+  - agent_rag.py（RAG Agent 独立服务）
+- 定义 Agent 间通信协议（A2A-like REST API）
+- 接口契约：每个 Agent 清晰的输入/输出规范
 - 确保现有功能不受影响
+- Docker Compose 一键部署
 
 ### Phase 3 - 体验提升（2周）
 - 流式输出（SSE + EventSource）
