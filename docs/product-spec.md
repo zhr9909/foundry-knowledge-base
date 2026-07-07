@@ -73,43 +73,27 @@
     → LLM (deepseek-v4-flash)
 ```
 
-### 目标架构（v0.2+）- 独立服务多 Agent
+### 目标架构（v0.2+）- 独立服务多 Agent + Orchestrator
 
 ```
-                                        ┌─────────────────────┐
-                                        │   Frontend           │
-                                        │   (HTML/CSS/JS)      │
-                                        └──────────┬──────────┘
-                                                   │ HTTP/SSE
-                                        ┌──────────▼──────────┐
-                                        │  API Gateway        │
-                                        │  (gateway.py, :8000)│
-                                        │  路由/代理/聚合     │
-                                        └──┬──────┬──────┬───┘
-                                           │      │      │
-                              ┌────────────┘      │      └────────────┐
-                         ┌────▼────┐        ┌─────▼─────┐      ┌─────▼─────┐
-                         │RAG Agent│        │Mind Map   │      │Comparison │
-                         │:8001    │        │Agent:8002 │      │Agent:8003 │
-                         │检索+生成 │        │导图生成   │      │材料对比   │
-                         └────┬────┘        └─────┬─────┘      └─────┬─────┘
-                              │                   │                   │
-                         ┌────▼───────────────────▼───────────────────▼──────┐
-                         │          Shared Platform Layer                     │
-                         │  PostgreSQL+pgvector | Ollama | Embedding Model   │
-                         │  Reranker | Redis Cache                            │
-                         └────────────────────────────────────────────────────┘
+用户提问 → Gateway (:8000)
+    → Orchestrator Agent（分析意图、编排任务）
+        ├── Search Agent (:8001) → 搜索 + 重排，返回上下文
+        ├── Generate Agent (:8002) → LLM 生成回答
+        ├── Mind Map Agent (:8003) → 导图（未来）
+        └── Orchestrator → 合并结果，流式返回
+
+Orchestrator 职责：意图识别、任务编排、状态推送
+Search Agent：检索 + reranker（不生成）
+Generate Agent：接收上下文 → LLM 生成（不检索）
 ```
 
-### 各 Agent 职责
+### A2A 任务编排
 
-| Agent | 独立文件 | 端口 | 职责 |
-|-------|---------|------|------|
-| API Gateway | gateway.py | 8000 | 统一入口、路由分发、结果聚合、前端静态文件 |
-| RAG Agent | agent_rag.py | 8001 | 知识库检索 + LLM 生成回答 |
-| Mind Map Agent | agent_mm.py | 8002 | 调 RAG 获取数据 → 生成 Mermaid 导图 |
-| Comparison Agent | agent_cp.py | 8003 | 多材料对比分析 |
-
+当前是单线程流水线（先搜完再生成）。改造后：
+Search Agent 处理 → 实时推送 "正在搜索..."
+Generate Agent 处理 → 逐字流式输出回答
+Orchestrator 编排 → 任务级并行，前端实时显示进度
 ### 数据流（RAG Agent 内部）
 
 用户输入 -> rewrite_query (LLM 重写为英文检索语句) -> search_parallel (多路并行搜索) -> pgvector + tsvector -> RRF 融合 -> select_context (reranker 重排) -> generate_answer (LLM) -> 前端展示
