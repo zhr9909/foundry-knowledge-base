@@ -373,8 +373,14 @@ async function sendMessage() {
   // Add user message
   addMessage('user', q);
 
-  // Use POST directly (wide browser compatibility)
-  await sendMessagePOST(q);
+  // Try SSE first
+  const sseSuccess = await sendMessageSSE(q);
+  
+  if (!sseSuccess) {
+    // Fallback to POST
+    console.log('SSE failed, falling back to POST');
+    await sendMessagePOST(q);
+  }
 
   state.currentAssistantEl = null;
   state.isProcessing = false;
@@ -382,61 +388,117 @@ async function sendMessage() {
   loadingEl.style.display = 'none';
 }
 
-async function sendMessageSSE(query) {
-  const params = new URLSearchParams({ query });
-  if (state.activeSection) params.set("section", state.activeSection);
-  const resp = await fetch("/chat/stream?" + params.toString());
-  if (!resp.ok) return false;
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "", resolved = false;
-  const TO = setTimeout(function() { if (!resolved) { resolved = true; reader.cancel(); } }, 120000);
-  while (true) {
-    const r = await reader.read();
-    if (r.done) break;
-    buf += decoder.decode(r.value, { stream: true });
-    let lines = buf.split(String.fromCharCode(10));
-    buf = lines.pop() || "";
-    for (let line of lines) {
+function sendMessageSSE(query) {
+  return new Promise((resolve) => {
+    const params = new URLSearchParams({ query });
+    if (state.activeSection) params.set('section', state.activeSection);
+    
+    let resolved = false;
+    let hasData = false;
+    let es;
+    
+    try {
+      es = new EventSource(`/chat/stream?${params}`);
+    } catch (e) {
+      return resolve(false);
+    }
+    
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        es.close();
+        resolve(false);
+      }
+    }, 30000);
+
+    es.onmessage = (event) => {
       let data;
-      try { data = JSON.parse(line.replace(/^data: /, "")); } catch { continue; }
-      if (data.type === "result") {
-        clearTimeout(TO); if (resolved) continue; resolved = true; reader.cancel();
-        completeStep("check", String.fromCharCode(10004) + " " + String.fromCharCode(23436, 25104));
-        let r = data.data || {};
-        if (state.currentAssistantEl) {
-          fillAssistantAnswer(state.currentAssistantEl, r.answer || String.fromCharCode(26080, 22238, 31572), r.citations || [], r.thinking || "");
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      hasData = true;
+
+      // --- Log events ---
+      if (data.type === 'log') {
+        addLogEntry(data.message, data.level || 'info');
+      }
+      // --- Progress events ---
+      else if (data.step === 'rewritten') {
+        const count = data.queries ? data.queries.length : 0;
+        advanceStep('rewrite', 'search', `→ ${count} 条语句`);
+      } 
+      else if (data.step === 'searched') {
+        advanceStep('search', 'context', `→ ${data.count} 个候选`);
+      }
+      else if (data.step === 'context_ready') {
+        advanceStep('context', 'generate', `→ 精选 ${data.count} 条`);
+      }
+      else if (data.step === 'checked') {
+        completeStep('generate');
+        if (data.score >= 7) {
+          completeStep('check', `✅ ${data.score}/10`);
         } else {
-          addAssistantMessage(r.answer || String.fromCharCode(26080, 22238, 31572), r.citations || [], r.thinking || "");
-        }
-        state.history.push({ role: "user", content: query }, { role: "assistant", content: r.answer || "" });
-        if (state.history.length > 20) state.history = state.history.slice(-20);
-        return true;
-      } else if (data.type === "error") {
-        clearTimeout(TO);
-        if (!resolved) { resolved = true; reader.cancel(); addAssistantMessage(String.fromCharCode(10060) + " " + data.message, []); }
-        return false;
-      } else if (data.type === "log") {
-        addLogEntry(data.message, data.level || "info");
-      } else if (data.step === "rewritten") {
-        advanceStep("rewrite", "search", String.fromCharCode(8594) + " " + (data.queries ? data.queries.length : 0) + " " + String.fromCharCode(26465, 35821, 21477));
-      } else if (data.step === "searched") {
-        advanceStep("search", "context", String.fromCharCode(8594) + " " + data.count + " " + String.fromCharCode(20010, 20505, 36873));
-      } else if (data.step === "context_ready") {
-        advanceStep("context", "generate", String.fromCharCode(8594) + " " + String.fromCharCode(31934, 36873) + " " + data.count + " " + String.fromCharCode(26465));
-      } else if (data.step === "checked") {
-        completeStep("generate");
-        if (data.score >= 7) completeStep("check", String.fromCharCode(10004) + " " + data.score + "/10");
-        else {
-          var el = document.querySelector('.step[data-step="check"]');
-          if (el) { el.classList.add("active"); el.querySelector(".step-status").textContent = data.score + "/10 " + String.fromCharCode(37325, 35797, 20013, 46, 46, 46); }
+          // Will retry - show retry status
+          const checkStep = document.querySelector('.step[data-step="check"]');
+          if (checkStep) {
+            checkStep.classList.add('active');
+            checkStep.querySelector('.step-status').textContent = `${data.score}/10 重试中...`;
+          }
         }
       }
-    }
-  }
-  clearTimeout(TO);
-  return false;
+      // --- Result event ---
+      else if (data.type === 'result') {
+        clearTimeout(timeout);
+        es.close();
+        if (!resolved) {
+          resolved = true;
+          const result = data.data;
+          // Ensure check step is marked done
+          completeStep('check', `✅ 完成`);
+          if (state.currentAssistantEl) {
+            fillAssistantAnswer(state.currentAssistantEl, result.answer || '无回答', result.citations || [], result.thinking || '');
+          } else {
+            addAssistantMessage(
+              result.answer || '无回答',
+              result.citations || [],
+              result.thinking || ''
+            );
+          }
+          // Update history
+          state.history.push(
+            { role: 'user', content: query },
+            { role: 'assistant', content: result.answer || '' }
+          );
+          if (state.history.length > 20) state.history = state.history.slice(-20);
+          resolve(true);
+        }
+      }
+      // --- Error event ---
+      else if (data.type === 'error') {
+        clearTimeout(timeout);
+        es.close();
+        if (!resolved) {
+          resolved = true;
+          addAssistantMessage(`❌ 生成回答失败: ${data.message}`, []);
+          resolve(false);
+        }
+      }
+    };
+
+    es.onerror = () => {
+      clearTimeout(timeout);
+      es.close();
+      if (!resolved) {
+        resolved = true;
+        resolve(false); // fallback to POST
+      }
+    };
+  });
 }
+
 // ===== POST Fallback (original logic) =====
 async function sendMessagePOST(query) {
   loadingEl.style.display = 'flex';
