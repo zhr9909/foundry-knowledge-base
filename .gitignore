@@ -1,0 +1,12 @@
+*.pyc
+__pycache__/
+agent.log
+server_start.log
+eval_results/
+processed/
+ragflow-docker/
+.codex/
+raw/*.pdf
+*.pdf
+docs/today-*.md
+docs/minimal-vram-ocr.md
