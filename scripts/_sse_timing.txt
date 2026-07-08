@@ -1,0 +1,10 @@
+0.0s LOG
+2.28s rewritten
+2.28s LOG
+3.66s LOG
+3.66s searched
+3.66s LOG
+3.66s LOG
+4.15s context_ready
+4.15s LOG
+Duration: 18.3s

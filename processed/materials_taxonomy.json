@@ -1,0 +1,300 @@
+{
+  "aluminum": {
+    "patterns": [
+      "\\balumin(?:um|ium)\\b"
+    ],
+    "keywords": [
+      "aluminum",
+      "aluminium"
+    ],
+    "uns_prefix": "A",
+    "aa_series": [
+      "1xxx",
+      "2xxx",
+      "3xxx",
+      "4xxx",
+      "5xxx",
+      "6xxx",
+      "7xxx",
+      "8xxx"
+    ]
+  },
+  "copper": {
+    "patterns": [
+      "\\b(?:copper|brass|bronze)\\b",
+      "\\bcu\\b"
+    ],
+    "keywords": [
+      "copper",
+      "brass",
+      "bronze"
+    ],
+    "uns_prefix": "C"
+  },
+  "nickel": {
+    "patterns": [
+      "\\b(?:nickel|inconel|monel|hastelloy)\\b"
+    ],
+    "keywords": [
+      "nickel",
+      "inconel",
+      "monel",
+      "hastelloy"
+    ]
+  },
+  "cobalt": {
+    "patterns": [
+      "\\b(?:cobalt|stellite)\\b"
+    ],
+    "keywords": [
+      "cobalt",
+      "stellite"
+    ]
+  },
+  "titanium": {
+    "patterns": [
+      "\\btitanium\\b"
+    ],
+    "keywords": [
+      "titanium"
+    ]
+  },
+  "magnesium": {
+    "patterns": [
+      "\\bmagnesium\\b"
+    ],
+    "keywords": [
+      "magnesium"
+    ]
+  },
+  "zinc": {
+    "patterns": [
+      "\\bzinc\\b"
+    ],
+    "keywords": [
+      "zinc"
+    ]
+  },
+  "lead": {
+    "patterns": [
+      "\\blead\\b"
+    ],
+    "keywords": [
+      "lead"
+    ]
+  },
+  "tin": {
+    "patterns": [
+      "\\b(?:tin|pewter)\\b"
+    ],
+    "keywords": [
+      "tin",
+      "pewter"
+    ]
+  },
+  "zirconium": {
+    "patterns": [
+      "\\b(?:zirconium|zircaloy)\\b"
+    ],
+    "keywords": [
+      "zirconium",
+      "zircaloy"
+    ]
+  },
+  "hafnium": {
+    "patterns": [
+      "\\bhafnium\\b"
+    ],
+    "keywords": [
+      "hafnium"
+    ]
+  },
+  "beryllium": {
+    "patterns": [
+      "\\bberyllium\\b"
+    ],
+    "keywords": [
+      "beryllium"
+    ]
+  },
+  "tungsten": {
+    "patterns": [
+      "\\btungsten\\b"
+    ],
+    "keywords": [
+      "tungsten"
+    ]
+  },
+  "molybdenum": {
+    "patterns": [
+      "\\bmolybdenum\\b"
+    ],
+    "keywords": [
+      "molybdenum"
+    ]
+  },
+  "niobium": {
+    "patterns": [
+      "\\b(?:niobium|columbium)\\b"
+    ],
+    "keywords": [
+      "niobium",
+      "columbium"
+    ]
+  },
+  "tantalum": {
+    "patterns": [
+      "\\btantalum\\b"
+    ],
+    "keywords": [
+      "tantalum"
+    ]
+  },
+  "uranium": {
+    "patterns": [
+      "\\buranium\\b"
+    ],
+    "keywords": [
+      "uranium"
+    ]
+  },
+  "indium": {
+    "patterns": [
+      "\\bindium\\b"
+    ],
+    "keywords": [
+      "indium"
+    ]
+  },
+  "bismuth": {
+    "patterns": [
+      "\\bbismuth\\b"
+    ],
+    "keywords": [
+      "bismuth"
+    ]
+  },
+  "silver": {
+    "patterns": [
+      "\\bsilver\\b"
+    ],
+    "keywords": [
+      "silver"
+    ]
+  },
+  "gold": {
+    "patterns": [
+      "\\bgold\\b"
+    ],
+    "keywords": [
+      "gold"
+    ]
+  },
+  "platinum_group": {
+    "patterns": [
+      "\\b(?:platinum|palladium|rhodium|iridium)\\b"
+    ],
+    "keywords": [
+      "platinum",
+      "palladium",
+      "rhodium",
+      "iridium"
+    ]
+  },
+  "steel": {
+    "patterns": [
+      "\\b(?:steel|stainless|maraging|tool.?steel)\\b"
+    ],
+    "keywords": [
+      "steel",
+      "stainless",
+      "maraging"
+    ],
+    "uns_prefixes": [
+      "G",
+      "S",
+      "T"
+    ]
+  },
+  "cast_iron": {
+    "patterns": [
+      "\\b(?:cast iron|ductile iron|gray iron|malleable iron)\\b"
+    ],
+    "keywords": [
+      "cast iron",
+      "ductile iron",
+      "gray iron"
+    ]
+  },
+  "refractory": {
+    "patterns": [
+      "\\brefractory metal\\b"
+    ],
+    "keywords": [
+      "refractory"
+    ]
+  },
+  "precious_metal": {
+    "patterns": [
+      "\\bprecious metal\\b"
+    ],
+    "keywords": [
+      "precious metal"
+    ]
+  },
+  "superconductor": {
+    "patterns": [
+      "\\bsuperconduct(?:ing|or)\\b"
+    ],
+    "keywords": [
+      "superconducting",
+      "superconductor"
+    ]
+  },
+  "composite": {
+    "patterns": [
+      "\\bcomposite\\b",
+      "\\bmmc\\b",
+      "metal.?matrix"
+    ],
+    "keywords": [
+      "composite",
+      "MMC",
+      "metal-matrix"
+    ]
+  },
+  "carbide": {
+    "patterns": [
+      "\\b(?:carbide|cermet)\\b"
+    ],
+    "keywords": [
+      "carbide",
+      "cermet"
+    ]
+  },
+  "rare_earth": {
+    "patterns": [
+      "\\brare earth\\b"
+    ],
+    "keywords": [
+      "rare earth"
+    ]
+  },
+  "diamond": {
+    "patterns": [
+      "\\b(?:diamond|cbn|polycrystalline)\\b"
+    ],
+    "keywords": [
+      "diamond",
+      "CBN"
+    ]
+  },
+  "ceramic": {
+    "patterns": [
+      "\\bceramic\\b"
+    ],
+    "keywords": [
+      "ceramic"
+    ]
+  }
+}

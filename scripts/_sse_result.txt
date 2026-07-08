@@ -1,0 +1,4 @@
+=== SSE Timing ===
+21.54s LOG ������������������������������
+21.54s rewritten 
+Duration: 21.5s

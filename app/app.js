@@ -29,7 +29,8 @@ function getTheme() { return localStorage.getItem('theme') || 'light'; }
 function setTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('theme', t);
-  themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+  themeToggle.innerHTML = t === 'dark' ? '<i data-lucide="sun" size="18"></i>' : '<i data-lucide="moon" size="18"></i>';
+  if (typeof lucide !== "undefined") lucide.createIcons();
 }
 themeToggle.addEventListener('click', () => {
   setTheme(getTheme() === 'dark' ? 'light' : 'dark');
@@ -196,12 +197,21 @@ function openCitation(page, sourceId) {
 
 
 
+// Lucide icons
+if (typeof lucide !== "undefined") lucide.createIcons();
+
 // ===== Auth State =====
 const authState = { user: null, token: localStorage.getItem('auth_token') || null, pendingEmail: null };
+// If no token in localStorage but cookie exists, restore from cookie
+if (!authState.token && getCookie('auth_token')) {
+  authState.token = getCookie('auth_token');
+  localStorage.setItem('auth_token', authState.token);
+}
+
 const urlToken = new URLSearchParams(window.location.search).get("token");
 if (urlToken) {
   localStorage.setItem("auth_token", urlToken);
-  authState.token = urlToken;
+  authState.token = urlToken; setCookie('auth_token', urlToken, 72);
   fetch("/api/auth/me", { headers: { "Authorization": "Bearer " + urlToken } })
     .then(r => r.json()).then(d => {
       if (d.user) { authState.user = d.user; updateAuthUI(); showToast("\u767b\u5f55\u6210\u529f"); }
@@ -221,8 +231,12 @@ function updateAuthUI() {
   if (!um || !lb) return;
   if (authState.user) {
     um.style.display = 'flex'; lb.style.display = 'none';
+    const avatar = document.getElementById('userAvatar');
     document.getElementById('userNameText').textContent = authState.user.username;
-    document.getElementById('dropdownEmail').textContent = authState.user.email;
+    document.getElementById('dropdownEmail').textContent = authState.user.username;
+    document.getElementById('dropdownEmailSub').textContent = authState.user.email;
+    avatar.textContent = authState.user.username.charAt(0).toUpperCase();
+    avatar.style.background = 'var(--accent)';
     const vb = document.getElementById('verifyBadge');
     if (authState.user.email_verified) { vb.textContent = '\u5df2\u9a8c\u8bc1'; vb.className = 'verify-badge verified'; }
     else { vb.textContent = '\u672a\u9a8c\u8bc1'; vb.className = 'verify-badge'; }
@@ -233,6 +247,16 @@ function showToast(msg, type) {
   const el = document.createElement('div'); el.className = 'toast' + (type === 'error' ? ' toast-error' : '');
   el.textContent = msg; document.body.appendChild(el);
   setTimeout(() => el.remove(), 4000);
+}
+
+// Cookie helpers
+function setCookie(name, value, hours) {
+  const d = new Date(); d.setTime(d.getTime() + hours * 60 * 60 * 1000);
+  document.cookie = name + "=" + value + "; path=/; expires=" + d.toUTCString();
+}
+function getCookie(name) {
+  const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return m ? m[2] : null;
 }
 
 // Auth Modal
@@ -271,7 +295,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const data = await resp.json();
     if (!resp.ok) { showAuthError(document.getElementById('authError'), data.detail || '\u767b\u5f55\u5931\u8d25'); btn.disabled = false; btn.classList.remove('loading'); return; }
     authState.token = data.token; authState.user = data.user;
-    localStorage.setItem('auth_token', data.token); authModal.style.display = 'none'; updateAuthUI(); showToast('\u767b\u5f55\u6210\u529f');
+    localStorage.setItem('auth_token', data.token); setCookie('auth_token', data.token, 72); authModal.style.display = 'none'; updateAuthUI(); showToast('\u767b\u5f55\u6210\u529f');
   } catch(e) { showAuthError(document.getElementById('authError'), '\u7f51\u7edc\u9519\u8bef'); }
   btn.disabled = false; btn.classList.remove('loading');
 });
@@ -289,7 +313,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const data = await resp.json();
     if (!resp.ok) { showAuthError(document.getElementById('regError'), data.detail || '\u6ce8\u518c\u5931\u8d25'); btn.disabled = false; btn.classList.remove('loading'); return; }
     authState.token = data.token; authState.user = data.user; authState.pendingEmail = email;
-    localStorage.setItem('auth_token', data.token);
+    localStorage.setItem('auth_token', data.token); setCookie('auth_token', data.token, 72);
     document.getElementById('regStepInfo').style.display = 'none';
     document.getElementById('regStepOtp').style.display = 'block';
     document.getElementById('regOtpEmail').textContent = email;
@@ -352,6 +376,7 @@ document.addEventListener('click', () => { if (userAvatarBtn) userAvatarBtn.clos
 document.getElementById('logoutBtn').addEventListener('click', () => {
   authState.token = null; authState.user = null; authState.pendingEmail = null;
   localStorage.removeItem('auth_token');
+  document.cookie = "auth_token=; path=/; max-age=0";
   if (userAvatarBtn) userAvatarBtn.closest('.user-menu').classList.remove('open');
   updateAuthUI(); showToast('\u5df2\u9000\u51fa\u767b\u5f55');
 });
@@ -490,6 +515,7 @@ function resetProgressSteps() {
 
 function showProgressSteps() {
   document.getElementById('progressSteps').style.display = 'flex';
+  if (typeof lucide !== "undefined") setTimeout(() => lucide.createIcons(), 50);
 }
 
 function activateStep(stepId) {

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>铸造知识库</title>
 <link rel="stylesheet" href="/static/style.css">
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 <div id="app">
@@ -19,21 +20,22 @@
       <button class="icon-btn" id="pdfToggle" title="文档查看器">📄</button>
        <button class="icon-btn" id="themeToggle" title="切换主题">🌙</button>
        <button class="icon-btn" id="infoToggle" title="关于">ℹ️</button>
-       <div class="user-menu" id="userMenu" style="display:none">
-         <button class="user-avatar-btn" id="userAvatarBtn">
-           <span class="user-avatar" id="userAvatar">👤</span>
-           <span class="user-name" id="userNameText"></span>
-         </button>
-         <div class="user-dropdown" id="userDropdown">
-           <div class="dropdown-item disabled">
-             <span id="dropdownEmail"></span>
+      <div class="user-menu" id="userMenu" style="display:none">
+        <button class="user-avatar-btn" id="userAvatarBtn">
+           <span class="user-avatar" id="userAvatar"></span>
+          <span class="user-name" id="userNameText"></span>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dropdown-item disabled">
+             <span id="dropdownEmail" style="font-weight:600;font-size:13px"></span>
+             <span class="dropdown-email" id="dropdownEmailSub"></span>
              <span class="verify-badge" id="verifyBadge">未验证</span>
-           </div>
-           <div class="dropdown-divider"></div>
-           <button class="dropdown-item" id="resendVerifyBtn">重新发送验证邮件</button>
-           <button class="dropdown-item" id="logoutBtn">退出登录</button>
-         </div>
-       </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" id="resendVerifyBtn">重新发送验证邮件</button>
+           <button class="dropdown-item danger" id="logoutBtn">退出登录</button>
+        </div>
+      </div>
        <button class="icon-btn auth-btn" id="loginBtn" title="登录">🔑</button>
      </div>
   </header>
@@ -136,7 +138,7 @@
        <div class="auth-tabs">
          <button class="auth-tab active" data-tab="login" id="tabLogin">登录</button>
          <button class="auth-tab" data-tab="register" id="tabRegister">注册</button>
-         <button class="auth-close" id="closeAuthModal">+</button>
+         <button class="auth-close" id="closeAuthModal"><i data-lucide="x" size="18"</button>
        </div>
        <div class="auth-view active" id="loginView">
          <h2 class="auth-view-title">欢迎回来</h2>
