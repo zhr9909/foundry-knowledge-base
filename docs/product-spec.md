@@ -462,3 +462,50 @@ rag_subgraph.add_edge("select_ctx", "generate")
 - ✅ 我们的 RAG Agent 子图化 = 标准做法
 - ✅ Orchestrator + 子 Agent = Supervisor 模式
 - ✅ 渐进式改造 = 低风险
+
+---
+
+## 六、实现机制详解
+
+### 6.1 日志实时推送（SSE 原理）
+
+实时日志不是轮询接口，而是同一个进程内的线程+队列：
+
+`
+浏览器 EventSource → GET /chat/stream
+  → gateway.py import agent.py（直接调，不走 HTTP）
+  → agent.stream_chat(query, section, history)
+  → 开 daemon 线程跑 agent_chat()
+  → agent_chat() 每步调 progress(event) 塞进 queue
+  → stream_chat() 从 queue 取 → yield
+  → StreamingResponse 推给浏览器
+  → 浏览器 onmessage 立即渲染 DOM
+
+事件产生节点：
+  rewrite_query()   → LOG + rewritten
+  search_parallel() → LOG + searched(count)
+  select_context()  → LOG + context_ready(count)
+  quality_check()   → LOG + checked(score)
+  generate_answer() → LOG + 最终 RESULT
+`
+
+SSE 的 Content-Type 必须精确为 	ext/event-stream（不能带 charset=utf-8），否则 Chrome 不逐条解析。
+
+### 6.2 对话历史维护
+
+无用户系统、无 session。历史完全在浏览器 JavaScript 内存中：
+
+`
+const state = { history: [], ... };    // 聊天记录 [{role, content}, ...]
+state.history.push({ role, content }); // 每次问答后追加
+if (state.history.length > 20) state.history = state.history.slice(-20);
+
+发送时带上前几轮：
+  POST /chat       → history[:6] → JSON → RAG Agent
+  SSE /chat/stream → history[:6] → URL → gateway.py → agent.stream_chat()
+
+后端拼入 LLM prompt：
+  messages = history[-4:] + [{"role": "user", "content": query}]
+`
+
+特点：多标签页互不干扰、刷新即丢失、无需登录态、每次发最后 6 轮。

@@ -131,3 +131,49 @@
  
  > 旧版单体服务 `app_server.py` 已废弃，改用多 Agent 架构。
  > 数据导入流程：`pdf_extractor.py` → `ingest.py` → `backfill_metadata.py`
+ 用户系统 + 邮箱验证
+ ```
+ 
+ ## 用户系统
+ 
+ ### 功能
+ - **注册**：邮箱 + 用户名 + 密码，自动发送验证邮件
+ - **登录**：邮箱 + 密码，返回 JWT Token
+ - **邮箱验证**：注册时发送验证链接（24小时有效）
+ - **重新发送验证邮件**：已验证状态标记
+ - **会话管理**：Token 存储于 localStorage，72小时有效期
+ - **前端**：登录/注册模态框 + 用户菜单（下拉）
+ 
+ ### 配置
+ 
+ 邮箱验证通过 SMTP 发送，需要设置以下环境变量（可选，未配置时验证链接会打印到控制台/日志）：
+ - `SMTP_HOST`：SMTP 服务器（默认 smtp.qq.com）
+ - `SMTP_PORT`：端口（默认 587）
+ - `SMTP_USER`：邮箱账号
+ - `SMTP_PASSWORD`：邮箱密码/授权码
+ - `SITE_URL`：网站地址（用于验证链接，默认 http://127.0.0.1:8000）
+ - `AUTH_SECRET_KEY`：JWT 签名密钥（默认随机生成）
+ 
+ ### API
+ | 方法 | 路径 | 说明 |
+ |------|------|------|
+ | POST | /api/auth/register | 注册（返回 Token + 发送验证邮件） |
+ | POST | /api/auth/login | 登录（返回 Token） |
+ | GET | /api/auth/verify-email?token=xxx | 验证邮箱 |
+ | POST | /api/auth/resend-verification | 重新发送验证邮件（需登录） |
+ | GET | /api/auth/me | 获取当前用户信息（需登录） |
+ 
+ ### 数据库表
+ - `users`：用户表（email, username, password_hash, email_verified, ...）
+ - `verification_tokens`：验证令牌表（token, type, expires_at, ...）
+ 
+ 表通过 `auth_handler.py` 的 `init_auth_db()` 在服务启动时自动创建。
+ 
+ ### 文件
+ - `scripts/auth_handler.py`：认证核心模块（JWT + bcrypt + 邮箱验证）
+ - `scripts/gateway.py`：认证 API 路由（已集成）
+ - `app/index.html`：登录/注册 UI
+ - `app/style.css`：认证相关样式
+ - `app/app.js`：前端认证逻辑
+ 
+ ## 架构

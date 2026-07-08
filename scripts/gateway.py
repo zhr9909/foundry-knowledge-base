@@ -3,14 +3,22 @@
 
 import os, sys, json, asyncio, logging
 from pathlib import Path
+import hashlib
 from typing import Optional
 import httpx
+from auth_handler import (
+    init_auth_db, create_user, authenticate_user, create_session_token,
+    get_current_user, require_user, create_verification_code,
+    verify_code, send_verification_code,
+    get_google_auth_url, google_login, validate_email
+)
+from pydantic import BaseModel
 
 _scripts_dir = Path(__file__).resolve().parent
 if str(_scripts_dir) not in sys.path:
     sys.path.insert(0, str(_scripts_dir))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import FileResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -77,8 +85,7 @@ async def health():
 @app.get("/sections")
 async def get_sections():
     try:
-        import psycopg2
-        conn = psycopg2.connect(host="127.0.0.1", port=15432, dbname="foundry_kb", user="findmyjob", password="findmyjob_dev_password")
+        conn = get_conn()
         cur = conn.cursor()
         cur.execute("SELECT id, title, parent_id FROM document_sources ORDER BY parent_id, id")
         rows = cur.fetchall()
@@ -87,8 +94,6 @@ async def get_sections():
     except Exception as e:
         _log.warning(f"Sections error: {e}")
         return {"sections": []}
-
-@app.get("/search")
 async def search(query: str = "", top_k: int = 10, section: str = None):
     if not query.strip():
         raise HTTPException(400, "query is required")
@@ -155,6 +160,78 @@ async def serve_pdf(source_id: int):
             return FileResponse(str(p), media_type="application/pdf")
     raise HTTPException(404, "PDF not found")
 
+@app.on_event("startup")
+async def startup():
+    init_auth_db()
+
+    # ==================== Auth Routes ====================
+class AuthRegisterRequest(BaseModel):
+    email: str
+    username: str
+    password: str
+
+class AuthLoginRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/api/auth/register")
+async def auth_register(req: AuthRegisterRequest):
+    if not validate_email(req.email):
+        raise HTTPException(400, "邮箱格式不正确")
+    if len(req.password) < 6:
+        raise HTTPException(400, "密码长度至少6位")
+    if not req.username.strip():
+        raise HTTPException(400, "用户名不能为空")
+    user = create_user(req.email, req.username, req.password)
+    code = create_verification_code(user["id"])
+    send_verification_code(req.email, code, req.username)
+    session = create_session_token(user["id"], user["email"])
+    return {"user": user, "token": session, "code": code, "message": "注册成功，请查收验证码"}
+
+@app.post("/api/auth/login")
+async def auth_login(req: AuthLoginRequest):
+    if not req.email or not req.password:
+        raise HTTPException(400, "请输入邮箱和密码")
+    user = authenticate_user(req.email, req.password)
+    if not user:
+        raise HTTPException(401, "邮箱或密码错误")
+    token = create_session_token(user["id"], user["email"])
+    return {"user": user, "token": token}
+
+@app.post("/api/auth/verify-code")
+async def auth_verify_code(req: dict):
+    email = req.get("email", "")
+    code = req.get("code", "")
+    if not email or not code:
+        raise HTTPException(400, "缺少邮箱或验证码")
+    success = verify_code(email, code)
+    if not success:
+        raise HTTPException(400, "验证码错误或已过期")
+    return {"message": "验证成功"}
+
+@app.post("/api/auth/resend-verification")
+async def auth_resend_verification(user: dict = Depends(require_user)):
+    token = create_verification_token(user["id"])
+    send_verification_email(user["email"], token, user["username"])
+    return {"message": "验证邮件已重新发送"}
+
+@app.get("/api/auth/me")
+async def auth_me(user: dict = Depends(get_current_user)):
+    return {"user": user}
+
+@app.get("/api/auth/google/url")
+async def auth_google_url():
+    return {"url": get_google_auth_url()}
+
+@app.get("/api/auth/google/callback")
+async def auth_google_callback(code: str = ""):
+    if not code:
+        return RedirectResponse(url="/static/index.html?auth=fail")
+    user = google_login(code)
+    if not user:
+        return RedirectResponse(url="/static/index.html?auth=fail")
+    token = create_session_token(user["id"], user["email"])
+    return RedirectResponse(url=f"/static/index.html?token={token}")
 if __name__ == "__main__":
     print(f"[Orchestrator] Starting on {HOST}:{PORT}")
     print(f"[Orchestrator] SSE: direct from agent.py (no proxy)")

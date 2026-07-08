@@ -193,6 +193,179 @@ function openCitation(page, sourceId) {
   openPDF(sourceId, page);
 }
 
+
+
+
+// ===== Auth State =====
+const authState = { user: null, token: localStorage.getItem('auth_token') || null, pendingEmail: null };
+const urlToken = new URLSearchParams(window.location.search).get("token");
+if (urlToken) {
+  localStorage.setItem("auth_token", urlToken);
+  authState.token = urlToken;
+  fetch("/api/auth/me", { headers: { "Authorization": "Bearer " + urlToken } })
+    .then(r => r.json()).then(d => {
+      if (d.user) { authState.user = d.user; updateAuthUI(); showToast("\u767b\u5f55\u6210\u529f"); }
+    }).catch(() => {});
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+
+if (authState.token) {
+  fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + authState.token } })
+    .then(r => r.json()).then(d => { if (d.user) { authState.user = d.user; updateAuthUI(); }
+    else { localStorage.removeItem('auth_token'); authState.token = null; updateAuthUI(); }}).catch(() => {});
+}
+
+function updateAuthUI() {
+  const um = document.getElementById('userMenu'); const lb = document.getElementById('loginBtn');
+  if (!um || !lb) return;
+  if (authState.user) {
+    um.style.display = 'flex'; lb.style.display = 'none';
+    document.getElementById('userNameText').textContent = authState.user.username;
+    document.getElementById('dropdownEmail').textContent = authState.user.email;
+    const vb = document.getElementById('verifyBadge');
+    if (authState.user.email_verified) { vb.textContent = '\u5df2\u9a8c\u8bc1'; vb.className = 'verify-badge verified'; }
+    else { vb.textContent = '\u672a\u9a8c\u8bc1'; vb.className = 'verify-badge'; }
+  } else { um.style.display = 'none'; lb.style.display = 'inline-flex'; }
+}
+
+function showToast(msg, type) {
+  const el = document.createElement('div'); el.className = 'toast' + (type === 'error' ? ' toast-error' : '');
+  el.textContent = msg; document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// Auth Modal
+const authModal = document.getElementById('authModal');
+const closeAuthModal = document.getElementById('closeAuthModal');
+const authOverlay = document.getElementById('authOverlay');
+const tabLogin = document.getElementById('tabLogin');
+const tabRegister = document.getElementById('tabRegister');
+const loginBtn = document.getElementById('loginBtn');
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-view').forEach(v => v.classList.remove('active'));
+  if (tab === 'login') { tabLogin.classList.add('active'); document.getElementById('loginView').classList.add('active'); }
+  else { tabRegister.classList.add('active'); document.getElementById('registerView').classList.add('active'); }
+  const err = document.getElementById('authError'); if (err) err.style.display = 'none';
+  const err2 = document.getElementById('regError'); if (err2) err2.style.display = 'none';
+}
+
+tabLogin.addEventListener('click', () => switchTab('login'));
+tabRegister.addEventListener('click', () => switchTab('register'));
+loginBtn.addEventListener('click', () => { authModal.style.display = 'flex'; switchTab('login'); });
+closeAuthModal.addEventListener('click', () => authModal.style.display = 'none');
+authOverlay.addEventListener('click', () => authModal.style.display = 'none');
+document.getElementById('backToLoginBtn').addEventListener('click', (e) => { e.preventDefault(); authModal.style.display = 'none'; });
+
+function showAuthError(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+// Login submit
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); const btn = document.getElementById('loginSubmit');
+  btn.disabled = true; btn.classList.add('loading');
+  try {
+    const resp = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPassword').value }) });
+    const data = await resp.json();
+    if (!resp.ok) { showAuthError(document.getElementById('authError'), data.detail || '\u767b\u5f55\u5931\u8d25'); btn.disabled = false; btn.classList.remove('loading'); return; }
+    authState.token = data.token; authState.user = data.user;
+    localStorage.setItem('auth_token', data.token); authModal.style.display = 'none'; updateAuthUI(); showToast('\u767b\u5f55\u6210\u529f');
+  } catch(e) { showAuthError(document.getElementById('authError'), '\u7f51\u7edc\u9519\u8bef'); }
+  btn.disabled = false; btn.classList.remove('loading');
+});
+
+// Register - Step 1
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); const btn = document.getElementById('sendCodeBtn');
+  btn.disabled = true; btn.classList.add('loading');
+  const email = document.getElementById('regEmail').value;
+  const username = document.getElementById('regUsername').value;
+  const password = document.getElementById('regPassword').value;
+  try {
+    const resp = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, username, password }) });
+    const data = await resp.json();
+    if (!resp.ok) { showAuthError(document.getElementById('regError'), data.detail || '\u6ce8\u518c\u5931\u8d25'); btn.disabled = false; btn.classList.remove('loading'); return; }
+    authState.token = data.token; authState.user = data.user; authState.pendingEmail = email;
+    localStorage.setItem('auth_token', data.token);
+    document.getElementById('regStepInfo').style.display = 'none';
+    document.getElementById('regStepOtp').style.display = 'block';
+    document.getElementById('regOtpEmail').textContent = email;
+    document.getElementById('verifyCodeBtn').disabled = true;
+    document.querySelector('.otp-input').focus(); updateAuthUI();
+  } catch(e) { showAuthError(document.getElementById('regError'), '\u7f51\u7edc\u9519\u8bef'); }
+  btn.disabled = false; btn.classList.remove('loading');
+});
+
+// OTP inputs
+document.querySelectorAll('.otp-input').forEach((inp, idx) => {
+  inp.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '').slice(0,1);
+    if (this.value) { this.classList.add('filled'); if (idx < 5) document.querySelectorAll('.otp-input')[idx+1].focus(); }
+    const filled = Array.from(document.querySelectorAll('.otp-input')).every(i => i.value);
+    document.getElementById('verifyCodeBtn').disabled = !filled;
+  });
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && !this.value && idx > 0) document.querySelectorAll('.otp-input')[idx-1].focus();
+  });
+  inp.addEventListener('paste', function(e) {
+    e.preventDefault(); const paste = (e.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'').slice(0,6);
+    document.querySelectorAll('.otp-input').forEach((i, n) => { if (n < paste.length) { i.value = paste[n]; i.classList.add('filled'); } });
+    document.getElementById('verifyCodeBtn').disabled = paste.length < 6;
+  });
+});
+
+document.getElementById('verifyCodeBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('verifyCodeBtn');
+  const code = Array.from(document.querySelectorAll('.otp-input')).map(i => i.value).join('');
+  btn.disabled = true; btn.classList.add('loading');
+  try {
+    const resp = await fetch('/api/auth/verify-code', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: authState.pendingEmail || document.getElementById('regEmail').value, code }) });
+    if (!resp.ok) { const d = await resp.json(); showAuthError(document.getElementById('regError'), d.detail || '\u9a8c\u8bc1\u5931\u8d25'); btn.disabled = true; btn.classList.remove('loading'); return; }
+    authModal.style.display = 'none';
+    document.getElementById('regStepOtp').style.display = 'none';
+    document.getElementById('regStepInfo').style.display = 'block';
+    document.querySelectorAll('.otp-input').forEach(i => { i.value = ''; i.classList.remove('filled'); });
+    if (authState.user) { authState.user.email_verified = true; updateAuthUI(); }
+    showToast('\u9a8c\u8bc1\u6210\u529f\uff01\u6b22\u8fce\u4f7f\u7528');
+  } catch(e) { showAuthError(document.getElementById('regError'), '\u7f51\u7edc\u9519\u8bef'); }
+  btn.disabled = true; btn.classList.remove('loading');
+});
+
+document.getElementById('resendCodeBtn').addEventListener('click', async (e) => {
+  e.preventDefault();
+  try {
+    const resp = await fetch('/api/auth/resend-verification', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authState.token } });
+    if (resp.ok) showToast('\u9a8c\u8bc1\u7801\u5df2\u91cd\u65b0\u53d1\u9001');
+    else showToast('\u53d1\u9001\u5931\u8d25', 'error');
+  } catch { showToast('\u7f51\u7edc\u9519\u8bef', 'error'); }
+});
+
+// User Dropdown
+const userAvatarBtn = document.getElementById('userAvatarBtn');
+userAvatarBtn.addEventListener('click', (e) => { e.stopPropagation(); userAvatarBtn.closest('.user-menu').classList.toggle('open'); });
+document.addEventListener('click', () => { if (userAvatarBtn) userAvatarBtn.closest('.user-menu').classList.remove('open'); });
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  authState.token = null; authState.user = null; authState.pendingEmail = null;
+  localStorage.removeItem('auth_token');
+  if (userAvatarBtn) userAvatarBtn.closest('.user-menu').classList.remove('open');
+  updateAuthUI(); showToast('\u5df2\u9000\u51fa\u767b\u5f55');
+});
+
+document.getElementById('resendVerifyBtn').addEventListener('click', async () => {
+  if (!authState.token) return;
+  try {
+    const resp = await fetch('/api/auth/resend-verification', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authState.token } });
+    if (resp.ok) showToast('\u9a8c\u8bc1\u90ae\u4ef6\u5df2\u91cd\u65b0\u53d1\u9001');
+  } catch { showToast('\u7f51\u7edc\u9519\u8bef', 'error'); }
+});
+
+document.getElementById('googleLogin').addEventListener('click', async () => { try { const r = await fetch('/api/auth/google/url'); const d = await r.json(); if (d.url) location.href = d.url; } catch(e) { showToast('Error'); } });
+document.getElementById('githubLogin').addEventListener('click', () => showToast('GitHub \u767b\u5f55\u5c1a\u672a\u5b9e\u73b0'));
 // ===== Log Panel =====
 function createAssistantSkeleton() {
   const div = document.createElement('div');
@@ -392,6 +565,7 @@ function sendMessageSSE(query) {
   return new Promise((resolve) => {
     const params = new URLSearchParams({ query });
     if (state.activeSection) params.set('section', state.activeSection);
+    if (state.history.length > 0) params.set('history', JSON.stringify(state.history.slice(-6)));
     
     let resolved = false;
     let hasData = false;
