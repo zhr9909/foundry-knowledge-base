@@ -11,10 +11,13 @@ if str(_scripts_dir) not in sys.path:
     sys.path.insert(0, str(_scripts_dir))
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
+
+# Direct import for SSE streaming (bypasses proxy buffering)
+import agent as _agent
 
 RAG_URL = "http://127.0.0.1:8001"
 HOST = "0.0.0.0"
@@ -28,6 +31,17 @@ _log = logging.getLogger('orchestrator')
 app = FastAPI(title="Foundry KB Orchestrator", version="0.3.0")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class SSEHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if response.headers.get("content-type", "").startswith("text/event-stream"):
+            response.headers["Connection"] = "keep-alive"
+        return response
+
+app.add_middleware(SSEHeadersMiddleware)
+ 
 class ChatRequest(BaseModel):
     query: str
     search_results: list = []
@@ -104,63 +118,35 @@ async def chat(req: ChatRequest):
         return {"answer": f"Orchestrator error: {str(e)}", "citations": [], "search_results": [], "thinking": ""}
 
 @app.get("/chat/stream")
-@app.get("/chat/stream")
-@app.get("/chat/stream")
 async def chat_stream(query: str, section: str = None):
-    """Proxy RAG Agent SSE stream (real-time)."""
-    task = {"source": "orchestrator", "type": "chat",
-            "input": {"query": query, "section": section, "stream": True}}
+    """Direct SSE from agent.py - no proxy, no buffering."""
     async def event_gen():
         try:
-            async with httpx.AsyncClient(timeout=120) as client:
-                async with client.stream("POST", f"{RAG_URL}/a2a/tasks", json=task) as resp:
-                    evt = ""
-                    async for line in resp.aiter_lines():
-                        line = line.strip()
-                        if not line: continue
-                        if line.startswith("event: "):
-                            evt = line[7:].strip()
-                            continue
-                        if line.startswith("data: "):
-                            pl = line[6:].strip()
-                            if not pl: continue
-                            try: data = json.loads(pl)
-                            except: continue
-                            if evt == "task.result":
-                                out = data.get("output", {})
-                                ans = out.get("answer","")
-                                cit = out.get("citations",[])
-                                thi = out.get("thinking","")
-                                payload = json.dumps({"type":"result","data":{"answer":ans,"citations":cit,"thinking":thi}}, ensure_ascii=False)
-                                yield "data: " + payload + "\n\n"
-                                yield 'data: {"type": "done"}\n\n'
-                                return
-                            elif evt == "task.error":
-                                err = data.get("error",{}).get("message","?")
-                                payload = json.dumps({"type":"error","message":err}, ensure_ascii=False)
-                                yield "data: " + payload + "\n\n"
-                                yield 'data: {"type": "done"}\n\n'
-                                return
-                            elif evt == "task.token":
-                                payload = json.dumps({"type":"token","content":data.get("content","")}, ensure_ascii=False)
-                                yield "data: " + payload + "\n\n"
-                            elif evt == "task.status":
-                                sd = data.get("data", {})
-                                payload = json.dumps(sd, ensure_ascii=False)
-                                yield "data: " + payload + "\n\n"
-                            elif evt == "task.done":
-                                yield 'data: {"type": "done"}\n\n'
-                                return
-                            else:
-                                yield "data: " + pl + "\n\n"
+            for event in _agent.stream_chat(query, section):
+                if event is None:
+                    continue
+                etype = event.get("type", "")
+                step = event.get("step", "")
+                if etype == "result":
+                    data = event.get("data", {})
+                    payload = json.dumps({"type": "result", "data": {"answer": data.get("answer",""), "citations": data.get("citations",[]), "thinking": data.get("thinking","")}}, ensure_ascii=False)
+                    yield f"data: {payload}\n\n"
+                    break
+                elif etype == "error":
+                    payload = json.dumps({"type": "error", "message": event.get("message","?")}, ensure_ascii=False)
+                    yield f"data: {payload}\n\n"
+                    break
+                elif step:
+                    yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                elif etype == "log":
+                    yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except Exception as e:
             _log.error(f"Stream error: {e}")
-            payload = json.dumps({"type":"error","message":str(e)}, ensure_ascii=False)
-            yield "data: " + payload + "\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
         finally:
             yield 'data: {"type": "done"}\n\n'
 
-    return StreamingResponse(event_gen(), media_type="text/event-stream")
+    return StreamingResponse(event_gen(), media_type="text/event-stream", headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "X-Accel-Buffering": "no"})
 
 @app.get("/pdf/{source_id}")
 async def serve_pdf(source_id: int):
@@ -171,5 +157,6 @@ async def serve_pdf(source_id: int):
 
 if __name__ == "__main__":
     print(f"[Orchestrator] Starting on {HOST}:{PORT}")
-    print(f"[Orchestrator] RAG Agent: {RAG_URL}")
+    print(f"[Orchestrator] SSE: direct from agent.py (no proxy)")
+    print(f"[Orchestrator] RAG Agent (search/chat POST): {RAG_URL}")
     uvicorn.run(app, host=HOST, port=PORT)

@@ -124,6 +124,7 @@ async def chat_stream_get(query: str, section: str = None):
     async def _event_gen():
         try:
             for event in _agent.stream_chat(query, section):
+                if event is None: continue
                 etype = event.get("type", "")
                 step = event.get("step", "")
                 if etype == "result":
@@ -211,6 +212,7 @@ async def _task_stream(task: Task):
 
     try:
         for event in _agent.stream_chat(query, section):
+            if event is None: continue
             etype = event.get("type", "")
             if etype == "token":
                 yield f"event: task.token\ndata: {json.dumps({'task_id': task.task_id, 'content': event['content']}, ensure_ascii=False)}\n\n"
