@@ -37,6 +37,8 @@ AGENT_ID = "rag"
 # ── App ──
 app = FastAPI(title="RAG Agent", version="0.1.0")
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 # ── Task Manager ──
 task_manager = TaskManager()
 
@@ -115,10 +117,35 @@ async def search_get(query: str = "", top_k: int = 10, section: str = None):
     from search import search
     if not query.strip():
         return JSONResponse({"error": "query is required"}, status_code=400)
-    result = search(query, top_k=top_k, hybrid=True, section=section)
-    return JSONResponse(result)
 
-
+@app.get("/chat/stream")
+async def chat_stream_get(query: str, section: str = None):
+    """Direct SSE - strips event: headers for browser."""
+    async def _event_gen():
+        try:
+            for event in _agent.stream_chat(query, section):
+                etype = event.get("type", "")
+                step = event.get("step", "")
+                if etype == "result":
+                    d = event.get("data", {})
+                    p = json.dumps({"type":"result","data":{"answer":d.get("answer",""),"citations":d.get("citations",[]),"thinking":d.get("thinking","")}}, ensure_ascii=False)
+                    yield "data: " + p + "\n\n"
+                    yield 'data: {"type": "done"}\n\n'
+                    return
+                elif etype == "error":
+                    p = json.dumps({"type":"error","message":event.get("message","?")}, ensure_ascii=False)
+                    yield "data: " + p + "\n\n"
+                    yield 'data: {"type": "done"}\n\n'
+                    return
+                elif step:
+                    yield "data: " + json.dumps(event, ensure_ascii=False) + "\n\n"
+                elif etype == "log":
+                    yield "data: " + json.dumps(event, ensure_ascii=False) + "\n\n"
+        except Exception as e:
+            yield "data: " + json.dumps({"type":"error","message":str(e)}, ensure_ascii=False) + "\n\n"
+        finally:
+            yield 'data: {"type": "done"}\n\n'
+    return StreamingResponse(_event_gen(), media_type="text/event-stream")
 # ════════════════════════════════
 #  Task Processing
 # ════════════════════════════════

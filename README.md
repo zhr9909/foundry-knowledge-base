@@ -1,379 +1,133 @@
-﻿# 铸造行业 RAG 知识库
-
-> 面向 AI Solution Architect 岗位的旗舰项目
-> 从 PDF 到 RAG 检索的全链路实现
-
-## 项目结构
-
-```
-foundry-knowledge-base/
-├── app/                          ← 前端页面
-│   ├── index.html                Chat UI
-│   ├── style.css                 样式
-│   ├── app.js                    前端逻辑
-│   ├── pdf-viewer.html           PDF.js 查看器（自包含）
-│   └── pdfjs/                    PDF.js v3 UMD 库
-├── raw/                          ← 源 PDF 存放处
-├── processed/                    ← 提取后的 JSONL 数据
-├── scripts/
-│   ├── pdf_extractor.py                Step 1: PDF → JSONL 粗提取
-│   ├── ingest.py                       Step 2: 清洗 + Embedding → pgvector
-│   ├── search.py                       混合检索核心 (向量+tsvector+RRF+Reranker)
-│   ├── agent.py                        Agent 智能调度 (LangGraph + Timing)
-│   ├── app_server.py                   FastAPI 服务入口（含前端静态文件）
-│   ├── backfill_metadata.py            PDF TOC → metadata 章节回填
-│   ├── generate_eval_dataset.py        评估测试集生成
-│   ├── eval_retrieval.py               检索评估 (HitRate/MRR)
-│   └── eval_db.py                      评估结果库管理
-├── db/
-│   └── schema.sql                PostgreSQL + pgvector 完整建表
-├── docs/
-│   ├── architecture-deep-dive.md ← 全链路架构深度文档（面试武器）
-│   └── interview-deep-dive.md    ← 面试高频追问及回答策略
-└── start_server.bat              一键启动
-```
-
-## 快速启动
-
-```bash
-# 1. 提取 PDF
-python scripts/pdf_extractor.py raw/asm-handbook-v2.pdf processed/
-
-# 2. 清洗 + Embedding + 入库
-python scripts/ingest.py processed/asm-handbook-v2_extracted_*.jsonl
-
-# 3. 章节元数据回填
-python scripts/backfill_metadata.py raw/asm-handbook-v2.pdf
-
-# 4. 启动全功能服务（API + 前端）
-python scripts/app_server.py
-# → http://127.0.0.1:8002/    （Chat UI + PDF 查看器）
-# → http://127.0.0.1:8002/docs （Swagger API 文档）
-```
-
-> 也可以双击 `start_server.bat` 一键启动。
-
-## 数据库连接
-
-```
-主机:   127.0.0.1
-端口:   15432 (容器) / 5432 (本地)
-数据库: foundry_kb
-用户:   findmyjob
-密码:   findmyjob_dev_password
-```
-
-## 关键能力
-
-| 能力 | 实现 |
-|------|------|
-| PDF 解析 | PyMuPDF + Marker OCR（表格/图片兜底） |
-| 清洗去重 | 表格-正文去重 + 空白合并 |
-| Embedding | BAAI/bge-base-zh-v1.5（768维，GPU CUDA） |
-| 向量存储 + 检索 | pgvector（余弦距离，~15ms） |
-| 全文检索 | PostgreSQL tsvector + GIN 索引 |
-| 混合检索 | RRF 融合（向量 + tsvector） |
-| 精排 Reranker | Cross-Encoder MiniLM-L6（GPU，~100ms/20条） |
-| Agent 编排 | LangGraph（异步节点 + 条件路由 + 重试兜底） |
-| API 服务 | FastAPI + SSE 流式 + Swagger 文档 |
-| LLM | DeepSeek-v4-flash（cc-switch 路由） |
-| 数据规模 | 27 本 ASM 手册，37,317 页，29,585 chunks |
-| 检索时延 | 混合 ~1.5s + Reranker ~0.36s + LLM ~14s |
-| 评估 | HitRate@5 / MRR / Precision@5 |
-
-
-## 新增功能（2026-06）
-
-### 5. Agent 智能调度系统
-
-```
-用户提问 → Query Rewrite → Parallel Search → Context Selection → LLM 生成 → Quality Check → 重试/兜底 → 回答
-```
-
-| 模块 | 职责 |
-|------|------|
-| `rewrite_query()` | 中文问题 → 1-3 条英文专业检索语句（保留合金牌号、热处理状态） |
-| `search_parallel()` | 多线程并发检索（3 worker），RRF 交互相交结果 |
-| `select_context()` | 动态 top-K + 关键词 boosting（引用材料牌号加权 +0.08） |
-| `generate_answer()` | 结构化 Prompt → LLM 生成 + 引用标记 |
-| `quality_check()` | 三维评分（0-4 数据完整性 / 0-3 引用规范 / 0-3 结构）≥7 通过 |
-| `agent_chat()` | 主循环：最大 2 轮重试，质量 < 7 则修改查询重试 |
-| 兜底 | 知识库无结果 → 使用 LLM 自身知识 + 免责声明 |
-
-**Prompt 体系：**
-- `QUERY_REWRITE_PROMPT` — 中文→英文改写，材料专业约束
-- `IMPROVED_SYSTEM_PROMPT` — 回答生成，4 种场景模板（单一参数/多材料对比/成分查询/无匹配）
-- `FALLBACK_SYSTEM_PROMPT` — 知识库兜底时的 LLM 自身知识
-- Quality Check Prompt — 三维评分标准
-
-### 6. 前端 Chat UI
-
-- 纯原生 HTML/CSS/JS（无框架依赖）
-- 侧边栏章节筛选
-- 深色/浅色主题切换
-- SSE 流式进度步骤（5 步：分析→检索→精选→生成→质检）
-- 实时处理日志面板（可折叠，精确到毫秒）
-- SSE 优先，失败自动降级到 POST
-
-### 7. PDF.js 文档查看器
-
-- 基于 PDF.js v3（UMD 构建，兼容无模块浏览器）
-- Worker 通过 fetch→blob 加载，绕过 MIME 类型限制
-- **连续滚动**：上下翻页，延迟加载（一次 ~10 页窗口）
-- **精确引用高亮**：取引用数据的精确文本 → 在 PDF 页面文字层搜索匹配 → 仅高亮匹配段落
-- 浮动面板：可拖拽、可缩放、可关闭
-- 工具栏：翻页 ▲/▼、缩放 +/−、适合宽度、跳转输入
-- 键盘快捷键：方向键 / PageUp/Down
-- 两种触发方式：顶栏 📄 按钮 / 点击引用卡片自动跳转
-
-### 8. SSE 流式接口
-
-```http
-GET /chat/stream?query=铝合金6061的力学性能&section=Aluminum+Alloys
-```
-
-返回事件流：
-```
-data: {"step":"rewritten","queries":["6061 aluminum alloy mechanical properties"]}
-data: {"step":"searched","count":12}
-data: {"step":"context_ready","count":8}
-data: {"type":"result","data":{"answer":"...","citations":[...]}}
-```
-
-前端 `EventSource` 消费，同时触发进度条 + 日志面板更新。
-
-
-
-
-## 9. 检索评估（Retrieval Evaluation）
-
-### 评估体系
-
-```
-generate_eval_dataset.py           eval_retrieval.py
-      │                                   │
-      ▼                                   ▼
-LLM 从 chunks 采样 → 生成真实风格查询  ──▶  逐条调 search() → 比对预期结果 → 算分
-      │                                   │
-      ▼                                   ▼
-eval_queries 表                        eval_runs 表 / eval_results 表
-```
-
-### 评估历程
-
-#### 基线（纯向量 + ts_rank）
-
-| 指标 | 值 |
-|------|-----|
-| 测试集 | 87 条 LLM 生成查询 |
-| Hit Rate@5 | 0.276 |
-| Hit Rate@10 | 0.322 |
-| MRR | 0.239 |
-
-#### 当前最佳（BM25 + RRF + Reranker）
-
-| 指标 | 值 | 含义 |
-|------|-----|------|
-| 测试集 | 87 条 LLM 生成查询 | 从 Vol.2 随机抽样，每条 chunk → 2-3 条查询变体 |
-| Hit Rate@5 | 0.276 | 27.6% 的查询在前 5 条命中正确答案 |
-| Hit Rate@10 | 0.322 | 32.2% 的查询在前 10 条命中 |
-| MRR | 0.239 | 命中时平均排名 ~4 |
-| Precision@5 | 0.055 | 前 5 条结果中仅 5.5% 相关 |
-| 平均延迟 | 276ms | 每次检索耗时 |
-
-**改进历程：**
-
-| 实验 | 配置 | Hit@5 | MRR |
-|------|------|-------|-----|
-| #2 | 纯向量 + ts_rank RRF（基线） | 0.276 | 0.239 |
-| #4 | +Reranker | 0.310 | 0.297 |
-| #5 | +RRF 融合改造 | 0.448 | 0.428 |
-| #9 | +BM25 替换 ts_rank | 0.471 | 0.310 |
-| #19 | BM25 + RRF + 材料 Boost | 0.575 | 0.347 |
-| #20 | **rank_bm25 → tsvector** | 待评测 | 待评测 |
-| #21 | **+Reranker MiniLM GPU** | 待评测 | 待评测 |
-
-
-
-### 实验记录
-
-#### Exp #1: 启用 Cross-Encoder Reranker
-
-在 `search.py` 的 `search()` 函数中，在 SQL 查询返回结果后、返回前插入 reranker 调用：
-
-```python
-# Apply cross-encoder reranker
-try:
-    if len(results) >= 2:
-        from agent import rerank
-        results = rerank(query, results, top_k=len(results))
-except Exception:
-    pass
-```
-
-| 指标 | Baseline | +Reranker | 变化 |
-|------|----------|-----------|------|
-| Hit Rate@5 | 0.276 | 0.310 | **+12.3%** |
-| Hit Rate@10 | 0.322 | 0.322 | 持平 |
-| MRR | 0.239 | 0.297 | **+24.3%** |
-| Precision@5 | 0.055 | 0.062 | **+12.7%** |
-| Avg Latency | 262 ms | 1057 ms | 4x 慢 |
-
-**结论：** Reranker 有效提升了检索精度，尤其是 MRR（正确答案排名更靠前）。代价是延迟增加了约 4 倍。后续可以优化：缓存 CrossEncoder 模型（避免每次重新加载）、对候选结果做 batch 预测、或只在候选数量 > threshold 时启用。
-
-**查看实验对比：**
-```bash
-python -c "from eval_db import print_runs_table, list_recent_runs; print_runs_table(list_recent_runs(10))"
-```
-
-
-
-#### Exp #2: RRF 权重融合改造
-
-**改动：** 重写 `search()` 中 hybrid SQL 的融合逻辑
-
-| 改造项 | 之前 | 之后 |
-|--------|------|------|
-| FTS 分数 | 原始 ts_rank（未归一化） | 除以 MAX 归一化到 0-1 |
-| JOIN 类型 | LEFT JOIN（丢弃纯 FTS 结果） | FULL OUTER JOIN（保留全部结果） |
-| 融合公式 | `vec + (0.1 if FTS matches else 0)` | `alpha * vec + (1-alpha) * fts_norm` |
-| 权重控制 | 硬编码 0.1 | `alpha` 参数，默认 0.5 |
-
-**结果对比（alpha=0.5）：**
-
-| 指标 | 旧融合 | RRF(alpha=0.5) | 提升 |
-|------|--------|----------------|------|
-| Hit Rate@5 | 0.310 | 0.448 | **+44.5%** |
-| Hit Rate@10 | 0.322 | 0.460 | **+42.9%** |
-| MRR | 0.297 | 0.428 | **+44.1%** |
-| Precision@5 | 0.062 | 0.090 | **+45.2%** |
-| Latency | 1057ms | 1060ms | 持平 |
-
-核心改进是 FULL OUTER JOIN 让纯 FTS 命中的结果不再被丢弃，FTS 分数归一化让向量和全文可以在同一量级下融合。
-
-#### Exp #3: alpha 权重调优
-
-测试不同 alpha 值（向量:FTS 权重比）:
-
-| alpha | 向量:FTS | Hit@5 | Hit@10 | MRR | P@5 | Latency |
-|-------|----------|-------|--------|-----|-----|---------|
-| 0.3 | 3:7 (FTS 重) | 0.448 | 0.460 | 0.427 | 0.090 | 1108ms |
-| 0.5 | 5:5 (均等) | 0.448 | 0.460 | 0.428 | 0.090 | 1060ms |
-| 0.7 | 7:3 (向量重) | 0.448 | 0.460 | 0.430 | 0.090 | 1051ms |
-
-**结论：** 当前 reranker 开启的情况下，alpha 值对最终结果几乎无影响。因为 reranker（Cross-Encoder）在 SQL 查询之后独立重排序，其语义匹配分数决定了最终顺序，初始 SQL 的加权融合只是候选集筛选，而 FULL OUTER JOIN 已经保证了候选集完整。推荐保持 alpha=0.5 作为对称默认值。
-
-
-#### Exp #4: Query Rewrite Prompt Fix + 结构化输出
-
-**Bug:** QUERY_REWRITE_PROMPT 未定义（变量在重构时丢失），rewrite_query() Silent 失败，中文查询未被重写。
-**Fix:** 更新 QUERY_REWRITE_PROMPT 为结构化输出（core_entity、filter_rule、search_queries、search_priority）
-- 删除英文短路逻辑（所有查询都走 LLM）
-- 正则 `[...]` → `{...}` 适配新 JSON 格式
-- 解析 `isinstance(list)` → `isinstance(dict)` + 提取 `search_queries`
-- 添加 `reasoning_content` 回退（DeepSeek 推理模型）
-- `AgentState` 新增 `core_entity`、`filter_rule`、`search_priority` 字段
-- `rewrite_query()` 返回 dict 替代 list
-**Impact:** 不反映在 eval 中（eval 直接测试 search()）。影响实际对话管道的 LLM 重写质量。
-
-
-#### Exp #5: BM25 替换 ts_rank + RRF 融合
-
-| 改进项 | 之前（ts_rank） | 之后（BM25Okapi） |
-|--------|----------------|-------------------|
-| 稀疏检索算法 | PostgreSQL ts_rank（TF-IDF 变体） | rank_bm25 库的 BM25Okapi |
-| 文档长度归一化 | ❌ 无 | ✅ 内置（b=0.75） |
-| 词频饱和（k1） | ❌ 无 | ✅ 内置（k1=1.5） |
-| 融合方式 | SQL 级 vector+FTS+alpha 加权 | Python 级 vector+BM25+RRF 融合 |
-| 结果集覆盖 | LEFT JOIN（丢弃纯 FTS 结果） | BM25 独占结果也被保留 |
-
-**完整优化历程对比：**
-
-| 实验 | 配置 | Hit@5 | Hit@10 | MRR | P@5 | Latency |
-|------|------|-------|--------|-----|-----|---------|
-| Run #2 | 纯向量 + ts_rank RRF（基线） | 0.276 | 0.322 | 0.239 | 0.055 | 276ms |
-| Run #4 | +Reranker | 0.310 | 0.322 | 0.297 | 0.062 | 1057ms |
-| Run #5 | +RRF 融合改造（FULL JOIN + 归一化） | 0.448 | 0.460 | 0.428 | 0.090 | 1060ms |
-| Run #9 | +BM25 替换 ts_rank | 0.471 | 0.517 | 0.310 | 0.094 | 386ms |
-| **Run #19** | **BM25 + RRF 混合检索（大小写修复 + RRF 修复）** | **0.575** | **0.644** | **0.347** | **0.115** | **284ms** |
-
-**关键发现：**
-1. **BM25 替换 ts_rank 是单次改动收益最大的（+70%）** — 从 Run #2 (0.276) 到 Run #5 (0.448)，而这还只是 RRF 融合的效果。
-2. **Run #19 (0.575) 达到行业 L2 标准区间（0.55-0.72）** — BM25 + 向量 RRF + 材料分类添加权的组合效果显著。
-3. **RRF 中 BM25 独占结果丢失是一个 bug** — 修复后 Hit@5 从 0.356 跳升到 0.575，说明 BM25 独占结果对命中率影响巨大。
-4. **BM25 词库大小写敏感性修复** — 查询 `.lower()` 但语料库未佞化，导致 BM25 匹配量为零。修复后 BM25 才真正发挥作用。
-5. **材料分类添加权 (+0.15)** — 在 RRF 基础上进一步提升相关材料类别的排名。
-6. **延迟从 386ms 降到 284ms** — BM25 (内存索引) 比 ts_rank (PostgreSQL) 更快，且免去了复杂的 CTE SQL 表连接开销。
-
-**当前状态：** BM25 + 向量 RRF 混合检索处于最佳配置，无需 Reranker。
-
-```bash
-# 1. 生成测试查询
-python scripts/generate_eval_dataset.py --n 100 --source-id 2 --dataset-name my_test
-
-# 2. 跑评估
-python scripts/eval_retrieval.py --queries eval_results/my_test.json --top-k 10
-
-# 3. 查看历史
-python -c "from eval_db import print_runs_table, list_recent_runs; print_runs_table(list_recent_runs(10))"
-```
-
-
-
-
-## 2026-07-06 更新：完整 Pipeline 重构 + Eval 修正
-
-### 变更清单
-
-| 文件 | 改动 |
-|------|------|
-| scripts/agent.py | 修复 query rewrite 空列表 bug；新增 3 次重试机制；改进对话记忆（全部拼接+10轮压缩）；调大动态 top_k |
-| scripts/eval_retrieval.py | 新增 --rerank 参数，支持 reranker 参与评估 |
-| scripts/eval_full_pipeline.py | 新建 - 完整管线评估脚本 (rewrite->search->select_context) |
-
-### Pipeline 架构
-
-用户提问 -> rewrite (LLM深挖->英文查询, 3次重试) -> search (多线程并行, 每条top_k=8) -> pgvector + tsvector RRF (向量30%:BM25 70%) -> select_context (reranker重排) -> generate (LLM回答)
-
-### 关键参数
-
-| 参数 | 值 |
-|------|-----|
-| Embedding | bge-base-zh-v1.5 (768维, CUDA) |
-| Reranker | cross-encoder/ms-marco-MiniLM-L-6-v2 (CUDA) |
-| 召回 | tsvector + pgvector RRF |
-| RRF权重 | 向量30%, BM25 70%, k=60 |
-| 对话记忆 | 全部拼接, 10轮后压缩(保留最近8轮) |
-| 动态top_k | >=0.75->8, >=0.6->10, else->12 |
-
-### 最新Eval (298条测试查询)
-
-| 方案 | HitRate@5 | HitRate@10 | MRR |
-|------|-----------|------------|-----|
-| 原始纯向量 | 0.276 | 0.322 | 0.239 |
-| 混合 RRF | 0.550 | 0.591 | 0.464 |
-| RRF + Reranker | 0.581 | 0.601 | 0.545 |
-| 完整管线 (rewrite+search+rerank) | 0.691~0.738 | 0.715~0.745 | 0.640~0.671 |
-| 行业·混合+Rerank 基准 | 0.75~0.88 | 0.82~0.93 | >=0.70 |
-
-### 关键发现
-
-1. 完整管线比直接搜索高 25% - 从0.581到0.725, LLM查询重写修复中英文匹配
-2. 候选池30->60零提升 - 瓶颈在检索质量本身(embedding+BM25)
-3. 英文查询HitRate@5=0.849已达行业上游 - 中文查询拖后腿但已被修复
-4. Precision@5低(0.14)是测试集设计问题 - 每条仅1个预期chunk
-
-### 剩余优化方向
-
-| 方向 | 预期提升 | 工作量 |
-|------|---------|--------|
-| bge-base->bge-m3 embedding升级 | +3~5% | 高(下载2G+重embedding) |
-| 优化查询重写prompt | +2~3% | 低 |
-| 材料元数据过滤(SQL WHERE) | +3~5% | 中 |
-| reranker升级为BGE-Reranker-v2-m3 | +1~3% | 中 |
-| 生成更真实的评估测试集(包含多chunk标注) | - | 中 |
-
-## 面试准备
-
-- 阅读 `docs/architecture-deep-dive.md` 理解每一层的架构决策
-- 阅读 `docs/interview-deep-dive.md` 准备追问回答
+ # 铸造行业 RAG 知识库
+ 
+ > 面向 AI Solution Architect 岗位的旗舰项目
+ > 从 PDF 到多 Agent 编排 RAG 的全链路实现
+ 
+ ## 架构
+ 
+ ```
+ 用户 → Orchestrator(:8000)
+   ├── Search Agent(:8002) → 查询重写 → 混合搜索 → Reranker → 返回上下文
+   └── Generate Agent(:8001) → 接收上下文 → LLM 生成答案 → 流式返回
+ ```
+ 
+ | 服务 | 端口 | 职责 | 通信方式 |
+ |------|------|------|---------|
+ | Orchestrator | 8000 | 编排 RAG Agent，SSE 流式推送 | HTTP |
+ | Search Agent | 8002 | 查询重写、混合检索（向量+BM25）、Reranker | A2A 协议 |
+ | Generate Agent | 8001 | 接收上下文，LLM 生成带引用的回答 | A2A 协议 |
+ 
+ 详细架构说明见 [docs/product-spec.md](docs/product-spec.md) 和 [docs/architecture-deep-dive.md](docs/architecture-deep-dive.md)。
+ 
+ ## 项目结构
+ 
+ ```
+ foundry-knowledge-base/
+ ├── app/                          ← 前端页面
+ │   ├── index.html                Chat UI + 进度条 + PDF 查看器
+ │   ├── style.css                 样式
+ │   ├── app.js                    前端逻辑（SSE 流式 + POST 降级）
+ │   ├── pdf-viewer.html           PDF.js 查看器
+ │   └── pdfjs/                    PDF.js v3 库
+ ├── raw/                          ← 源 PDF 文件
+ ├── processed/                    ← 提取后的数据
+ ├── scripts/                      ← 全部核心代码
+ │   ├── gateway.py                Orchestrator（:8000，编排 RAG Agent）
+  │   ├── agent_rag.py              RAG Agent（:8001，搜索+生成一体）
+ │   ├── a2a/                      A2A 协议层（Task/TaskManager/AgentCard）
+ │   ├── agent.py                  RAG 核心逻辑（LangGraph 工作流）
+ │   ├── search.py                 混合检索引擎（pgvector + tsvector + RRF）
+ │   ├── pdf_extractor.py          Step 1: PDF → JSONL 粗提取
+ │   ├── ingest.py                 Step 2: 清洗 + Embedding → pgvector
+ │   ├── backfill_metadata.py      PDF TOC → metadata 章节回填
+ │   ├── generate_eval_dataset.py  评估测试集生成
+ │   ├── eval_retrieval.py         检索评估 (HitRate/MRR)
+ │   ├── start.bat                 一键启动三个服务
+ │   ├── 00_search.bat             启动 Search Agent
+ │   ├── 01_generate.bat           启动 Generate Agent
+ │   └── 02_orchestrator.bat       启动 Orchestrator
+ ├── docs/
+ │   ├── product-spec.md           ← 完整产品需求文档
+ │   ├── architecture-deep-dive.md ← 架构深度分析
+ │   ├── handoff.md                ← 交接手稿
+ │   └── interview-deep-dive.md    ← 面试准备
+ └── db/
+     └── schema.sql                PostgreSQL + pgvector 完整建表
+ ```
+ 
+ ## 快速启动
+ 
+ 需要两个终端窗口，按顺序启动：
+ 
+ ```bash
+ # 窗口 1 - RAG Agent (:8001)
+ cd E:\AgentProjects\ai-solution-architect-lab\projects\foundry-knowledge-base\scripts
+ python agent_search.py
+ # 期待输出: Uvicorn running on http://0.0.0.0:8002
+ 
+ # 窗口 2 - Generate Agent (:8001)
+ cd E:\AgentProjects\ai-solution-architect-lab\projects\foundry-knowledge-base\scripts
+ python agent_rag.py
+ # 期待输出: Uvicorn running on http://0.0.0.0:8001
+ 
+ # 窗口 2 - Orchestrator (:8000) —— 等 RAG Agent 就绪再启动
+ cd E:\AgentProjects\ai-solution-architect-lab\projects\foundry-knowledge-base\scripts
+ python gateway.py
+ # 加载模型约 20 秒后: Uvicorn running on http://0.0.0.0:8000
+ ```
+ 
+ 启动后在浏览器打开 **http://127.0.0.1:8000** 即可使用。
+ 
+ 也可以双击 `scripts/start.bat` 一键启动三个服务窗口。
+ 
+ ## 数据库连接
+ 
+ ```
+ 主机:   127.0.0.1
+ 端口:   15432 (Docker)
+ 数据库: foundry_kb
+ 用户:   findmyjob
+ 密码:   findmyjob_dev_password
+ ```
+ 
+ Docker 运行：
+ ```bash
+ docker run --name findmyjob-postgres -e POSTGRES_PASSWORD=findmyjob_dev_password -e POSTGRES_DB=foundry_kb -p 15432:5432 -d pgvector/pgvector:pg17
+ ```
+ 
+ ## 关键能力
+ 
+ | 能力 | 实现 |
+ |------|------|
+ | PDF 解析 | PyMuPDF + Marker OCR（表格/图片兜底） |
+ | 清洗去重 | 表格-正文去重 + 空白合并 |
+ | Embedding | BAAI/bge-base-zh-v1.5（768维，GPU CUDA） |
+ | 向量存储 + 检索 | pgvector（余弦距离） |
+ | 全文检索 | PostgreSQL tsvector + GIN 索引 |
+ | 混合检索 | RRF 融合（向量 + BM25 tsvector） |
+ | 精排 Reranker | Cross-Encoder MiniLM-L6（GPU） |
+ | Agent 编排 | 三服务微服务编排（Orchestrator + Search + Generate） |
+ | 流式输出 | SSE + EventSource（Orchestrator 代理 Generate Agent） |
+ | LLM | deepseek-v4-flash（cc-switch 路由） |
+ | 数据规模 | 27 本 ASM 手册，37,317 页 |
+ | 检索时延 | 混合 ~1.5s + Reranker ~0.36s + LLM ~14s |
+ | 评估 | HitRate@5 / MRR / Precision@5 |
+ 
+ ## Agent 核心流程
+ 
+ ```
+ Orchestrator 收到提问
+   → POST Search Agent /a2a/tasks
+     → rewrite_query() 中文→英文查询重写
+     → search_parallel() 多路并行搜索（向量+BM25）
+     → select_context() Reranker 重排
+     → 返回上下文 + 子查询
+   → POST Generate Agent /a2a/tasks
+     → generate_answer() LLM 生成带引用标记的答案
+     → quality_check() 质量评分，低分重试
+     → 返回最终答案
+   → SSE 流式推送至前端
+ ```
+ 
+ > 旧版单体服务 `app_server.py` 已废弃，改用多 Agent 架构。
+ > 数据导入流程：`pdf_extractor.py` → `ingest.py` → `backfill_metadata.py`

@@ -1,12 +1,30 @@
-*.pyc
-__pycache__/
-agent.log
-server_start.log
+*.log
+.pids.txt
+
+# Data
+raw/
+processed/chunks/
+processed/layout/
+processed/markdown/
+processed/models/
 eval_results/
-processed/
 ragflow-docker/
-.codex/
-raw/*.pdf
-*.pdf
-docs/today-*.md
-docs/minimal-vram-ocr.md
+
+# Temp scripts
+scripts/00_search.bat
+scripts/01_generate.bat
+scripts/start_all.bat
+scripts/start_all.py
+scripts/start_gateway.bat
+scripts/start_orchestrator.bat
+scripts/start_rag.bat
+scripts/start_search.bat
+scripts/old_*.py
+scripts/_*.py
+scripts/*.pyc
+
+# Cache
+__pycache__/
+.env
+node_modules/
+server.log
