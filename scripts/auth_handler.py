@@ -231,6 +231,21 @@ def init_auth_db():
             created_at TIMESTAMPTZ DEFAULT NOW(), used BOOLEAN DEFAULT FALSE)""")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_verif_token ON verification_tokens(token)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_verif_user ON verification_tokens(user_id)")
+        cur.execute("""CREATE TABLE IF NOT EXISTS conversations (
+            id SERIAL PRIMARY KEY,
+            user_id INT REFERENCES users(id) ON DELETE CASCADE,
+            title TEXT DEFAULT '',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS conversation_messages (
+            id SERIAL PRIMARY KEY,
+            conversation_id INT REFERENCES conversations(id) ON DELETE CASCADE,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW())""")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_conv_user ON conversations(user_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_msg_conv ON conversation_messages(conversation_id)")
         conn.commit()
         print("[Auth] 数据库表已就绪")
     except Exception as e:
@@ -311,3 +326,81 @@ def google_login(code: str) -> Optional[dict]:
     return create_user(email, name, random_pwd)
 def validate_email(email: str) -> bool:
     return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
+
+# ==================== Conversation History CRUD ====================
+def _get_conn2():
+    import psycopg2
+    return psycopg2.connect(host="127.0.0.1", port=15432, dbname="foundry_kb", user="findmyjob", password="findmyjob_dev_password")
+
+def create_conversation(user_id, title=""):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO conversations (user_id, title) VALUES (%s, %s) RETURNING id, created_at", (user_id, title))
+        r = cur.fetchone()
+        conn.commit()
+        return {"id": r[0], "title": title, "created_at": r[1].isoformat()}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"创建会话失败: {e}")
+    finally:
+        conn.close()
+
+def list_conversations(user_id):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, title, created_at, updated_at FROM conversations WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
+        return [{"id": r[0], "title": r[1], "created_at": r[2].isoformat(), "updated_at": r[3].isoformat()} for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+def get_conv_messages(conv_id, user_id):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, title FROM conversations WHERE id = %s AND user_id = %s", (conv_id, user_id))
+        conv = cur.fetchone()
+        if not conv:
+            return None
+        cur.execute("SELECT id, role, content, metadata, created_at FROM conversation_messages WHERE conversation_id = %s ORDER BY id", (conv_id,))
+        msgs = [{"id": r[0], "role": r[1], "content": r[2], "metadata": r[3], "created_at": r[4].isoformat()} for r in cur.fetchall()]
+        return {"id": conv[0], "title": conv[1], "messages": msgs}
+    finally:
+        conn.close()
+
+def save_message(conv_id, role, content, metadata=None):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO conversation_messages (conversation_id, role, content, metadata) VALUES (%s, %s, %s, %s) RETURNING id, created_at",
+            (conv_id, role, content, json.dumps(metadata or {})))
+        r = cur.fetchone()
+        cur.execute("UPDATE conversations SET updated_at = NOW() WHERE id = %s", (conv_id,))
+        conn.commit()
+        return {"id": r[0], "created_at": r[1].isoformat()}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"保存消息失败: {e}")
+    finally:
+        conn.close()
+
+def delete_conversation(conv_id, user_id):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM conversations WHERE id = %s AND user_id = %s", (conv_id, user_id))
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+def update_conv_title(conv_id, user_id, title):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE conversations SET title = %s, updated_at = NOW() WHERE id = %s AND user_id = %s", (title, conv_id, user_id))
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()

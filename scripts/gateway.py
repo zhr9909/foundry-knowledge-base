@@ -10,8 +10,11 @@ from auth_handler import (
     init_auth_db, create_user, authenticate_user, create_session_token,
     get_current_user, require_user, create_verification_code,
     verify_code, send_verification_code,
-    get_google_auth_url, google_login, validate_email
+    get_google_auth_url, google_login, validate_email,
+    create_conversation, list_conversations, get_conv_messages,
+    save_message, delete_conversation, update_conv_title
 )
+from auth_handler import decode_token as _decode_jwt
 from pydantic import BaseModel
 
 _scripts_dir = Path(__file__).resolve().parent
@@ -123,10 +126,51 @@ async def chat(req: ChatRequest):
         return {"answer": f"Orchestrator error: {str(e)}", "citations": [], "search_results": [], "thinking": ""}
 
 @app.get("/chat/stream")
-async def chat_stream(query: str, section: str = None):
-    """Direct SSE from agent.py - no proxy, no buffering."""
-    async def event_gen():
+async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None):
+    """Direct SSE from agent.py - no proxy, no buffering.
+    Supports: token (JWT) for auth, conv_id for conversation tracking.
+    """
+    # Decode auth if token provided
+    auth_user = None
+    if token:
+        payload = _decode_jwt(token)
+        if payload:
+            auth_user = {"id": int(payload["sub"]), "email": payload.get("email", "")}
+    
+    # Resolve conversation
+    conversation_id = None
+    user_saved = False
+    answer_saved = False
+    if auth_user:
+        if conv_id and conv_id != "null" and conv_id != "undefined":
+            try:
+                c = get_conv_messages(int(conv_id), auth_user["id"])
+                if c:
+                    conversation_id = int(conv_id)
+            except:
+                pass
+        if not conversation_id:
+            # Auto-create conversation with first query as title
+            title = query[:60] if len(query) > 60 else query
+            c = create_conversation(auth_user["id"], title)
+            conversation_id = c["id"]
+            conv_id = str(conversation_id)
+        
+        # Save user message
         try:
+            save_message(conversation_id, "user", query)
+            user_saved = True
+        except Exception as e:
+            _log.warning(f"Failed to save user message: {e}")
+    
+    async def event_gen():
+        nonlocal answer_saved
+        full_answer = ""
+        full_citations = []
+        try:
+            if conversation_id:
+                yield f"data: {json.dumps({'type': 'conv_id', 'conv_id': conversation_id}, ensure_ascii=False)}\n\n"
+            
             for event in _agent.stream_chat(query, section):
                 if event is None:
                     continue
@@ -134,7 +178,9 @@ async def chat_stream(query: str, section: str = None):
                 step = event.get("step", "")
                 if etype == "result":
                     data = event.get("data", {})
-                    payload = json.dumps({"type": "result", "data": {"answer": data.get("answer",""), "citations": data.get("citations",[]), "thinking": data.get("thinking","")}}, ensure_ascii=False)
+                    full_answer = data.get("answer", "")
+                    full_citations = data.get("citations", [])
+                    payload = json.dumps({"type": "result", "data": {"answer": full_answer, "citations": full_citations, "thinking": data.get("thinking","")}}, ensure_ascii=False)
                     yield f"data: {payload}\n\n"
                     break
                 elif etype == "error":
@@ -149,6 +195,13 @@ async def chat_stream(query: str, section: str = None):
             _log.error(f"Stream error: {e}")
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
         finally:
+            # Save assistant answer
+            if auth_user and user_saved and full_answer and conversation_id:
+                try:
+                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations})
+                    answer_saved = True
+                except Exception as e:
+                    _log.warning(f"Failed to save assistant message: {e}")
             yield 'data: {"type": "done"}\n\n'
 
     return StreamingResponse(event_gen(), media_type="text/event-stream", headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "X-Accel-Buffering": "no"})
@@ -232,6 +285,53 @@ async def auth_google_callback(code: str = ""):
         return RedirectResponse(url="/static/index.html?auth=fail")
     token = create_session_token(user["id"], user["email"])
     return RedirectResponse(url=f"/static/index.html?token={token}")
+
+# ==================== Conversation History API ====================
+@app.get("/api/conversations")
+async def api_list_conversations(user: dict = Depends(require_user)):
+    """List all conversations for the current user."""
+    return {"conversations": list_conversations(user["id"])}
+
+@app.post("/api/conversations")
+async def api_create_conversation(user: dict = Depends(require_user)):
+    """Create a new conversation."""
+    c = create_conversation(user["id"], "")
+    return {"conversation": c}
+
+@app.get("/api/conversations/{conv_id}")
+async def api_get_conversation(conv_id: int, user: dict = Depends(require_user)):
+    """Get conversation with all messages."""
+    c = get_conv_messages(conv_id, user["id"])
+    if not c:
+        raise HTTPException(404, "会话不存在")
+    return {"conversation": c}
+
+@app.put("/api/conversations/{conv_id}")
+async def api_update_conversation(conv_id: int, req: dict, user: dict = Depends(require_user)):
+    """Update conversation title."""
+    title = req.get("title", "")
+    ok = update_conv_title(conv_id, user["id"], title)
+    if not ok:
+        raise HTTPException(404, "会话不存在")
+    return {"message": "updated"}
+
+@app.delete("/api/conversations/{conv_id}")
+async def api_delete_conversation(conv_id: int, user: dict = Depends(require_user)):
+    """Delete a conversation."""
+    ok = delete_conversation(conv_id, user["id"])
+    if not ok:
+        raise HTTPException(404, "会话不存在")
+    return {"message": "deleted"}
+
+@app.post("/api/conversations/{conv_id}/messages")
+async def api_save_message(conv_id: int, req: dict, user: dict = Depends(require_user)):
+    """Save a message to a conversation."""
+    role = req.get("role", "user")
+    content = req.get("content", "")
+    meta = req.get("metadata", {})
+    msg = save_message(conv_id, role, content, meta)
+    return {"message": msg}
+
 if __name__ == "__main__":
     print(f"[Orchestrator] Starting on {HOST}:{PORT}")
     print(f"[Orchestrator] SSE: direct from agent.py (no proxy)")

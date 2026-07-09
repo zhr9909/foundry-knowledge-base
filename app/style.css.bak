@@ -1003,12 +1003,3 @@ body {
   background: var(--border);
   opacity: 0.5;
 }
-/* History */
-.sidebar-section{padding:0 12px}
-.sidebar-divider{height:1px;background:var(--border);margin:8px 0}
-.history-list{max-height:300px;overflow-y:auto;margin-top:4px}
-.history-item{display:flex;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:all .15s;gap:6px}
-.history-item:hover{background:var(--bg-hover);color:var(--text-primary)}
-#newChatBtn{font-size:12px;padding:4px 10px;background:var(--accent);color:var(--bg-surface);border:none;border-radius:6px;cursor:pointer;font-weight:500}
-.history-empty{text-align:center;padding:20px;font-size:12px;color:var(--text-secondary)}
-.history-item-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

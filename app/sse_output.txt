@@ -1,0 +1,319 @@
+function sendMessageSSE(query) {
+  return new Promise((resolve) => {
+    const params = new URLSearchParams({ query });
+    if (state.activeSection) params.set('section', state.activeSection);
+    if (state.history.length > 0) params.set('history', JSON.stringify(state.history.slice(-6)));
+    
+    let resolved = false;
+    let hasData = false;
+    let es;
+    
+    try {
+      es = new EventSource(`/chat/stream?${params}`);
+    } catch (e) {
+      return resolve(false);
+    }
+    
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        es.close();
+        resolve(false);
+      }
+    }, 30000);
+
+    es.onmessage = (event) => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      hasData = true;
+
+      // --- Log events ---
+      if (data.type === 'log') {
+        addLogEntry(data.message, data.level || 'info');
+      }
+      // --- Progress events ---
+      else if (data.step === 'rewritten') {
+        const count = data.queries ? data.queries.length : 0;
+        advanceStep('rewrite', 'search', `→ ${count} 条语句`);
+      } 
+      else if (data.step === 'searched') {
+        advanceStep('search', 'context', `→ ${data.count} 个候选`);
+      }
+      else if (data.step === 'context_ready') {
+        advanceStep('context', 'generate', `→ 精选 ${data.count} 条`);
+      }
+      else if (data.step === 'checked') {
+        completeStep('generate');
+        if (data.score >= 7) {
+          completeStep('check', `✅ ${data.score}/10`);
+        } else {
+          // Will retry - show retry status
+          const checkStep = document.querySelector('.step[data-step="check"]');
+          if (checkStep) {
+            checkStep.classList.add('active');
+            checkStep.querySelector('.step-status').textContent = `${data.score}/10 重试中...`;
+          }
+        }
+      }
+      // --- Result event ---
+      else if (data.type === 'result') {
+        clearTimeout(timeout);
+        es.close();
+        if (!resolved) {
+          resolved = true;
+          const result = data.data;
+          // Ensure check step is marked done
+          completeStep('check', `✅ 完成`);
+          if (state.currentAssistantEl) {
+            fillAssistantAnswer(state.currentAssistantEl, result.answer || '无回答', result.citations || [], result.thinking || '');
+          } else {
+            addAssistantMessage(
+              result.answer || '无回答',
+              result.citations || [],
+              result.thinking || ''
+            );
+          }
+          // Update history
+          state.history.push(
+            { role: 'user', content: query },
+            { role: 'assistant', content: result.answer || '' }
+          );
+          if (state.history.length > 20) state.history = state.history.slice(-20);
+          resolve(true);
+        }
+      }
+      // --- Error event ---
+      else if (data.type === 'error') {
+        clearTimeout(timeout);
+        es.close();
+        if (!resolved) {
+          resolved = true;
+          addAssistantMessage(`❌ 生成回答失败: ${data.message}`, []);
+          resolve(false);
+        }
+      }
+    };
+
+    es.onerror = () => {
+      clearTimeout(timeout);
+      es.close();
+      if (!resolved) {
+        resolved = true;
+        resolve(false); // fallback to POST
+      }
+    };
+  });
+}
+
+// ===== POST Fallback (original logic) =====
+async function sendMessagePOST(query) {
+  loadingEl.style.display = 'flex';
+  loadingEl.querySelector('span').textContent = '正在检索知识库...';
+
+  try {
+    // Step 1: Search
+    const params = new URLSearchParams({ query, top_k: 6 });
+    if (state.activeSection) params.set('section', state.activeSection);
+    const searchResp = await fetch(`/search?${params}`);
+    const searchData = await searchResp.json();
+
+    loadingEl.querySelector('span').textContent = 'AI 正在生成回答...';
+
+    // Step 2: Generate
+    const chatResp = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query,
+        search_results: searchData.results,
+        history: state.history.slice(-6),
+        section: state.activeSection || null,
+      }),
+    });
+
+    if (!chatResp.ok) {
+      const err = await chatResp.text();
+      addAssistantMessage(`❌ 生成回答失败: ${err}`, []);
+      return;
+    }
+
+    const chatData = await chatResp.json();
+    if (state.currentAssistantEl) {
+      fillAssistantAnswer(state.currentAssistantEl, chatData.answer || '', chatData.search_results || [], chatData.thinking || '');
+    } else {
+      addAssistantMessage(chatData.answer, chatData.search_results || [], chatData.thinking);
+    }
+
+    state.history.push(
+      { role: 'user', content: query },
+      { role: 'assistant', content: chatData.answer }
+    );
+    if (state.history.length > 20) state.history = state.history.slice(-20);
+
+  } catch (e) {
+    addAssistantMessage(`❌ 请求失败: ${e.message}`, []);
+  }
+}
+
+// ===== Message Rendering =====
+function addMessage(role, text) {
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  div.innerHTML = `
+    <div class="message-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+    <div class="message-content"><p>${escapeHtml(text).replace(/\n/g, '<br>')}</p></div>
+  `;
+  messagesEl.appendChild(div);
+  scrollToBottom();
+}
+
+function addAssistantMessage(text, citations, thinking) {
+  const div = document.createElement('div');
+  div.className = 'message assistant';
+  let content = `<div class="message-avatar">🤖</div><div class="message-content">`;
+
+  if (thinking) {
+    content += `<details class="thinking-block" style="margin-bottom:8px;font-size:12px;color:var(--text-secondary)">
+      <summary style="cursor:pointer;font-weight:500">🤔 AI 思考过程</summary>
+      <p style="margin-top:6px;padding:8px;background:var(--bg-code);border-radius:6px">${escapeHtml(thinking)}</p>
+    </details>`;
+  }
+
+  // Process citations inline: [1], [2] etc become clickable
+  content += `<div class="answer-text">${renderAnswer(text, citations)}</div>`;
+
+  if (citations && citations.length > 0) {
+    content += '<div class="citations"><div class="citations-title">📚 引用来源</div>';
+    for (let i = 0; i < citations.length; i++) {
+      const c = citations[i];
+      const page = c.page || '?';
+      const section = c.section || '';
+      const preview = (c.text || '').substring(0, 200);
+      const score = typeof c.score === 'number' ? c.score.toFixed(3) : '';
+      content += `
+        <a class="citation-card" href="#" onclick="event.preventDefault(); sessionStorage.setItem('pdfHighlight',this.querySelector('.citation-text')?.textContent||'');openCitation(${page}, ${c.source_id || 2})">
+          <div class="citation-header">
+            <span class="citation-page">pg.${page}</span>
+            <span class="citation-score">[${score}]</span>
+            <span class="citation-section" title="${escapeHtml(section)}">${escapeHtml(section)}</span>
+          </div>
+          <div class="citation-text">${escapeHtml(preview)}</div>
+        </a>`;
+    }
+    content += '</div>';
+  }
+
+  content += '</div>';
+  div.innerHTML = content;
+  messagesEl.appendChild(div);
+  scrollToBottom();
+}
+
+function renderAnswer(text, citations) {
+  if (!text) return "";
+  // Extract pipe tables before HTML escaping
+  const tblBlocks = [];
+  const noTables = text.replace(/((?:\|.*\|(?:\r?\n|$)){2,})/g, function(m) {
+    tblBlocks.push(renderTable(m));
+    return "\x00T" + (tblBlocks.length - 1) + "\x00";
+  });
+  // Escape HTML (table placeholders survive since \x00 is not in the escape list)
+  let result = escapeHtml(noTables);
+  // Process basic markdown formatting (safe after escapeHtml)
+  result = result.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  result = result.replace(/`(.*?)`/g, "<code>$1</code>");
+  result = result.replace(/^### (.*?)$/gm, "<h4>$1</h4>");
+  result = result.replace(/^## (.*?)$/gm, "<h3>$1</h3>");
+  // Restore table HTML
+  result = result.replace(/\x00T(\d+)\x00/g, function(_, id) { return tblBlocks[parseInt(id)]; });
+  // Replace citations
+  if (citations) {
+    for (let i = 0; i < citations.length; i++) {
+      const page = citations[i].page || "?";
+      result = result.replace("[" + (i + 1) + "]", '<sup onclick="openCitation(' + page + ')" style="color:var(--accent);cursor:pointer" title="pg.' + page + '">[' + (i + 1) + ']</sup>');
+    }
+  }
+  return result.replace(/\n/g, "<br>");
+}
+
+function renderTable(t) {
+  var rows = t.trim().split("\n").filter(function(x) { return x.trim().startsWith("|"); });
+  if (rows.length < 1) return escapeHtml(t);
+  var hasSep = rows.some(function(x) { return x.indexOf("---") >= 0; });
+  var html = '<div style="overflow-x:auto;margin:8px 0"><table style="border-collapse:collapse;width:100%;font-size:13px">';
+  if (hasSep && rows.length >= 2) {
+    // Header row
+    html += "<thead><tr>";
+    rows[0].split("|").filter(function(c) { return c.trim(); }).forEach(function(c) {
+      html += '<th style="background:var(--accent);color:white;padding:4px 8px;border:1px solid var(--border);text-align:left;white-space:nowrap">' + escapeHtml(c.trim()) + "</th>";
+    });
+    html += "</tr></thead><tbody>";
+    for (var i = 2; i < rows.length; i++) {
+      var cells = rows[i].split("|").filter(function(c) { return c.trim(); });
+      if (!cells.length) continue;
+      html += "<tr" + (i % 2 === 0 ? ' style="background:var(--bg)"' : "") + ">";
+      cells.forEach(function(c) { html += '<td style="padding:4px 8px;border:1px solid var(--border)">' + escapeHtml(c.trim()) + "</td>"; });
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
+  } else {
+    html += "<tbody>";
+    for (var i = 0; i < rows.length; i++) {
+      var cells = rows[i].split("|").filter(function(c) { return c.trim(); });
+      if (!cells.length) continue;
+      html += "<tr>";
+      cells.forEach(function(c) { html += '<td style="padding:4px 8px;border:1px solid var(--border)">' + escapeHtml(c.trim()) + "</td>"; });
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
+  }
+  return html;
+}
+
+
+// ===== Utility =====
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function scrollToBottom() {
+  setTimeout(() => {
+    const ca = document.querySelector('.chat-area');
+    ca.scrollTop = ca.scrollHeight;
+  }, 50);
+}
+
+// ===== Knowledge Base Overview =====
+showKnowledgeBtn.addEventListener('click', () => {
+  infoModal.style.display = 'flex';
+});
+
+// ===== Init =====
+// loadSections(); // disabled - sections not ready
+
+// PDF viewer toggle
+const pdfToggle = document.getElementById('pdfToggle');
+const pdfClose = document.getElementById('pdfCloseBtn');
+if (pdfToggle) pdfToggle.addEventListener('click', togglePDF);
+if (pdfClose) pdfClose.addEventListener('click', closePDF);
+
+// Init PDF state
+state.pdfState = null;
+
+// Also show chunk count from health endpoint (disabled)
+// fetch('/health').then(r => r.json()).then(d => {
+//   const el = document.getElementById('chunkCount');
+//   if (d.chunks) el.textContent = `${d.chunks.toLocaleString()} chunks`;
+// }).catch(() => {});
