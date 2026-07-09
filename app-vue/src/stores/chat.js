@@ -36,6 +36,10 @@ export const useChatStore = defineStore('chat', () => {
     addLog('开始处理查询...')
     addLog('原始查询：' + query)
 
+    // Create placeholder assistant message for live log display
+    const msgIdx = messages.value.length
+    addMessage('assistant', '', { logs: logs.value })
+    
     try {
       const params = new URLSearchParams({ query })
       if (section) params.set('section', section)
@@ -50,7 +54,11 @@ export const useChatStore = defineStore('chat', () => {
       const result = await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => { es.close(); reject(new Error('timeout')) }, 60000)
         es.onmessage = (event) => {
-          try {
+          // Create placeholder assistant message for live log display
+    const msgIdx = messages.value.length
+    addMessage('assistant', '', { logs: logs.value })
+    
+    try {
             const data = JSON.parse(event.data)
             if (data.type === 'conv_id') { currentConvId.value = data.conv_id; return }
             if (data.type === 'log') { addLog(data.message, data.level || 'info'); return }
@@ -84,7 +92,14 @@ export const useChatStore = defineStore('chat', () => {
         es.onerror = () => { clearTimeout(timeout); es.close(); reject(new Error('SSE Connection failed')) }
       })
 
-      addMessage('assistant', answer, { citations, thinking, logs: [...logs.value] })
+      // Update placeholder with response
+      if (messages.value[msgIdx] && messages.value[msgIdx].role === 'assistant') {
+        messages.value[msgIdx] = {
+          role: 'assistant',
+          content: answer,
+          metadata: { citations, thinking, logs: [...logs.value] }
+        }
+      }
       return result
     } catch (e) {
       addMessage('assistant', `\u274c 请求失败: ${e.message}`)
@@ -97,11 +112,19 @@ export const useChatStore = defineStore('chat', () => {
 
   async function loadConversations() {
     if (!localStorage.getItem('auth_token')) { conversations.value = []; return }
+    // Create placeholder assistant message for live log display
+    const msgIdx = messages.value.length
+    addMessage('assistant', '', { logs: logs.value })
+    
     try { const r = await api.listConversations(); conversations.value = r.conversations || [] }
     catch { conversations.value = [] }
   }
 
   async function loadConversation(id) {
+    // Create placeholder assistant message for live log display
+    const msgIdx = messages.value.length
+    addMessage('assistant', '', { logs: logs.value })
+    
     try {
       const r = await api.getConversation(id)
       const cv = r.conversation
