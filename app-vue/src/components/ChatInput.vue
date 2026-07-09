@@ -15,14 +15,14 @@
 import { ref, nextTick } from 'vue'
 const text = ref('')
 const textarea = ref(null)
-defineProps({ disabled: Boolean })
+const props = defineProps({ disabled: Boolean })
 const emit = defineEmits(['send'])
 function autoResize() {
   const el = textarea.value
   if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px' }
 }
 function submit() {
-  if (!text.value.trim() || this.disabled) return
+  if (!text.value.trim() || props.disabled) return
   emit('send', text.value.trim())
   text.value = ''
   nextTick(() => { if (textarea.value) { textarea.value.style.height = 'auto' } })

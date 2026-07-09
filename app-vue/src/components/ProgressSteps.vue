@@ -1,27 +1,27 @@
 <template>
   <div v-if="visible" id="progressSteps" class="progress-steps">
     <div class="step" :class="stepClass('rewrite')" data-step="rewrite">
-      <span class="step-label">\uD83D\uDD0D 分析问题</span>
+      <span class="step-label">🔍 分析问题</span>
       <span class="step-status">{{ steps.rewrite }}</span>
     </div>
-    <span class="step-arrow">\u27A1</span>
+    <span class="step-arrow">➡</span>
     <div class="step" :class="stepClass('search')" data-step="search">
-      <span class="step-label">\uD83D\uDCD8 检索知识库</span>
+      <span class="step-label">📘 检索知识库</span>
       <span class="step-status">{{ steps.search }}</span>
     </div>
-    <span class="step-arrow">\u27A1</span>
+    <span class="step-arrow">➡</span>
     <div class="step" :class="stepClass('context')" data-step="context">
-      <span class="step-label">\uD83D\uDCCE 精选上下文</span>
+      <span class="step-label">📎 精选上下文</span>
       <span class="step-status">{{ steps.context }}</span>
     </div>
-    <span class="step-arrow">\u27A1</span>
+    <span class="step-arrow">➡</span>
     <div class="step" :class="stepClass('generate')" data-step="generate">
-      <span class="step-label">\uD83E\uDDFB 生成回答</span>
+      <span class="step-label">🧻 生成回答</span>
       <span class="step-status">{{ steps.generate }}</span>
     </div>
-    <span class="step-arrow">\u27A1</span>
+    <span class="step-arrow">➡</span>
     <div class="step" :class="stepClass('check')" data-step="check">
-      <span class="step-label">\u2705 质量检查</span>
+      <span class="step-label">✅ 质量检查</span>
       <span class="step-status">{{ steps.check }}</span>
     </div>
   </div>
