@@ -1,0 +1,21 @@
+function createAssistantSkeleton() {
+  const div = document.createElement('div');
+  div.className = 'message assistant';
+  div.innerHTML = `
+    <div class="message-avatar">🤖</div>
+    <div class="message-content">
+      <details class="log-panel-inline" open>
+        <summary class="log-panel-header">
+          <span class="log-panel-title">📋 处理日志</span>
+          <span class="log-panel-badge">0</span>
+        </summary>
+        <div class="log-panel-body"></div>
+      </details>
+      <div class="answer-block"></div>
+    </div>
+  `;
+  document.getElementById('messages').appendChild(div);
+  scrollToBottom();
+  return div;
+}
+

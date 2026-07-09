@@ -1012,3 +1012,8 @@ body {
 #newChatBtn{font-size:12px;padding:4px 10px;background:var(--accent);color:var(--bg-surface);border:none;border-radius:6px;cursor:pointer;font-weight:500}
 .history-empty{text-align:center;padding:20px;font-size:12px;color:var(--text-secondary)}
 .history-item-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Spacing */
+.messages { margin-top: 24px; }
+.message { margin-bottom: 8px; }
+#progressSteps { padding: 8px 16px; }

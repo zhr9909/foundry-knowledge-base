@@ -477,9 +477,19 @@ function showLogPanel() {
 
 function addLogEntry(message, level) {
   let body, badge;
-  if (state.currentAssistantEl) {
-    body = state.currentAssistantEl.querySelector('.log-panel-body');
-    badge = state.currentAssistantEl.querySelector('.log-panel-badge');
+  const targetEl = state.currentAssistantEl;
+  if (targetEl) {
+    body = targetEl.querySelector('.log-panel-body');
+    badge = targetEl.querySelector('.log-panel-badge');
+  }
+  if (!body) {
+    const allBodies = document.querySelectorAll('.log-panel-body');
+    if (allBodies.length > 0) {
+      body = allBodies[allBodies.length - 1];
+      state.currentAssistantEl = body.closest('.message.assistant');
+    }
+    const allBadges = document.querySelectorAll('.log-panel-badge');
+    if (allBadges.length > 0) badge = allBadges[allBadges.length - 1];
   }
   if (!body) return;
 
@@ -598,7 +608,8 @@ function sendMessageSSE(query) {
   return new Promise((resolve) => {
     const params = new URLSearchParams({ query });
     if (state.activeSection) params.set('section', state.activeSection);
-    if (state.history.length > 0) params.set('history', JSON.stringify(state.history.slice(-6)));
+    if (_convId) params.set('conv_id', _convId);
+    if (authState.token) params.set('token', authState.token);
     
     let resolved = false;
     let hasData = false;
@@ -627,6 +638,12 @@ function sendMessageSSE(query) {
       }
 
       hasData = true;
+
+      // --- Conversation ID ---
+      if (data.type === 'conv_id' && data.conv_id) {
+        _convId = data.conv_id;
+        return;
+      }
 
       // --- Log events ---
       if (data.type === 'log') {
@@ -675,6 +692,7 @@ function sendMessageSSE(query) {
             );
           }
           // Update history
+          if (_convId) { _lca(); }
           state.history.push(
             { role: 'user', content: query },
             { role: 'assistant', content: result.answer || '' }
@@ -918,8 +936,10 @@ state.pdfState = null;
 var _convHist=[];_convId=null;
 function _lca(){if(!authState.token)return;fetch('/api/conversations',{headers:{'Authorization':'Bearer '+authState.token}}).then(function(r){return r.json()}).then(function(d){_convHist=d.conversations||[];_rc()}).catch(function(){})}
 function _rc(){var l=document.getElementById('historyList');var s=document.getElementById('historySection');if(!l||!s)return;if(!authState.user){s.style.display='none';return}s.style.display='block';if(_convHist.length===0){l.innerHTML='<div class="history-empty">暂无对话记录</div>';return}var h='';for(var i=0;i<_convHist.length;i++){var c=_convHist[i];var t=c.title||'新对话';var a=_convId===c.id?' active':'';h+='<div class="history-item'+a+'" data-id="'+c.id+'"><span class="history-item-title">'+t.replace(/</g,'&lt;')+'</span></div>'}l.innerHTML=h;Array.from(l.querySelectorAll('.history-item')).forEach(function(e){e.addEventListener('click',function(){_lc2(parseInt(this.dataset.id))})})}
-function _lc2(id){if(!authState.token)return;fetch('/api/conversations/'+id,{headers:{'Authorization':'Bearer '+authState.token}}).then(function(r){return r.json()}).then(function(d){var cv=d.conversation;if(!cv)return;_convId=cv.id;var w=document.getElementById('welcome');var m=document.getElementById('messages');var p=document.getElementById('progressSteps');if(w)w.style.display='none';if(m){m.style.display='block';m.innerHTML=''}if(p)p.style.display='none';state.history=[];for(var i=0;i<cv.messages.length;i++){var x=cv.messages[i];if(x.role==='user'){addUserMessage(x.content);state.history.push({role:'user',content:x.content})}else if(x.role==='assistant'){var ct=(x.metadata&&x.metadata.citations)||[];addAssistantMessage(x.content,ct);state.history.push({role:'assistant',content:x.content,citations:ct})}}_rc()}).catch(function(){showToast('加载失败','error')})}
-function _nc(){if(!authState.token)return;fetch('/api/conversations',{method:'POST',headers:{'Authorization':'Bearer '+authState.token}}).then(function(r){return r.json()}).then(function(d){_convId=d.conversation?d.conversation.id:null;var w=document.getElementById('welcome');var m=document.getElementById('messages');if(w)w.style.display='';if(m)m.innerHTML='';state.currentAssistantEl=null;state.history=[];_lca()}).catch(function(){showToast('创建失败','error')})}
+function _lc2(id){if(!authState.token)return;fetch('/api/conversations/'+id,{headers:{'Authorization':'Bearer '+authState.token}}).then(function(r){return r.json()}).then(function(d){var cv=d.conversation;if(!cv)return;_convId=cv.id;var w=document.getElementById('welcome');var m=document.getElementById('messages');var p=document.getElementById('progressSteps');if(w)w.style.display='none';if(m){m.style.display='block';m.innerHTML=''}if(p)p.style.display='none';state.history=[];for(var i=0;i<cv.messages.length;i++){var x=cv.messages[i];if(x.role==='user'){addMessage('user',x.content);state.history.push({role:'user',content:x.content})}else if(x.role==='assistant'){var ct=(x.metadata&&x.metadata.citations)||[];addAssistantMessage(x.content,ct);state.history.push({role:'assistant',content:x.content,citations:ct})}}_rc()}).catch(function(e){console.error('loadConv:',e);showToast('加载失败','error')})}
+function _nc(){if(!authState.token)return;_convId=null;var w=document.getElementById('welcome');var m=document.getElementById('messages');if(w)w.style.display='';if(m)m.innerHTML='';state.currentAssistantEl=null;state.history=[];_lca()}
 var _ou=window.updateAuthUI;window.updateAuthUI=function(){_ou.apply(this,arguments);if(authState.user){_lca()}else{var s=document.getElementById('historySection');if(s)s.style.display='none'}};
 var ncBtn=document.getElementById("newChatBtn");if(ncBtn)ncBtn.addEventListener("click",_nc);
 var _ll=0;setInterval(function(){if(!_convId||!authState.token||state.history.length<=_ll)return;var nm=state.history.slice(_ll);_ll=state.history.length;for(var i=0;i<nm.length;i++){(function(msg){fetch('/api/conversations/'+_convId+'/messages',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+authState.token},body:JSON.stringify({role:msg.role,content:typeof msg.content==='string'?msg.content:''})}).catch(function(){})})(nm[i])}},3000);
+
+// End of app.js

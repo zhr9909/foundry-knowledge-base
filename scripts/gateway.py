@@ -171,7 +171,19 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
             if conversation_id:
                 yield f"data: {json.dumps({'type': 'conv_id', 'conv_id': conversation_id}, ensure_ascii=False)}\n\n"
             
-            for event in _agent.stream_chat(query, section):
+            # Build history from conversation messages
+            hist_from_conv = []
+            if conversation_id:
+                try:
+                    from auth_handler import get_conv_messages
+                    cm = get_conv_messages(conversation_id, auth_user["id"])
+                    if cm and cm.get("messages"):
+                        for msg in cm["messages"][-10:]:
+                            if msg.get("role") in ("user", "assistant"):
+                                hist_from_conv.append({"role": msg["role"], "content": msg.get("content", "")})
+                except Exception:
+                    pass
+            for event in _agent.stream_chat(query, section, history=hist_from_conv if hist_from_conv else None):
                 if event is None:
                     continue
                 etype = event.get("type", "")
