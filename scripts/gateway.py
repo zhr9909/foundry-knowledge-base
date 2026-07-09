@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Orchestrator Gateway (port 8000)"""
 
-import os, sys, json, asyncio, logging
+import os, sys, json, asyncio, logging, mimetypes
 from pathlib import Path
 import hashlib
 from typing import Optional
@@ -33,14 +33,19 @@ import agent as _agent
 RAG_URL = "http://127.0.0.1:8001"
 HOST = "0.0.0.0"
 PORT = 8000
-STATIC_DIR = _scripts_dir.parent / "app"
+STATIC_DIR = _scripts_dir.parent / "app-vue" / "dist"
 PDF_DIR = _scripts_dir.parent / "raw"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [ORCH] %(message)s', datefmt='%H:%M:%S', force=True)
 _log = logging.getLogger('orchestrator')
 
 app = FastAPI(title="Foundry KB Orchestrator", version="0.3.0")
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+# Fix Windows MIME types
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("image/svg+xml", ".svg")
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 
 from starlette.middleware.base import BaseHTTPMiddleware
 

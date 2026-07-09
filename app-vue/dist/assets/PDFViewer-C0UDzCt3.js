@@ -1,0 +1,1 @@
+import{b as e,p as t,t as n,u as r}from"./index-B6ulN_ZD.js";var i={},a={class:`pdf-viewer`};function o(n,i){return e(),t(`div`,a,[...i[0]||=[r(`h2`,null,`PDF Viewer (placeholder)`,-1)]])}var s=n(i,[[`render`,o]]);export{s as default};
