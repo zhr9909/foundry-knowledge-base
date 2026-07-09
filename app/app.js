@@ -29,8 +29,12 @@ function getTheme() { return localStorage.getItem('theme') || 'light'; }
 function setTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('theme', t);
-  themeToggle.innerHTML = t === 'dark' ? '<i data-lucide="sun" size="18"></i>' : '<i data-lucide="moon" size="18"></i>';
-  if (typeof lucide !== "undefined") lucide.createIcons();
+  var moonSvg = themeToggle.querySelector("svg");
+  var sunSvg = themeToggle.querySelector("svg:last-child");
+  if (moonSvg && sunSvg) {
+    moonSvg.style.display = t === "dark" ? "none" : "";
+    sunSvg.style.display = t === "dark" ? "" : "none";
+  }
 }
 themeToggle.addEventListener('click', () => {
   setTheme(getTheme() === 'dark' ? 'light' : 'dark');
@@ -102,6 +106,13 @@ document.querySelectorAll('.suggestion-chip').forEach(el => {
 });
 
 
+
+document.querySelectorAll(".floating-bubble").forEach(function(el) {
+  el.addEventListener("click", function() {
+    queryInput.value = el.dataset.q;
+    sendMessage();
+  });
+});
 
 // ===== PDF Viewer =====
 function openPDF(sourceId, pageNum) {
@@ -196,9 +207,6 @@ function openCitation(page, sourceId) {
 
 
 
-
-// Lucide icons
-if (typeof lucide !== "undefined") lucide.createIcons();
 
 // ===== Auth State =====
 const authState = { user: null, token: localStorage.getItem('auth_token') || null, pendingEmail: null };
@@ -515,7 +523,6 @@ function resetProgressSteps() {
 
 function showProgressSteps() {
   document.getElementById('progressSteps').style.display = 'flex';
-  if (typeof lucide !== "undefined") setTimeout(() => lucide.createIcons(), 50);
 }
 
 function activateStep(stepId) {

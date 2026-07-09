@@ -5,21 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>铸造知识库</title>
 <link rel="stylesheet" href="/static/style.css">
-<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 <div id="app">
   <!-- Top Bar -->
   <header class="topbar">
     <div class="topbar-left">
-      <span class="logo">🏭</span>
+      <span class="logo" style="background:none;font-size:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><path d="M4 8a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/><path d="M8 18v2h8v-2"/><path d="M12 10v4"/><path d="M10 12h4"/></svg></span>
       <h1 class="title">铸造知识库</h1>
       <span class="model-badge" id="modelBadge">DeepSeek-v4-Flash</span>
     </div>
     <div class="topbar-right">
-      <button class="icon-btn" id="pdfToggle" title="文档查看器">📄</button>
-       <button class="icon-btn" id="themeToggle" title="切换主题">🌙</button>
-       <button class="icon-btn" id="infoToggle" title="关于">ℹ️</button>
+      <button class="icon-btn" id="pdfToggle" title="文档查看器"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
+       <button class="icon-btn" id="themeToggle" title="切换主题"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg wid18" style="display:none"ht="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+       <button class="icon-btn" id="infoToggle" title="关于"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>️</button>
       <div class="user-menu" id="userMenu" style="display:none">
         <button class="user-avatar-btn" id="userAvatarBtn">
            <span class="user-avatar" id="userAvatar"></span>
@@ -36,7 +35,7 @@
            <button class="dropdown-item danger" id="logoutBtn">退出登录</button>
         </div>
       </div>
-       <button class="icon-btn auth-btn" id="loginBtn" title="登录">🔑</button>
+       <button class="icon-btn auth-btn" id="loginBtn" title="登录"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></button>
      </div>
   </header>
 
@@ -44,17 +43,17 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <h3>📂 章节筛选</h3>
+        <h3 style="display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-5l-2-2H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4"/><path d="M20 14v4"/><path d="M17 16h6"/></svg> 章节筛选</h3>
         <button class="btn-sm" id="clearSection">清除</button>
       </div>
       <div class="sidebar-search">
         <input type="text" id="sectionFilter" placeholder="搜索章节..." class="input-sm">
       </div>
       <div class="section-list" id="sectionList">
-        <div class="section-item active" data-section="">📄 全部章节</div>
+        <div class="section-item active" data-section=""><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.86v10.82A2.32 2.32 0 0 0 5.32 21H15"/></svg> 全部章节</div>
       </div>
       <div class="sidebar-footer">
-        <button class="btn-link" id="showKnowledgeBtn">📖 知识库概览</button>
+        <button class="btn-link" id="showKnowledgeBtn" style="display:inline-flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> 知识库概览</button>
       </div>
     </aside>
 
@@ -62,45 +61,52 @@
     <main class="main">
       <div class="chat-area" id="chatArea">
         <div class="welcome" id="welcome">
-          <div class="welcome-icon">🏭</div>
+          <div class="welcome-icon"><svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"><rect x="8" y="12" width="32" height="24" rx="4"/><path d="M14 36v4h20v-4"/><path d="M20 20h8"/><path d="M24 16v12"/></svg></div>
           <h2>铸造知识库 AI 助手</h2>
           <p>输入金属材料、铸造工艺相关问题，从技术手册知识库中检索答案</p>
-          <div class="suggestions">
-            <button class="suggestion-chip" data-q="铝合金6061的力学性能">铝合金6061的力学性能</button>
-            <button class="suggestion-chip" data-q="不锈钢的热处理温度">不锈钢的热处理温度</button>
-            <button class="suggestion-chip" data-q="铜合金的铸造工艺">铜合金的铸造工艺</button>
-            <button class="suggestion-chip" data-q="钛合金的抗拉强度">钛合金的抗拉强度</button>
-          </div>
+        <div class="suggestions">
+          <button class="suggestion-chip" data-q="铝合金6061的力学性能">铝合金6061的力学性能</button>
+          <button class="suggestion-chip" data-q="不锈钢的热处理温度">不锈钢的热处理温度</button>
+          <button class="suggestion-chip" data-q="铜合金的铸造工艺">铜合金的铸造工艺</button>
+          <button class="suggestion-chip" data-q="钛合金的抗拉强度">钛合金的抗拉强度</button>
+        </div>
+         <div class="floating-suggestions-container">
+           <div class="floating-bubble bubble-1" data-q="铝合金6061的力学性能">铝合金6061的力学性能</div>
+           <div class="floating-bubble bubble-2" data-q="不锈钢的热处理温度">不锈钢的热处理温度</div>
+           <div class="floating-bubble bubble-3" data-q="铜合金的铸造工艺">铜合金的铸造工艺</div>
+           <div class="floating-bubble bubble-4" data-q="钛合金的抗拉强度">钛合金的抗拉强度</div>
+           <div class="floating-bubble bubble-5" data-q="铝合金的牌号分类">铝合金的牌号分类</div>
+         </div>
         </div>
         <div class="messages" id="messages"></div>
         <!-- Progress Steps -->
         <div class="progress-steps" id="progressSteps" style="display:none">
           <div class="step" data-step="rewrite">
-            <div class="step-icon">🔍</div>
+            <div class="step-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
             <div class="step-label">分析问题</div>
             <div class="step-status"></div>
           </div>
           <div class="step-connector"></div>
           <div class="step" data-step="search">
-            <div class="step-icon">📡</div>
+            <div class="step-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></div>
             <div class="step-label">检索知识库</div>
             <div class="step-status"></div>
           </div>
           <div class="step-connector"></div>
           <div class="step" data-step="context">
-            <div class="step-icon">📚</div>
+            <div class="step-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
             <div class="step-label">精选上下文</div>
             <div class="step-status"></div>
           </div>
           <div class="step-connector"></div>
           <div class="step" data-step="generate">
-            <div class="step-icon">🤖</div>
+            <div class="step-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></div>
             <div class="step-label">生成回答</div>
             <div class="step-status"></div>
           </div>
           <div class="step-connector"></div>
           <div class="step" data-step="check">
-            <div class="step-icon">✅</div>
+            <div class="step-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
             <div class="step-label">质量检查</div>
             <div class="step-status"></div>
           </div>
@@ -116,7 +122,7 @@
       <div class="input-area">
         <div class="section-indicator" id="sectionIndicator" style="display:none">
           当前筛选: <span id="activeSectionLabel"></span>
-          <button class="btn-sm" id="clearSectionBtn">✕</button>
+          <button class="btn-sm" id="clearSectionBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
         </div>
         <div class="input-row">
           <textarea id="queryInput" rows="1" placeholder="输入关于金属材料、合金、工艺的问题..." 
@@ -138,7 +144,7 @@
        <div class="auth-tabs">
          <button class="auth-tab active" data-tab="login" id="tabLogin">登录</button>
          <button class="auth-tab" data-tab="register" id="tabRegister">注册</button>
-         <button class="auth-close" id="closeAuthModal"><i data-lucide="x" size="18"</button>
+         <button class="auth-close" id="closeAuthModal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
        </div>
        <div class="auth-view active" id="loginView">
          <h2 class="auth-view-title">欢迎回来</h2>
@@ -220,8 +226,8 @@
   <div class="modal-overlay" id="infoModal" style="display:none">
     <div class="modal">
       <div class="modal-header">
-        <h2>ℹ️ 关于铸造知识库</h2>
-        <button class="icon-btn" id="closeModal">✕</button>
+        <h2 style="display:flex;align-items:center;gap:6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> 关于铸造知识库</h2>
+        <button class="icon-btn" id="closeModal"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
       </div>
       <div class="modal-body">
       <div class="modal-body" style="line-height:1.8">
@@ -246,10 +252,10 @@
 <!-- Floating PDF Viewer -->
 <div id="pdfViewer" class="pdf-viewer" style="display:none">
   <div class="pdf-viewer-header" id="pdfDragHandle">
-    <span class="pdf-viewer-title">📄 文档查看器</span>
+    <span class="pdf-viewer-title" style="display:flex;align-items:center;gap:6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 文档查看器</span>
     <div class="pdf-viewer-controls">
       <span class="pdf-viewer-status" id="pdfStatus">关闭</span>
-      <button class="icon-btn pdf-close-btn" id="pdfCloseBtn">✕</button>
+      <button class="icon-btn pdf-close-btn" id="pdfCloseBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
     </div>
   </div>
   <div class="pdf-viewer-body">
@@ -257,6 +263,7 @@
   </div>
 </div>
 
+<footer class="app-footer">铸造知识库 v0.2 · 技术手册知识库</footer>
 <script src="/static/app.js?v=20260708"></script>
 </body>
 </html>
