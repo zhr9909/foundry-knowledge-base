@@ -84,7 +84,7 @@ export const useChatStore = defineStore('chat', () => {
         es.onerror = () => { clearTimeout(timeout); es.close(); reject(new Error('SSE Connection failed')) }
       })
 
-      addMessage('assistant', answer, { citations, thinking })
+      addMessage('assistant', answer, { citations, thinking, logs: [...logs.value] })
       return result
     } catch (e) {
       addMessage('assistant', `\u274c 请求失败: ${e.message}`)

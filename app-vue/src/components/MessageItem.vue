@@ -2,7 +2,7 @@
   <div class="message" :class="msg.role">
     <div class="message-avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
     <div class="message-content">
-      <LogPanel v-if="msg.role === 'assistant' && logs.length" :logs="logs" />
+      <LogPanel v-if="msg.role === 'assistant' && msg.metadata.logs?.length" :logs="msg.metadata.logs" />
       <div v-if="msg.role === 'assistant' && msg.metadata.thinking" class="thinking-block">
         <details>
           <summary>🤙 AI ????</summary>

@@ -1,22 +1,16 @@
 <template>
   <main class="chat-area" ref="chatArea">
     <div id="chatArea" class="chat-inner">
-      <!-- Welcome -->
       <div v-if="messages.length === 0 && !chat.isProcessing" id="welcome" class="welcome">
-        <h1>????? AI ??</h1>
-        <p class="welcome-subtitle">?????????????????????????????</p>
+        <h1>铸造知识库 AI 助手</h1>
+        <p class="welcome-subtitle">输入金属材料、铸造工艺相关问题，从技术手册知识库中检索答案</p>
         <div class="suggestions">
-          <div v-for="(s, i) in suggestions" :key="i" class="suggestion-chip" @click="('suggest', s.query)">{{ s.label }}</div>
+          <div v-for="(s, i) in suggestions" :key="i" class="suggestion-chip" @click="$emit('suggest', s.query)">{{ s.label }}</div>
         </div>
       </div>
-      <!-- Messages -->
-      <div v-for="(msg, i) in messages" :key="i">
-        <MessageItem :msg="msg" :logs="chat.logs" />
-      </div>
-      <!-- Progress -->
+      <div v-for="(msg, i) in messages" :key="i"><MessageItem :msg="msg" :logs="chat.logs" /></div>
       <ProgressSteps :steps="chat.progressSteps" :visible="chat.showProgress" />
-      <!-- Loading -->
-      <div v-if="chat.isProcessing && !messages.length" class="loading"><span>????...</span></div>
+      <div v-if="chat.isProcessing && !messages.length" class="loading"><span>正在处理...</span></div>
     </div>
   </main>
 </template>
@@ -27,10 +21,10 @@ import ProgressSteps from './ProgressSteps.vue'
 const props = defineProps({ messages: { type: Array, default: () => [] }, chat: Object })
 defineEmits(['suggest'])
 const suggestions = [
-  { label: '???6061?????', query: '???6061?????' },
-  { label: '?????????', query: '?????????' },
-  { label: '????????', query: '????????' },
-  { label: '????????', query: '????????' },
+  { label: '铝合金6061的力学性能', query: '铝合金6061的力学性能' },
+  { label: '不锈钢的热处理温度', query: '不锈钢的热处理温度' },
+  { label: '铜合金的铸造工艺', query: '铜合金的铸造工艺' },
+  { label: '钛合金的抗拉强度', query: '钛合金的抗拉强度' },
 ]
 </script>
 <style scoped>
