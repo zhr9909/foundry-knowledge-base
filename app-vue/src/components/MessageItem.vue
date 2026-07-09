@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="message" :class="msg.role">
-    <div class="message-avatar">{{ msg.role === 'user' ? '馃懁' : '馃' }}</div>
+    <div class="message-avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
     <div class="message-content">
       <LogPanel v-if="msg.role === 'assistant' && msg.metadata.logs?.length" :logs="msg.metadata.logs" />
       <div v-if="msg.role === 'assistant' && msg.metadata.thinking" class="thinking-block">
@@ -41,6 +41,10 @@ const renderedAnswer = computed(() => {
       '<sup class="citation-ref" onclick="event.preventDefault(); window.open(\'/static/pdf-viewer.html?page=' + page + '\')">[' + (i+1) + ']</sup>')
   }
   result = result.replace(/\*\*(.*?)\*\*/g, "<strong>`$1</strong>")
+  // Bold: **text** -> <strong>text</strong>
+  result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  // Bold markdown
+  result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
   return result.replace(/\n/g, '<br>')
 })
 function openCitation(c) {

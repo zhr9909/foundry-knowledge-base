@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Orchestrator Gateway (port 8000)"""
 
-import os, sys, json, asyncio, logging, mimetypes
+import os, sys, json, asyncio, logging, mimetypes, mimetypes
 from pathlib import Path
 import hashlib
 from typing import Optional
@@ -41,6 +41,11 @@ _log = logging.getLogger('orchestrator')
 
 app = FastAPI(title="Foundry KB Orchestrator", version="0.3.0")
 # Fix Windows MIME types
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("image/svg+xml", ".svg")
+
+# Fix MIME types
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("image/svg+xml", ".svg")
