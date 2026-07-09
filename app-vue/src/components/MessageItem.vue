@@ -29,24 +29,63 @@ import { computed } from 'vue'
 import LogPanel from './LogPanel.vue'
 const props = defineProps({ msg: Object, logs: { type: Array, default: () => [] } })
 const renderedAnswer = computed(() => {
-  let text = props.msg.content || ''
-  if (props.msg.role === 'user') return text
-  if (!props.msg.metadata.citations) return text.replace(/\n/g, '<br>')
-  let result = text
-  const citations = props.msg.metadata.citations || []
-  for (let i = 0; i < citations.length; i++) {
-    const c = citations[i]
-    const page = c.page || '?'
-    result = result.replace(new RegExp('\\[' + (i+1) + '\\]', 'g'),
-      '<sup class="citation-ref" onclick="event.preventDefault(); window.open(\'/static/pdf-viewer.html?page=' + page + '\')">[' + (i+1) + ']</sup>')
+  function escapeHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") }
+  function renderTable(md) {
+    const lines = md.trim().split("\n")
+    let html = "<table><thead><tr>"
+    for (const h of lines[0].split("|").filter(function(c) { return c.trim() })) html += "<th>" + h.trim() + "</th>"
+    html += "</tr></thead><tbody>"
+    for (let i = 2; i < lines.length; i++) {
+      const cells = lines[i].split("|").filter(function(c) { return c.trim() })
+      if (cells.length) {
+        html += "<tr>"
+        for (const c of cells) html += "<td>" + c.trim() + "</td>"
+        html += "</tr>"
+      }
+    }
+    html += "</tbody></table>"
+    return html
   }
-  result = result.replace(/\*\*(.*?)\*\*/g, "<strong>`$1</strong>")
-  // Bold: **text** -> <strong>text</strong>
-  result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-  // Bold markdown
-  result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-  return result.replace(/\n/g, '<br>')
+  
+  let text = props.msg.content || ""
+  if (props.msg.role === "user") return text
+  const citations = props.msg.metadata.citations || []
+  
+  // Extract tables before HTML escaping
+  const tblBlocks = []
+  let result = text.replace(/((?:\|.*\|(?:\r?\n|$)){2,})/g, function(m) {
+    tblBlocks.push(renderTable(m))
+    return "\x00T" + (tblBlocks.length - 1) + "\x00"
+  })
+  
+  // Escape HTML
+  result = escapeHtml(result)
+  
+  // Bold
+  result = result.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+  // Inline code
+  result = result.replace(/\`(.*?)\`/g, "<code>$1</code>")
+  // Headers
+  result = result.replace(/^###\s+(.*?)$/gm, "<h4>$1</h4>")
+  result = result.replace(/^##\s+(.*?)$/gm, "<h3>$1</h3>")
+  
+  // Restore tables
+  result = result.replace(/\x00T(\d+)\x00/g, function(_, id) { return tblBlocks[parseInt(id)] })
+  
+  // Citations
+  for (let i = 0; i < citations.length; i++) {
+    const page = citations[i].page || "?"
+    result = result.replace("[" + (i + 1) + "]", "<sup class=\"citation-ref\" style=\"color:#2563eb;cursor:pointer\" onclick=\"event.preventDefault(); window.open(\'/static/pdf-viewer.html?page=" + page + "\')\">[" + (i + 1) + "]</sup>")
+  }
+  
+  // Line breaks to paragraphs
+  result = result.replace(/\n{2,}/g, "</p><p>")
+  result = result.replace(/\n/g, "<br>")
+  if (!result.startsWith("<")) result = "<p>" + result + "</p>"
+  
+  return result
 })
+
 function openCitation(c) {
   const page = c.page || 1
   window.open('/static/pdf-viewer.html?page=' + page, '_blank')
