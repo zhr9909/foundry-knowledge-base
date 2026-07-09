@@ -120,3 +120,14 @@ input, textarea, button { font-family: inherit; }
 /* Auth modal */
 .auth-overlay { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 1000 !important; }
 .auth-card { background: #fff !important; border-radius: 16px !important; padding: 32px !important; width: 380px !important; max-width: 90vw !important; position: relative !important; box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important; }
+
+/* Markdown rendered elements */
+.answer-text h3 { font-size: 16px; font-weight: 600; margin: 12px 0 6px; }
+.answer-text h4 { font-size: 14px; font-weight: 600; margin: 10px 0 4px; }
+.answer-text code { background: var(--bg-code); padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+.answer-text strong { font-weight: 600; }
+.answer-text p { margin-bottom: 8px; }
+.answer-text .citation-ref { cursor: pointer; color: #2563eb; }
+.answer-text table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
+.answer-text th, .answer-text td { border: 1px solid #e5e5e5; padding: 6px 8px; text-align: left; }
+.answer-text th { background: var(--bg-sub); font-weight: 500; }

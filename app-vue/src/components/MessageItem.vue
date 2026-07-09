@@ -1,17 +1,17 @@
-<template>
+﻿<template>
   <div class="message" :class="msg.role">
-    <div class="message-avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
+    <div class="message-avatar">{{ msg.role === 'user' ? '馃懁' : '馃' }}</div>
     <div class="message-content">
       <LogPanel v-if="msg.role === 'assistant' && msg.metadata.logs?.length" :logs="msg.metadata.logs" />
       <div v-if="msg.role === 'assistant' && msg.metadata.thinking" class="thinking-block">
         <details>
-          <summary>🤙 AI ????</summary>
+          <summary>馃 AI ????</summary>
           <p>{{ msg.metadata.thinking }}</p>
         </details>
       </div>
       <div class="answer-text" v-html="renderedAnswer"></div>
       <div v-if="msg.role === 'assistant' && msg.metadata.citations && msg.metadata.citations.length" class="citations">
-        <div class="citations-title">📎 ????</div>
+        <div class="citations-title">馃搸 ????</div>
         <a v-for="(c, i) in msg.metadata.citations" :key="i" class="citation-card" href="#" @click.prevent="openCitation(c)">
           <div class="citation-header">
             <span class="citation-page">pg.{{ c.page || '?' }}</span>
@@ -40,6 +40,7 @@ const renderedAnswer = computed(() => {
     result = result.replace(new RegExp('\\[' + (i+1) + '\\]', 'g'),
       '<sup class="citation-ref" onclick="event.preventDefault(); window.open(\'/static/pdf-viewer.html?page=' + page + '\')">[' + (i+1) + ']</sup>')
   }
+  result = result.replace(/\*\*(.*?)\*\*/g, "<strong>`$1</strong>")
   return result.replace(/\n/g, '<br>')
 })
 function openCitation(c) {
