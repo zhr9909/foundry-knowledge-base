@@ -7,6 +7,21 @@ import bcrypt
 import jwt
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pathlib import Path
+
+# Load .env file if present (must happen before os.environ.get() calls)
+_env_path = Path(__file__).parent / ".env"
+if _env_path.exists():
+    try:
+        with open(_env_path, encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+    except Exception:
+        pass
+
 
 # === Config ===
 SECRET_KEY = os.environ.get("AUTH_SECRET_KEY", secrets.token_hex(32))
