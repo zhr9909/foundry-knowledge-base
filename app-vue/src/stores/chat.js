@@ -31,15 +31,16 @@ export const useChatStore = defineStore('chat', () => {
     if (!query.trim() || isProcessing.value) return
     isProcessing.value = true
     addMessage('user', query)
+    const msgIdx = messages.value.length
+    addMessage('assistant', '', { citations: [], thinking: '', logs: [] })
+    if (messages.value[msgIdx]) {
+      messages.value[msgIdx].metadata.logs = [...logs.value]
+    }
     showProgress.value = true
     progressSteps.value.rewrite = 'active'
     addLog('开始处理查询...')
     addLog('原始查询：' + query)
 
-    // Create placeholder assistant message for live log display
-    const msgIdx = messages.value.length
-    addMessage('assistant', '', { logs: logs.value })
-    
     try {
       const params = new URLSearchParams({ query })
       if (section) params.set('section', section)
@@ -54,14 +55,10 @@ export const useChatStore = defineStore('chat', () => {
       const result = await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => { es.close(); reject(new Error('timeout')) }, 60000)
         es.onmessage = (event) => {
-          // Create placeholder assistant message for live log display
-    const msgIdx = messages.value.length
-    addMessage('assistant', '', { logs: logs.value })
-    
-    try {
+          try {
             const data = JSON.parse(event.data)
             if (data.type === 'conv_id') { currentConvId.value = data.conv_id; return }
-            if (data.type === 'log') { addLog(data.message, data.level || 'info'); return }
+            if (data.type === 'log') { addLog(data.message, data.level || 'info'); if (messages.value[msgIdx]) { messages.value[msgIdx].metadata.logs = [...logs.value] } return }
             if (data.step === 'rewritten') {
               progressSteps.value.rewrite = `\u2192 ${data.queries?.length || 0} 条语句`
               progressSteps.value.search = 'active'
@@ -81,6 +78,10 @@ export const useChatStore = defineStore('chat', () => {
               citations = data.data.citations || []
               thinking = data.data.thinking || ''
               progressSteps.value.check = '\u2714 完成'
+              if (messages.value[msgIdx]) {
+                messages.value[msgIdx].content = answer
+                messages.value[msgIdx].metadata = { citations, thinking, logs: [...logs.value] }
+              }
               resolve(true)
             }
             if (data.type === 'error') {
@@ -92,14 +93,7 @@ export const useChatStore = defineStore('chat', () => {
         es.onerror = () => { clearTimeout(timeout); es.close(); reject(new Error('SSE Connection failed')) }
       })
 
-      // Update placeholder with response
-      if (messages.value[msgIdx] && messages.value[msgIdx].role === 'assistant') {
-        messages.value[msgIdx] = {
-          role: 'assistant',
-          content: answer,
-          metadata: { citations, thinking, logs: [...logs.value] }
-        }
-      }
+      // message updated inline in SSE handler
       return result
     } catch (e) {
       addMessage('assistant', `\u274c 请求失败: ${e.message}`)
@@ -112,19 +106,11 @@ export const useChatStore = defineStore('chat', () => {
 
   async function loadConversations() {
     if (!localStorage.getItem('auth_token')) { conversations.value = []; return }
-    // Create placeholder assistant message for live log display
-    const msgIdx = messages.value.length
-    addMessage('assistant', '', { logs: logs.value })
-    
     try { const r = await api.listConversations(); conversations.value = r.conversations || [] }
     catch { conversations.value = [] }
   }
 
   async function loadConversation(id) {
-    // Create placeholder assistant message for live log display
-    const msgIdx = messages.value.length
-    addMessage('assistant', '', { logs: logs.value })
-    
     try {
       const r = await api.getConversation(id)
       const cv = r.conversation

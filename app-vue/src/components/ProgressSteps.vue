@@ -1,47 +1,33 @@
 <template>
-  <div v-if="visible" id="progressSteps" class="progress-steps">
-    <div class="step" :class="stepClass('rewrite')" data-step="rewrite">
-      <span class="step-label">🔍 分析问题</span>
-      <span class="step-status">{{ steps.rewrite }}</span>
-    </div>
-    <span class="step-arrow">➡</span>
-    <div class="step" :class="stepClass('search')" data-step="search">
-      <span class="step-label">📘 检索知识库</span>
-      <span class="step-status">{{ steps.search }}</span>
-    </div>
-    <span class="step-arrow">➡</span>
-    <div class="step" :class="stepClass('context')" data-step="context">
-      <span class="step-label">📎 精选上下文</span>
-      <span class="step-status">{{ steps.context }}</span>
-    </div>
-    <span class="step-arrow">➡</span>
-    <div class="step" :class="stepClass('generate')" data-step="generate">
-      <span class="step-label">🧻 生成回答</span>
-      <span class="step-status">{{ steps.generate }}</span>
-    </div>
-    <span class="step-arrow">➡</span>
-    <div class="step" :class="stepClass('check')" data-step="check">
-      <span class="step-label">✅ 质量检查</span>
-      <span class="step-status">{{ steps.check }}</span>
-    </div>
+  <div v-if="visible" id="progressSteps" class="progress-steps" aria-label="Processing progress">
+    <template v-for="(item, index) in stepItems" :key="item.key">
+      <div class="step" :class="stepClass(item.key)" :data-step="item.key">
+        <span class="step-node"></span><span class="step-label">{{ item.label }}</span><span v-if="steps[item.key] && steps[item.key] !== 'active'" class="step-status">{{ steps[item.key] }}</span>
+      </div>
+      <span v-if="index < stepItems.length - 1" class="step-arrow"></span>
+    </template>
   </div>
 </template>
 <script setup>
-defineProps({ steps: { type: Object, default: () => ({}) }, visible: Boolean })
-function stepClass(name) {
-  const s = this?.steps?.[name]
-  if (!s || s === '') return ''
-  if (s === 'active') return 'active'
-  if (s === 'done') return 'done'
-  return 'done'
-}
+const props = defineProps({ steps: { type: Object, default: () => ({}) }, visible: Boolean })
+const stepItems = [
+  { key: 'rewrite', label: '\u5206\u6790\u95ee\u9898' },
+  { key: 'search', label: '\u68c0\u7d22\u77e5\u8bc6\u5e93' },
+  { key: 'context', label: '\u7cbe\u9009\u4e0a\u4e0b\u6587' },
+  { key: 'generate', label: '\u751f\u6210\u56de\u7b54' },
+  { key: 'check', label: '\u8d28\u91cf\u68c0\u67e5' },
+]
+function stepClass(name) { const s = props.steps?.[name]; if (!s) return ''; if (s === 'active') return 'active'; return 'done' }
 </script>
 <style scoped>
-.progress-steps { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; background: var(--bg-sub); border-radius: var(--radius-sm); margin: 8px 0; flex-wrap: wrap; }
-.step { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-.step.active { color: var(--text-primary); font-weight: 500; }
-.step.done { color: #2ecc71; }
-.step-status { font-size: 11px; color: var(--text-muted); }
-.step.done .step-status { color: #2ecc71; }
-.step-arrow { color: var(--text-muted); font-size: 10px; }
+.progress-steps { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 2px 0 0 48px; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-surface); color: var(--text-muted); }
+.step { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; font-size: 12px; white-space: nowrap; }
+.step-node { width: 7px; height: 7px; border-radius: 50%; background: #c7d2df; }
+.step.active { color: var(--accent-strong); font-weight: 700; }
+.step.active .step-node { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.step.done { color: var(--success); }
+.step.done .step-node { background: var(--success); }
+.step-status { color: inherit; opacity: .8; }
+.step-arrow { width: 18px; height: 1px; background: var(--border-strong); opacity: .7; }
+@media (max-width: 820px) { .progress-steps { margin-left: 0; } }
 </style>

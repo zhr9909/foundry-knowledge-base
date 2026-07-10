@@ -22,6 +22,19 @@ from search import search, list_sections
 
 import httpx
 import logging
+
+_env_path = Path(__file__).parent / ".env"
+if _env_path.exists():
+    try:
+        with open(_env_path, encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+    except Exception:
+        pass
+
 _LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'agent.log')
 logging.basicConfig(
     filename=_LOG_FILE,
@@ -32,9 +45,9 @@ logging.basicConfig(
 )
 _log = logging.getLogger('agent')
 
-LLM_API = "http://127.0.0.1:15721/v1"
-LLM_MODEL = "deepseek-v4-flash"
-LLM_KEY = "PROXY_MANAGED"
+LLM_API = os.environ.get("LLM_API", "https://api.deepseek.com")
+LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek-chat")
+LLM_KEY = os.environ.get("LLM_KEY", "")
 
 FALLBACK_SYSTEM_PROMPT = """你是铸造、金属材料专业知识库AI助手。当前知识库检索未能找到与用户问题匹配的有效信息。
 请基于你自身的知识来回答用户问题。
@@ -188,7 +201,7 @@ def generate_answer(query: str, context: list, history: list = None, system_prom
     # Call LLM
     start = time.time()
     try:
-        with httpx.Client(timeout=60) as client:
+        with httpx.Client(timeout=60, trust_env=False) as client:
             resp = client.post(
                 f"{LLM_API}/chat/completions",
                 headers={"Authorization": f"Bearer {LLM_KEY}", "Content-Type": "application/json"},
@@ -472,7 +485,7 @@ def _call_llm(messages, max_tokens=512, timeout=30):
     _log.info(f"  Input: {last_input}")
     start = time.time()
     try:
-        with httpx.Client(timeout=timeout) as client:
+        with httpx.Client(timeout=timeout, trust_env=False) as client:
             resp = client.post(f"{LLM_API}/chat/completions", headers={"Authorization": f"Bearer {LLM_KEY}", "Content-Type": "application/json"}, json={"model": LLM_MODEL, "messages": messages, "max_tokens": max_tokens})
             elapsed = int((time.time() - start) * 1000)
             if resp.status_code == 200:
@@ -706,9 +719,9 @@ logging.basicConfig(
 )
 _log = logging.getLogger('agent')
 
-LLM_API = "http://127.0.0.1:15721/v1"
-LLM_MODEL = "deepseek-v4-flash"
-LLM_KEY = "PROXY_MANAGED"
+LLM_API = os.environ.get("LLM_API", "https://api.deepseek.com")
+LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek-chat")
+LLM_KEY = os.environ.get("LLM_KEY", "")
 
 FALLBACK_SYSTEM_PROMPT = """你是铸造、金属材料专业知识库AI助手。当前知识库检索未能找到与用户问题匹配的有效信息。
 请基于你自身的知识来回答用户问题。
@@ -862,7 +875,7 @@ def generate_answer(query: str, context: list, history: list = None, system_prom
     # Call LLM
     start = time.time()
     try:
-        with httpx.Client(timeout=60) as client:
+        with httpx.Client(timeout=60, trust_env=False) as client:
             resp = client.post(
                 f"{LLM_API}/chat/completions",
                 headers={"Authorization": f"Bearer {LLM_KEY}", "Content-Type": "application/json"},
@@ -1146,7 +1159,7 @@ def _call_llm(messages, max_tokens=512, timeout=30):
     _log.info(f"  Input: {last_input}")
     start = time.time()
     try:
-        with httpx.Client(timeout=timeout) as client:
+        with httpx.Client(timeout=timeout, trust_env=False) as client:
             resp = client.post(f"{LLM_API}/chat/completions", headers={"Authorization": f"Bearer {LLM_KEY}", "Content-Type": "application/json"}, json={"model": LLM_MODEL, "messages": messages, "max_tokens": max_tokens})
             elapsed = int((time.time() - start) * 1000)
             if resp.status_code == 200:

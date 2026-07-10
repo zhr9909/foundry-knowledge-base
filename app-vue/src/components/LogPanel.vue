@@ -1,43 +1,34 @@
 <template>
   <details class="log-panel-inline" open>
-    <summary class="log-panel-header">
-      <span class="log-panel-title">📋 处理日志</span>
-      <span class="log-panel-badge">{{ logs.length }}</span>
-    </summary>
+    <summary class="log-panel-header"><span class="log-panel-title">{{ title }}</span><span class="log-panel-badge">{{ logs.length }}</span></summary>
     <div class="log-panel-body">
-      <div v-for="(log, i) in logs" :key="i" class="log-entry" :class="log.level">
-        <span class="log-time">[{{ log.time }}]</span>
-        <span class="log-icon">{{ iconFor(log.msg) }}</span>
-        <span class="log-msg">{{ log.msg }}</span>
-      </div>
+      <div v-for="(log, i) in logs" :key="i" class="log-entry" :class="log.level"><span class="log-time">[{{ log.time }}]</span><span class="log-icon">{{ iconFor(log.msg) }}</span><span class="log-msg">{{ log.msg }}</span></div>
     </div>
   </details>
 </template>
 <script setup>
 defineProps({ logs: { type: Array, default: () => [] } })
+const title = '\u5904\u7406\u65e5\u5fd7'
 function iconFor(msg) {
-  if (msg.includes('拆解') || msg.includes('语义')) return '\uD83D\uDD33'
-  if (msg.includes('检索')) return '\uD83D\uDCD7'
-  if (msg.includes('精选') || msg.includes('上下文')) return '\uD83D\uDCCE'
-  if (msg.includes('提示词') || msg.includes('生成')) return '\uD83E\uDDFB'
-  if (msg.includes('质量') || msg.includes('检查')) return '\u2705'
-  if (msg.includes('降级') || msg.includes('兜底')) return '\u26A0\uFE0F'
-  if (msg.includes('偏低') || msg.includes('新一轮')) return '\uD83D\uDD04'
-  if (msg.includes('失败')) return '\u274C'
-  return '\u25B6'
+  if (msg.includes('\u62c6\u89e3') || msg.includes('\u8bed\u4e49')) return 'S'
+  if (msg.includes('\u68c0\u7d22')) return 'R'
+  if (msg.includes('\u7cbe\u9009') || msg.includes('\u4e0a\u4e0b\u6587')) return 'C'
+  if (msg.includes('\u63d0\u793a\u8bcd') || msg.includes('\u751f\u6210')) return 'G'
+  if (msg.includes('\u8d28\u91cf') || msg.includes('\u68c0\u67e5')) return 'Q'
+  if (msg.includes('\u5931\u8d25')) return '!'
+  return '>'
 }
 </script>
 <style scoped>
-.log-panel-inline { margin: 0 0 8px 0; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-sub); overflow: hidden; }
-.log-panel-header { display: flex; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer; font-size: 12px; color: var(--text-secondary); user-select: none; }
+.log-panel-inline { margin-bottom: 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-surface-2); overflow: hidden; }
+.log-panel-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; color: var(--text-secondary); font-size: 12px; font-weight: 650; user-select: none; }
 .log-panel-title { flex: 1; }
-.log-panel-badge { background: var(--text-primary); color: #fff; font-size: 10px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
-.log-panel-body { padding: 4px 10px 8px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-.log-entry { display: flex; align-items: baseline; gap: 4px; font-size: 11px; line-height: 1.5; color: var(--text-secondary); }
-.log-time { color: var(--text-muted); flex-shrink: 0; }
-.log-icon { flex-shrink: 0; }
-.log-msg { word-break: break-all; }
-.log-entry.retry .log-msg { color: #e67e22; }
-.log-entry.fallback .log-msg { color: #e74c3c; }
-.log-entry.error .log-msg { color: #e74c3c; font-weight: 500; }
+.log-panel-badge { min-width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center; background: var(--bg-user); color: white; font-size: 11px; }
+.log-panel-body { max-height: 190px; overflow-y: auto; padding: 0 10px 10px; display: flex; flex-direction: column; gap: 4px; }
+.log-entry { display: flex; align-items: baseline; gap: 6px; color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; line-height: 1.55; }
+.log-time { color: var(--text-muted); flex: 0 0 auto; }
+.log-icon { width: 15px; height: 15px; border-radius: 4px; display: inline-grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); font-size: 9px; font-weight: 800; flex: 0 0 auto; }
+.log-msg { word-break: break-word; }
+.log-entry.error .log-msg { color: var(--danger); font-weight: 700; }
+.log-entry.retry .log-msg, .log-entry.fallback .log-msg { color: var(--warning); }
 </style>
