@@ -32,7 +32,7 @@ export const useChatStore = defineStore('chat', () => {
     isProcessing.value = true
     addMessage('user', query)
     const msgIdx = messages.value.length
-    addMessage('assistant', '', { citations: [], thinking: '', logs: [] })
+    addMessage('assistant', '', { citations: [], thinking: '', logs: [], question: query })
     if (messages.value[msgIdx]) {
       messages.value[msgIdx].metadata.logs = [...logs.value]
     }
@@ -50,6 +50,7 @@ export const useChatStore = defineStore('chat', () => {
       let answer = ''
       let citations = []
       let thinking = ''
+      let graph = null
 
       const es = new EventSource(`/chat/stream?${params}`)
       const result = await new Promise((resolve, reject) => {
@@ -77,10 +78,11 @@ export const useChatStore = defineStore('chat', () => {
               answer = data.data.answer || ''
               citations = data.data.citations || []
               thinking = data.data.thinking || ''
+              graph = data.data.graph || null
               progressSteps.value.check = '\u2714 完成'
               if (messages.value[msgIdx]) {
                 messages.value[msgIdx].content = answer
-                messages.value[msgIdx].metadata = { citations, thinking, logs: [...logs.value] }
+                messages.value[msgIdx].metadata = { citations, thinking, graph, logs: [...logs.value], question: query }
               }
               resolve(true)
             }

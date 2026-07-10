@@ -1,0 +1,1 @@
+import{f as e,l as t,t as n,v as r}from"./index-BoZXiev7.js";var i={},a={class:`pdf-viewer`};function o(n,i){return r(),e(`div`,a,[...i[0]||=[t(`h2`,null,`PDF Viewer (placeholder)`,-1)]])}var s=n(i,[[`render`,o]]);export{s as default};

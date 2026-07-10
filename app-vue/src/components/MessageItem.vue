@@ -5,6 +5,7 @@
       <LogPanel v-if="msg.role === 'assistant' && msg.metadata.logs?.length" :logs="msg.metadata.logs" />
       <div v-if="msg.role === 'assistant' && msg.metadata.thinking" class="thinking-block"><details><summary>{{ thinkingTitle }}</summary><p>{{ msg.metadata.thinking }}</p></details></div>
       <div class="answer-text" v-html="renderedAnswer"></div>
+      <KnowledgeGraph v-if="msg.role === 'assistant'" :graph="knowledgeGraph" />
       <div v-if="msg.role === 'assistant' && msg.metadata.citations && msg.metadata.citations.length" class="citations">
         <div class="citations-title">{{ citationTitle }}</div>
         <a v-for="(c, i) in msg.metadata.citations" :key="i" class="citation-card" href="#" @click.prevent="openCitation(c)"><div class="citation-header"><span class="citation-page">pg.{{ c.page || '?' }}</span><span class="citation-score">{{ (c.score || 0).toFixed(3) }}</span><span class="citation-section">{{ c.section || '' }}</span></div><div class="citation-text">{{ (c.text || '').substring(0, 200) }}</div></a>
@@ -15,9 +16,19 @@
 <script setup>
 import { computed } from 'vue'
 import LogPanel from './LogPanel.vue'
+import KnowledgeGraph from './KnowledgeGraph.vue'
+import { buildKnowledgeGraph } from '../utils/knowledgeGraph.js'
 const props = defineProps({ msg: Object, logs: { type: Array, default: () => [] } })
 const thinkingTitle = 'AI \u601d\u8003\u8fc7\u7a0b'
 const citationTitle = '\u5f15\u7528\u6765\u6e90'
+const knowledgeGraph = computed(() => {
+  if (props.msg.role !== 'assistant' || !props.msg.content) return null
+  return props.msg.metadata.graph || buildKnowledgeGraph(
+    props.msg.metadata.question || '',
+    props.msg.content,
+    props.msg.metadata.citations || [],
+  )
+})
 const renderedAnswer = computed(() => {
   function escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
   function renderTable(md) {

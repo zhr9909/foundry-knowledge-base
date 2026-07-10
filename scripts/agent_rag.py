@@ -129,7 +129,7 @@ async def chat_stream_get(query: str, section: str = None):
                 step = event.get("step", "")
                 if etype == "result":
                     d = event.get("data", {})
-                    p = json.dumps({"type":"result","data":{"answer":d.get("answer",""),"citations":d.get("citations",[]),"thinking":d.get("thinking","")}}, ensure_ascii=False)
+                    p = json.dumps({"type":"result","data":{"answer":d.get("answer",""),"citations":d.get("citations",[]),"thinking":d.get("thinking",""),"graph":d.get("graph",{})}}, ensure_ascii=False)
                     yield "data: " + p + "\n\n"
                     yield 'data: {"type": "done"}\n\n'
                     return
@@ -192,6 +192,7 @@ def _process_task(task: Task):
             "answer": result.get("answer", ""),
             "citations": result.get("citations", ctx),
             "thinking": result.get("thinking", ""),
+            "graph": result.get("graph", {}),
         })
 
     except Exception as e:

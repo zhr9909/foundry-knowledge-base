@@ -281,6 +281,7 @@ class AgentState(TypedDict):
     context: list
     answer: str
     citations: list
+    graph: dict
     score: float
     attempts: int
     max_retries: int
@@ -384,7 +385,9 @@ def _output_node(state: AgentState) -> dict:
     elapsed = int((time.time() - state["start_time"]) * 1000)
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": f"回答生成完成 (耗时 {elapsed}ms)", "level": "done"})
-    return {"answer": state["answer"], "citations": state.get("citations", state.get("context", [])[:5]),
+    citations = state.get("citations", state.get("context", [])[:5])
+    graph = extract_knowledge_graph(state.get("query") or state.get("current_query", ""), state["answer"], citations)
+    return {"answer": state["answer"], "citations": citations, "graph": graph,
             "model": "", "sub_queries": state["sub_queries"], "attempts": state["attempts"], "latency_ms": elapsed}
 
 _agent_graph = None
@@ -430,7 +433,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
     initial = {
         "query": query, "section": section, "history": history,
         "current_query": query, "sub_queries": [], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡", "search_results": [],
-        "context": [], "answer": "", "citations": [], "score": 0,
+        "context": [], "answer": "", "citations": [], "graph": {}, "score": 0,
         "attempts": 1, "max_retries": 1, "start_time": time.time(),
         "progress_callback": progress_callback,
     }
@@ -475,6 +478,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
         "attempts": result.get("attempts", 1),
         "latency_ms": result.get("latency_ms", 0),
         "thinking": "",
+        "graph": result.get("graph", {}),
     }
 
 
@@ -497,6 +501,145 @@ def _call_llm(messages, max_tokens=512, timeout=30):
     except Exception as e:
         _log.warning(f"  Error: {e}")
     return ""
+
+
+def _safe_json_loads(text: str):
+    if not text:
+        return None
+    cleaned = text.strip()
+    cleaned = re.sub(r"^```(?:json)?", "", cleaned, flags=re.I).strip()
+    cleaned = re.sub(r"```$", "", cleaned).strip()
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        pass
+    match = re.search(r"\{.*\}", cleaned, re.S)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except Exception:
+            return None
+    return None
+
+
+def _normalize_graph(raw, citations):
+    if not isinstance(raw, dict):
+        return {}
+    nodes_in = raw.get("nodes") or []
+    edges_in = raw.get("edges") or []
+    if not isinstance(nodes_in, list) or not isinstance(edges_in, list):
+        return {}
+
+    allowed_types = {"material", "material_state", "property", "property_value", "process", "condition", "application", "source", "risk"}
+    nodes = []
+    seen = set()
+    for idx, node in enumerate(nodes_in[:16]):
+        if not isinstance(node, dict):
+            continue
+        label = str(node.get("label", "")).strip()
+        if not label:
+            continue
+        node_id = str(node.get("id") or f"node_{idx + 1}").strip()
+        node_id = re.sub(r"[^a-zA-Z0-9_\-\u4e00-\u9fa5]+", "_", node_id)[:48] or f"node_{idx + 1}"
+        if node_id in seen:
+            continue
+        seen.add(node_id)
+        node_type = str(node.get("type") or "property").strip()
+        if node_type not in allowed_types:
+            node_type = "property"
+        if node_type == "source":
+            label = re.sub(r"^(来源|Source)\s*[:：]?\s*", "", label, flags=re.I)
+        nodes.append({
+            "id": node_id,
+            "label": label[:36],
+            "type": node_type,
+            "meta": str(node.get("meta") or node.get("evidence") or "")[:80],
+            "page": node.get("page"),
+        })
+
+    if not nodes:
+        return {}
+    if not any(n["id"] == "root" for n in nodes):
+        nodes[0]["id"] = "root"
+        nodes[0]["type"] = nodes[0].get("type") or "material"
+
+    node_ids = {n["id"] for n in nodes}
+    edges = []
+    for edge in edges_in[:24]:
+        if not isinstance(edge, dict):
+            continue
+        source = str(edge.get("source", "")).strip()
+        target = str(edge.get("target", "")).strip()
+        if source not in node_ids or target not in node_ids or source == target:
+            continue
+        edges.append({
+            "source": source,
+            "target": target,
+            "label": str(edge.get("label") or edge.get("relation") or "关联")[:16],
+        })
+
+    if not edges and len(nodes) > 1:
+        edges = [{"source": "root", "target": n["id"], "label": "关联"} for n in nodes if n["id"] != "root"]
+
+    return {
+        "title": str(raw.get("title") or f"{nodes[0]['label']} 思维图谱")[:48],
+        "summary": str(raw.get("summary") or f"{len(nodes)}个知识节点 / {len(edges)}条关系")[:60],
+        "nodes": nodes,
+        "edges": edges,
+    }
+
+
+def extract_knowledge_graph(query: str, answer: str, citations: list) -> dict:
+    if not answer or answer.startswith("❌"):
+        return {}
+    citation_lines = []
+    for i, c in enumerate((citations or [])[:5], 1):
+        citation_lines.append(
+            f"[{i}] pg.{c.get('page', '?')} {c.get('section', '')}: {(c.get('text', '') or '')[:420]}"
+        )
+    prompt = f"""请从下面这轮工业材料知识库问答中抽取有工程价值的知识图谱，只输出 JSON，不要解释。
+
+要求：
+1. 优先抽取材料状态、具体性能数值、温度/工艺条件、应用/风险、来源证据。
+2. 不要只生成 pg.xxx 这种来源节点；来源节点只能作为证据，并连接到它支持的具体结论。
+3. 属性节点尽量带数值和单位，例如“抗拉强度 310 MPa”“T6 24℃ 屈服强度 276 MPa”。
+4. 边要有语义，例如“具有”“测试条件”“来源支持”“提升”“适用于”“风险”。
+5. 节点数量 6-14 个，边数量 6-18 条。
+
+JSON schema:
+{{
+  "title": "string",
+  "summary": "string",
+  "nodes": [
+    {{"id": "root", "label": "主题", "type": "material", "meta": "中心主题"}},
+    {{"id": "uts_310", "label": "抗拉强度 310 MPa", "type": "property_value", "meta": "T6/T651 常温典型值"}}
+  ],
+  "edges": [
+    {{"source": "root", "target": "uts_310", "label": "具有"}}
+  ]
+}}
+
+可用 type: material, material_state, property, property_value, process, condition, application, source, risk
+
+用户问题：
+{query}
+
+最终答案：
+{answer[:3500]}
+
+引用来源：
+{chr(10).join(citation_lines)}
+"""
+    raw = _call_llm([
+        {"role": "system", "content": "You extract compact engineering knowledge graphs. Output valid JSON only."},
+        {"role": "user", "content": prompt},
+    ], max_tokens=1200, timeout=30)
+    graph = _normalize_graph(_safe_json_loads(raw), citations)
+    if graph:
+        _log.info(f"  Graph extracted: {len(graph.get('nodes', []))} nodes, {len(graph.get('edges', []))} edges")
+    else:
+        _log.warning("  Graph extraction returned empty graph")
+    return graph
 
 
 def rewrite_query(query: str, history: list = None) -> dict:
@@ -955,6 +1098,7 @@ class AgentState(TypedDict):
     context: list
     answer: str
     citations: list
+    graph: dict
     score: float
     attempts: int
     max_retries: int
@@ -1058,7 +1202,9 @@ def _output_node(state: AgentState) -> dict:
     elapsed = int((time.time() - state["start_time"]) * 1000)
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": f"回答生成完成 (耗时 {elapsed}ms)", "level": "done"})
-    return {"answer": state["answer"], "citations": state.get("citations", state.get("context", [])[:5]),
+    citations = state.get("citations", state.get("context", [])[:5])
+    graph = extract_knowledge_graph(state.get("query") or state.get("current_query", ""), state["answer"], citations)
+    return {"answer": state["answer"], "citations": citations, "graph": graph,
             "model": "", "sub_queries": state["sub_queries"], "attempts": state["attempts"], "latency_ms": elapsed}
 
 _agent_graph = None
@@ -1104,7 +1250,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
     initial = {
         "query": query, "section": section, "history": history,
         "current_query": query, "sub_queries": [], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡", "search_results": [],
-        "context": [], "answer": "", "citations": [], "score": 0,
+        "context": [], "answer": "", "citations": [], "graph": {}, "score": 0,
         "attempts": 1, "max_retries": 1, "start_time": time.time(),
         "progress_callback": progress_callback,
     }
@@ -1149,6 +1295,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
         "attempts": result.get("attempts", 1),
         "latency_ms": result.get("latency_ms", 0),
         "thinking": "",
+        "graph": result.get("graph", {}),
     }
 
 
