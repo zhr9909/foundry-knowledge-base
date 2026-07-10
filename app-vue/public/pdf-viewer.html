@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PDF 查看器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#525659;font-family:-apple-system,sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+#toolbar{display:flex;align-items:center;gap:6px;padding:4px 12px;background:#2a2a2e;color:#fff;flex-shrink:0;user-select:none;flex-wrap:wrap}
+#toolbar button{background:#444;border:none;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;min-width:28px}
+#toolbar button:hover{background:#555}
+#toolbar .info{font-size:12px;color:#aaa}
+#toolbar .sep{width:1px;height:18px;background:#555;margin:0 4px}
+#viewerContainer{flex:1;overflow-y:auto;display:flex;justify-content:center;padding:8px 0}
+#pagesWrapper{max-width:100%}
+.pdf-page{position:relative;margin:4px auto;box-shadow:0 2px 8px rgba(0,0,0,.3);background:#fff}
+.pdf-page canvas{display:block;width:100%;height:auto}
+.pdf-page .text-layer{position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;color:transparent;width:100%;height:100%}
+.pdf-page .text-layer span{position:absolute;white-space:pre;transform-origin:0 0}
+.highlight{background:rgba(255,230,0,0.5)!important;border-radius:2px}
+#loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#aaa;font-size:14px}
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <button id="prevPage">▲</button>
+  <span class="info"><span id="pageNum">-</span>/<span id="pageCount">-</span></span>
+  <button id="nextPage">▼</button>
+  <span class="sep"></span>
+  <button id="zoomOut">−</button>
+  <span class="info" id="zoomLabel">100%</span>
+  <button id="zoomIn">+</button>
+  <span class="sep"></span>
+  <button id="fitWidth">适合宽度</button>
+  <span class="sep"></span>
+  <button id="scrollToPageBtn">跳转</button>
+  <input type="number" id="pageInput" style="width:50px;padding:2px 4px;border:1px solid #555;border-radius:3px;background:#333;color:#fff;font-size:12px" min="1">
+</div>
+<div id="viewerContainer">
+  <div id="loading">加载中...</div>
+  <div id="pagesWrapper"></div>
+</div>
+<script src="/static/pdfjs/pdf.min.js"></script>
+<script>
+(function(){
+var P=new URLSearchParams(location.search);
+var pdfUrl=P.get("file"),startPage=parseInt(P.get("page"))||1;
+var hText=sessionStorage.getItem("pdfHighlight")||"";
+
+var ld=document.getElementById("loading");
+if(!pdfjsLib){ld.textContent="错误: pdfjsLib未加载";return;}
+
+ld.textContent="加载 worker...";
+fetch("/static/pdfjs/pdf.worker.min.js").then(function(r){return r.blob()}).then(function(wb){
+pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(wb);
+ld.textContent="正在加载文档...";
+return pdfjsLib.getDocument(pdfUrl).promise;
+}).then(function(doc){
+var vc=document.getElementById("viewerContainer"),pw=document.getElementById("pagesWrapper");
+var scale=1.3,total=doc.numPages,cur=startPage,cache={};
+document.getElementById("pageCount").textContent=total;
+ld.style.display="none";
+
+function renderRange(s,e){var ps=[];for(var i=s;i<=e;i++){if(!cache[i])ps.push(renderPage(i));}return Promise.all(ps);}
+
+function renderPage(num){
+return doc.getPage(num).then(function(pg){
+var vp=pg.getViewport({scale:scale});
+var wr=document.createElement("div");wr.className="pdf-page";wr.dataset.page=num;wr.style.width=vp.width+"px";
+var cv=document.createElement("canvas");cv.width=vp.width;cv.height=vp.height;
+wr.appendChild(cv);
+var tl=document.createElement("div");tl.className="text-layer";
+wr.appendChild(tl);
+pw.appendChild(wr);
+return pg.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise.then(function(){return pg.getTextContent();}).then(function(tc){
+tl.style.width=vp.width+"px";tl.style.height=vp.height+"px";
+tc.items.forEach(function(it){
+var sx=vp.width/pg.getViewport({scale:1}).width;
+var sy=vp.height/pg.getViewport({scale:1}).height;
+var tx=it.transform[4]*sx;
+var ty=vp.height-(it.transform[5]+it.height)*sy;
+var tw=it.width*sx;
+var th=it.height*sy;
+var sp=document.createElement("span");
+sp.textContent=it.str;
+sp.style.cssText="left:"+tx+"px;top:"+ty+"px;width:"+tw+"px;font-size:"+th+"px;line-height:"+th+"px";
+if(hText&&hText.length>10&&it.str){
+var lower=it.str.toLowerCase();
+var search=hText.toLowerCase().substring(0,200).replace(/[\s\n\r\t]+/g," ");
+if(search.length>10&&lower.indexOf(search.substring(0,Math.min(30,search.length)))>=0){
+sp.classList.add("highlight");
+}
+}
+tl.appendChild(sp);
+});
+cache[num]=wr;
+});
+}).catch(function(e){console.error("Render error:",e);});
+}
+
+// Initial render
+renderRange(Math.max(1,startPage-2),Math.min(total,startPage+6));
+setTimeout(function(){var t=pw.querySelector('[data-page="'+startPage+'"]');if(t)t.scrollIntoView({block:"start"});},200);
+
+// Scroll lazy load
+vc.addEventListener("scroll",function(){var wrappers=pw.querySelectorAll(".pdf-page");var sc=vc.scrollTop+vc.clientHeight/2;for(var wi=0;wi<wrappers.length;wi++){var w=wrappers[wi];var pn=parseInt(w.dataset.page);var ot=w.offsetTop;if(ot<=sc&&ot+w.offsetHeight>sc&&pn!==cur){cur=pn;document.getElementById("pageNum").textContent=cur;break;}}
+var pages=Object.keys(cache).map(Number);
+var maxP=Math.max.apply(null,pages),minP=Math.min.apply(null,pages);
+if(maxP<total&&vc.scrollTop+vc.clientHeight>vc.scrollHeight-1200)renderRange(maxP+1,Math.min(total,maxP+5));
+if(minP>1&&vc.scrollTop<800){var ph=vc.scrollHeight;renderRange(Math.max(1,minP-5),minP-1).then(function(){vc.scrollTop+=vc.scrollHeight-ph;});}
+});
+
+// Toolbar
+document.getElementById("prevPage").onclick=function(){
+var t=pw.querySelector('[data-page="'+(cur-1)+'"]');
+if(t){cur--;t.scrollIntoView({block:"start"});document.getElementById("pageNum").textContent=cur;}
+else if(cur>1){cur--;renderRange(cur-2,cur+2).then(function(){var s=pw.querySelector('[data-page="'+cur+'"]');if(s)s.scrollIntoView({block:"start"});});}
+};
+document.getElementById("nextPage").onclick=function(){
+var t=pw.querySelector('[data-page="'+(cur+1)+'"]');
+if(t){cur++;t.scrollIntoView({block:"start"});document.getElementById("pageNum").textContent=cur;}
+else if(cur<total){cur++;renderRange(cur-2,cur+2).then(function(){var s=pw.querySelector('[data-page="'+cur+'"]');if(s)s.scrollIntoView({block:"start"});});}
+};
+document.getElementById("zoomIn").onclick=function(){scale=Math.min(3,scale+0.2);pw.innerHTML="";cache={};renderRange(Math.max(1,cur-2),Math.min(total,cur+6));document.getElementById("zoomLabel").textContent=Math.round(scale*100)+"%";};
+document.getElementById("zoomOut").onclick=function(){scale=Math.max(0.5,scale-0.2);pw.innerHTML="";cache={};renderRange(Math.max(1,cur-2),Math.min(total,cur+6));document.getElementById("zoomLabel").textContent=Math.round(scale*100)+"%";};
+document.getElementById("fitWidth").onclick=function(){doc.getPage(cur).then(function(p){scale=vc.clientWidth/p.getViewport({scale:1}).width;pw.innerHTML="";cache={};renderRange(Math.max(1,cur-2),Math.min(total,cur+6));document.getElementById("zoomLabel").textContent=Math.round(scale*100)+"%";});};
+document.getElementById("scrollToPageBtn").onclick=function(){var n=parseInt(document.getElementById("pageInput").value);if(n>=1&&n<=total){var t=pw.querySelector('[data-page="'+n+'"]');if(t){t.scrollIntoView({block:"start"});cur=n;document.getElementById("pageNum").textContent=n;}else{renderRange(Math.max(1,n-2),Math.min(total,n+2)).then(function(){var s=pw.querySelector('[data-page="'+n+'"]');if(s){s.scrollIntoView({block:"start"});cur=n;document.getElementById("pageNum").textContent=n;}});}}};
+document.addEventListener("keydown",function(e){if(e.key==="PageDown"||e.key==="ArrowDown"){e.preventDefault();document.getElementById("nextPage").click();}if(e.key==="PageUp"||e.key==="ArrowUp"){e.preventDefault();document.getElementById("prevPage").click();}});
+
+}).catch(function(e){ld.textContent="加载失败: "+e.message;});
+})();
+</script>
+</body>
+</html>

@@ -136,7 +136,7 @@ async def chat(req: ChatRequest):
         return {"answer": f"Orchestrator error: {str(e)}", "citations": [], "search_results": [], "thinking": ""}
 
 @app.get("/chat/stream")
-async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None):
+async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None, history: str = None):
     """Direct SSE from agent.py - no proxy, no buffering.
     Supports: token (JWT) for auth, conv_id for conversation tracking.
     """
@@ -184,6 +184,16 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
             
             # Build history from conversation messages
             hist_from_conv = []
+            request_history = []
+            if history:
+                try:
+                    parsed_history = json.loads(history)
+                    if isinstance(parsed_history, list):
+                        for msg in parsed_history[-8:]:
+                            if isinstance(msg, dict) and msg.get("role") in ("user", "assistant") and msg.get("content"):
+                                request_history.append({"role": msg["role"], "content": str(msg.get("content", ""))[:1200]})
+                except Exception as e:
+                    _log.warning(f"Invalid request history ignored: {e}")
             if conversation_id:
                 try:
                     from auth_handler import get_conv_messages
@@ -192,9 +202,12 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
                         for msg in cm["messages"][-10:]:
                             if msg.get("role") in ("user", "assistant"):
                                 hist_from_conv.append({"role": msg["role"], "content": msg.get("content", "")})
+                        if hist_from_conv and hist_from_conv[-1].get("role") == "user" and hist_from_conv[-1].get("content") == query:
+                            hist_from_conv.pop()
                 except Exception:
                     pass
-            for event in _agent.stream_chat(query, section, history=hist_from_conv if hist_from_conv else None):
+            effective_history = request_history or hist_from_conv
+            for event in _agent.stream_chat(query, section, history=effective_history if effective_history else None):
                 if event is None:
                     continue
                 etype = event.get("type", "")

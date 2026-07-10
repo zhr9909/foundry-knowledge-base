@@ -8,7 +8,15 @@
       <KnowledgeGraph v-if="msg.role === 'assistant'" :graph="knowledgeGraph" />
       <div v-if="msg.role === 'assistant' && msg.metadata.citations && msg.metadata.citations.length" class="citations">
         <div class="citations-title">{{ citationTitle }}</div>
-        <a v-for="(c, i) in msg.metadata.citations" :key="i" class="citation-card" href="#" @click.prevent="openCitation(c)"><div class="citation-header"><span class="citation-page">pg.{{ c.page || '?' }}</span><span class="citation-score">{{ (c.score || 0).toFixed(3) }}</span><span class="citation-section">{{ c.section || '' }}</span></div><div class="citation-text">{{ (c.text || '').substring(0, 200) }}</div></a>
+        <a
+          v-for="(c, i) in msg.metadata.citations"
+          :key="i"
+          class="citation-card"
+          :href="pdfViewerUrl(c)"
+          target="_blank"
+          rel="noopener"
+          @click="rememberCitation(c)"
+        ><div class="citation-header"><span class="citation-page">pg.{{ c.page || '?' }}</span><span class="citation-score">{{ (c.score || 0).toFixed(3) }}</span><span class="citation-section">{{ c.section || '' }}</span></div><div class="citation-text">{{ (c.text || '').substring(0, 200) }}</div></a>
       </div>
     </div>
   </article>
@@ -61,14 +69,26 @@ const renderedAnswer = computed(() => {
   result = result.replace(/\x00T(\d+)\x00/g, function(_, id) { return tblBlocks[parseInt(id)] })
   for (let i = 0; i < citations.length; i++) {
     const page = citations[i].page || '?'
-    result = result.replace('[' + (i + 1) + ']', '<sup class="citation-ref" style="color:var(--info);cursor:pointer" onclick="event.preventDefault(); window.open(\'/static/pdf-viewer.html?page=' + page + '\')">[' + (i + 1) + ']</sup>')
+    const sourceId = citations[i].source_id || 2
+    const url = pdfViewerUrl({ page, source_id: sourceId })
+    result = result.replace('[' + (i + 1) + ']', '<a class="citation-ref" style="color:var(--info);cursor:pointer;text-decoration:none" href="' + url + '" target="_blank" rel="noopener">[' + (i + 1) + ']</a>')
   }
   result = result.replace(/\n{2,}/g, '</p><p>')
   result = result.replace(/\n/g, '<br>')
   if (!result.startsWith('<')) result = '<p>' + result + '</p>'
   return result
 })
-function openCitation(c) { const page = c.page || 1; window.open('/static/pdf-viewer.html?page=' + page, '_blank') }
+function pdfViewerUrl(c) {
+  const page = c?.page || 1
+  const sourceId = c?.source_id || c?.sourceId || 2
+  return `/static/pdf-viewer.html?file=${encodeURIComponent(`/pdf/${sourceId}`)}&page=${encodeURIComponent(page)}`
+}
+
+function rememberCitation(c) {
+  try {
+    sessionStorage.setItem('pdfHighlight', c?.text || '')
+  } catch {}
+}
 </script>
 <style scoped>
 .message { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; }

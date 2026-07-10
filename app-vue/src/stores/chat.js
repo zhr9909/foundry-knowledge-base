@@ -46,6 +46,12 @@ export const useChatStore = defineStore('chat', () => {
       if (section) params.set('section', section)
       if (currentConvId.value) params.set('conv_id', currentConvId.value)
       if (localStorage.getItem('auth_token')) params.set('token', localStorage.getItem('auth_token'))
+      const recentHistory = messages.value
+        .slice(0, Math.max(0, msgIdx - 1))
+        .filter((m) => m.role && m.content)
+        .slice(-8)
+        .map((m) => ({ role: m.role, content: String(m.content).slice(0, 1200) }))
+      if (recentHistory.length) params.set('history', JSON.stringify(recentHistory))
 
       let answer = ''
       let citations = []
