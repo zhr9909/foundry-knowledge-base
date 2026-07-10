@@ -32,7 +32,7 @@ export const useChatStore = defineStore('chat', () => {
     isProcessing.value = true
     addMessage('user', query)
     const msgIdx = messages.value.length
-    addMessage('assistant', '', { citations: [], thinking: '', logs: [], question: query })
+    addMessage('assistant', '', { citations: [], thinking: '', logs: [], question: query, retrieval: null })
     if (messages.value[msgIdx]) {
       messages.value[msgIdx].metadata.logs = [...logs.value]
     }
@@ -57,6 +57,7 @@ export const useChatStore = defineStore('chat', () => {
       let citations = []
       let thinking = ''
       let graph = null
+      let retrieval = null
 
       const es = new EventSource(`/chat/stream?${params}`)
       const result = await new Promise((resolve, reject) => {
@@ -69,12 +70,24 @@ export const useChatStore = defineStore('chat', () => {
             if (data.step === 'rewritten') {
               progressSteps.value.rewrite = `\u2192 ${data.queries?.length || 0} 条语句`
               progressSteps.value.search = 'active'
+              retrieval = data.retrieval || retrieval
+              if (messages.value[msgIdx]) {
+                messages.value[msgIdx].metadata = { ...messages.value[msgIdx].metadata, retrieval }
+              }
             } else if (data.step === 'searched') {
               progressSteps.value.search = `\u2192 ${data.count} 个候选`
               progressSteps.value.context = 'active'
+              retrieval = data.retrieval || { ...(retrieval || {}), candidate_count: data.count }
+              if (messages.value[msgIdx]) {
+                messages.value[msgIdx].metadata = { ...messages.value[msgIdx].metadata, retrieval }
+              }
             } else if (data.step === 'context_ready') {
               progressSteps.value.context = `\u2192 精选 ${data.count} 条`
               progressSteps.value.generate = 'active'
+              retrieval = data.retrieval || { ...(retrieval || {}), selected_count: data.count }
+              if (messages.value[msgIdx]) {
+                messages.value[msgIdx].metadata = { ...messages.value[msgIdx].metadata, retrieval }
+              }
             } else if (data.step === 'checked') {
               progressSteps.value.generate = 'done'
               progressSteps.value.check = data.score >= 7 ? `\u2714 ${data.score}/10` : `${data.score}/10 重试中...`
@@ -85,10 +98,11 @@ export const useChatStore = defineStore('chat', () => {
               citations = data.data.citations || []
               thinking = data.data.thinking || ''
               graph = data.data.graph || null
+              retrieval = data.data.retrieval || retrieval
               progressSteps.value.check = '\u2714 完成'
               if (messages.value[msgIdx]) {
                 messages.value[msgIdx].content = answer
-                messages.value[msgIdx].metadata = { citations, thinking, graph, logs: [...logs.value], question: query }
+                messages.value[msgIdx].metadata = { citations, thinking, graph, logs: [...logs.value], question: query, retrieval }
               }
               resolve(true)
             }

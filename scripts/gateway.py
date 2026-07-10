@@ -178,6 +178,7 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
         full_answer = ""
         full_citations = []
         full_graph = {}
+        full_retrieval = {}
         try:
             if conversation_id:
                 yield f"data: {json.dumps({'type': 'conv_id', 'conv_id': conversation_id}, ensure_ascii=False)}\n\n"
@@ -217,7 +218,8 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
                     full_answer = data.get("answer", "")
                     full_citations = data.get("citations", [])
                     full_graph = data.get("graph", {})
-                    payload = json.dumps({"type": "result", "data": {"answer": full_answer, "citations": full_citations, "thinking": data.get("thinking",""), "graph": full_graph}}, ensure_ascii=False)
+                    full_retrieval = data.get("retrieval", {})
+                    payload = json.dumps({"type": "result", "data": {"answer": full_answer, "citations": full_citations, "thinking": data.get("thinking",""), "graph": full_graph, "retrieval": full_retrieval}}, ensure_ascii=False)
                     yield f"data: {payload}\n\n"
                     break
                 elif etype == "error":
@@ -235,7 +237,7 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
             # Save assistant answer
             if auth_user and user_saved and full_answer and conversation_id:
                 try:
-                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations, "graph": full_graph})
+                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations, "graph": full_graph, "retrieval": full_retrieval})
                     answer_saved = True
                 except Exception as e:
                     _log.warning(f"Failed to save assistant message: {e}")

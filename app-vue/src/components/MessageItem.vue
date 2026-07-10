@@ -3,6 +3,45 @@
     <div class="message-avatar">{{ msg.role === 'user' ? 'YOU' : 'AI' }}</div>
     <div class="message-content">
       <LogPanel v-if="msg.role === 'assistant' && msg.metadata.logs?.length" :logs="msg.metadata.logs" />
+      <section v-if="showRetrievalPanel" class="retrieval-panel">
+        <div class="retrieval-head">
+          <div>
+            <div class="retrieval-title">检索解释</div>
+            <div class="retrieval-subtitle">{{ retrievalModeText }}</div>
+          </div>
+          <button class="correction-toggle" type="button" @click="correctionOpen = !correctionOpen">{{ correctionOpen ? '收起' : '纠正上下文' }}</button>
+        </div>
+        <div class="retrieval-grid">
+          <div class="retrieval-item">
+            <span>当前实体</span>
+            <strong>{{ entityText }}</strong>
+          </div>
+          <div class="retrieval-item">
+            <span>过滤规则</span>
+            <strong>{{ retrieval.filter_rule || '全部' }}</strong>
+          </div>
+          <div class="retrieval-item">
+            <span>候选 / 精选</span>
+            <strong>{{ countText }}</strong>
+          </div>
+        </div>
+        <div v-if="retrieval.resolved_query && retrieval.resolved_query !== retrieval.original_query" class="resolved-query">
+          <span>上下文解析</span>
+          <strong>{{ retrieval.original_query }}</strong>
+          <em>→</em>
+          <strong>{{ retrieval.resolved_query }}</strong>
+        </div>
+        <details v-if="searchQueries.length" class="query-details">
+          <summary>查看检索语句</summary>
+          <ol>
+            <li v-for="(query, index) in searchQueries" :key="index">{{ query }}</li>
+          </ol>
+        </details>
+        <form v-if="correctionOpen" class="correction-form" @submit.prevent="submitCorrection">
+          <input v-model.trim="correctionEntity" type="text" placeholder="输入正确实体，例如：钻石、铜合金、不锈钢" />
+          <button type="submit" :disabled="!correctionEntity">按此实体重问</button>
+        </form>
+      </section>
       <div v-if="msg.role === 'assistant' && msg.metadata.thinking" class="thinking-block"><details><summary>{{ thinkingTitle }}</summary><p>{{ msg.metadata.thinking }}</p></details></div>
       <div class="answer-text" v-html="renderedAnswer"></div>
       <KnowledgeGraph v-if="msg.role === 'assistant'" :graph="knowledgeGraph" />
@@ -22,13 +61,29 @@
   </article>
 </template>
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import LogPanel from './LogPanel.vue'
 import KnowledgeGraph from './KnowledgeGraph.vue'
 import { buildKnowledgeGraph } from '../utils/knowledgeGraph.js'
 const props = defineProps({ msg: Object, logs: { type: Array, default: () => [] } })
+const emit = defineEmits(['correct-context'])
 const thinkingTitle = 'AI \u601d\u8003\u8fc7\u7a0b'
 const citationTitle = '\u5f15\u7528\u6765\u6e90'
+const correctionOpen = ref(false)
+const correctionEntity = ref('')
+const retrieval = computed(() => props.msg.metadata?.retrieval || null)
+const showRetrievalPanel = computed(() => props.msg.role === 'assistant' && retrieval.value)
+const searchQueries = computed(() => Array.isArray(retrieval.value?.search_queries) ? retrieval.value.search_queries : [])
+const entityText = computed(() => {
+  const entities = retrieval.value?.core_entity
+  return Array.isArray(entities) && entities.length ? entities.join('、') : '未限定'
+})
+const countText = computed(() => {
+  const candidate = retrieval.value?.candidate_count ?? '-'
+  const selected = retrieval.value?.selected_count ?? '-'
+  return `${candidate} / ${selected}`
+})
+const retrievalModeText = computed(() => retrieval.value?.used_history ? '本轮使用历史上下文补全了省略实体' : '本轮优先使用当前问题中的显式实体')
 const knowledgeGraph = computed(() => {
   if (props.msg.role !== 'assistant' || !props.msg.content) return null
   return props.msg.metadata.graph || buildKnowledgeGraph(
@@ -78,6 +133,14 @@ const renderedAnswer = computed(() => {
   if (!result.startsWith('<')) result = '<p>' + result + '</p>'
   return result
 })
+function submitCorrection() {
+  const entity = correctionEntity.value
+  if (!entity) return
+  const question = props.msg.metadata?.question || retrieval.value?.original_query || ''
+  emit('correct-context', `关于${entity}，${question}`)
+  correctionEntity.value = ''
+  correctionOpen.value = false
+}
 function pdfViewerUrl(c) {
   const page = c?.page || 1
   const sourceId = c?.source_id || c?.sourceId || 2
@@ -101,6 +164,26 @@ function rememberCitation(c) {
 .answer-text { color: inherit; font-size: 14px; line-height: 1.78; white-space: pre-wrap; }
 .message.user .answer-text { text-align: left; }
 .message.user :deep(code) { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.18); color: #fff; }
+.retrieval-panel { margin-bottom: 12px; padding: 11px; border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-light)); border-radius: var(--radius-md); background: color-mix(in srgb, var(--accent-soft) 36%, var(--bg-surface)); }
+.retrieval-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.retrieval-title { color: var(--text-primary); font-size: 13px; font-weight: 750; line-height: 1.35; }
+.retrieval-subtitle { margin-top: 2px; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.correction-toggle { flex: 0 0 auto; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--accent-strong); padding: 5px 8px; font-size: 12px; font-weight: 650; cursor: pointer; }
+.correction-toggle:hover { border-color: var(--accent); background: var(--accent-soft); }
+.retrieval-grid { margin-top: 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.retrieval-item { min-width: 0; padding: 8px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); }
+.retrieval-item span, .resolved-query span { display: block; margin-bottom: 3px; color: var(--text-muted); font-size: 11px; font-weight: 650; }
+.retrieval-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); font-size: 12px; font-weight: 720; }
+.resolved-query { margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.55; }
+.resolved-query strong { color: var(--text-primary); font-weight: 680; }
+.resolved-query em { margin: 0 6px; color: var(--accent-strong); font-style: normal; font-weight: 800; }
+.query-details { margin-top: 8px; color: var(--text-secondary); font-size: 12px; }
+.query-details summary { cursor: pointer; font-weight: 650; }
+.query-details ol { margin-top: 6px; padding-left: 18px; font-family: var(--font-mono); line-height: 1.6; word-break: break-word; }
+.correction-form { margin-top: 9px; display: flex; gap: 8px; }
+.correction-form input { flex: 1; min-width: 0; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); padding: 7px 9px; font-size: 12px; }
+.correction-form button { border: 0; border-radius: var(--radius-sm); background: var(--accent); color: white; padding: 0 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.correction-form button:disabled { opacity: .45; cursor: not-allowed; }
 .thinking-block { margin-bottom: 12px; font-size: 12px; color: var(--text-secondary); }
 .thinking-block summary { cursor: pointer; font-weight: 650; }
 .thinking-block p { margin-top: 8px; padding: 10px; background: var(--bg-surface-2); border: 1px solid var(--border-light); border-radius: var(--radius-md); white-space: pre-wrap; }
@@ -112,5 +195,5 @@ function rememberCitation(c) {
 .citation-page { color: var(--accent-strong); font-weight: 800; }
 .citation-section { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .citation-text { color: var(--text-secondary); font-size: 12px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media (max-width: 820px) { .message.user .message-content { max-width: 92%; } }
+@media (max-width: 820px) { .message.user .message-content { max-width: 92%; } .retrieval-grid { grid-template-columns: 1fr; } .retrieval-head, .correction-form { flex-direction: column; } .correction-toggle, .correction-form button { width: 100%; min-height: 34px; } }
 </style>

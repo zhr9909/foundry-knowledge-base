@@ -8,7 +8,7 @@
         <div class="suggestions"><button v-for="(s, i) in suggestions" :key="i" class="suggestion-chip" @click="$emit('suggest', s.query)"><span>{{ s.label }}</span></button></div>
       </div>
       <div class="messages-stack">
-        <MessageItem v-for="(msg, i) in messages" :key="i" :msg="msg" :logs="chat.logs" />
+        <MessageItem v-for="(msg, i) in messages" :key="i" :msg="msg" :logs="chat.logs" @correct-context="$emit('suggest', $event)" />
         <ProgressSteps :steps="chat.progressSteps" :visible="chat.showProgress" />
         <div v-if="chat.isProcessing && !messages.length" class="loading"><span>{{ loadingText }}</span></div>
       </div>
