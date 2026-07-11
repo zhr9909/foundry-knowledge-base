@@ -8,13 +8,35 @@
   </div>
 </template>
 <script setup>
-import { ref, nextTick } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 const text = ref('')
 const textarea = ref(null)
-const placeholder = '\u8f93\u5165\u91d1\u5c5e\u6750\u6599\u3001\u94f8\u9020\u5de5\u827a\u76f8\u5173\u95ee\u9898...'
-const footerText = 'AI \u56de\u7b54\u53ef\u80fd\u4e0d\u51c6\u786e\uff0c\u8bf7\u6838\u5b9e\u5173\u952e\u6570\u636e'
-const props = defineProps({ disabled: Boolean })
+const props = defineProps({ disabled: Boolean, mode: { type: String, default: 'qa' } })
 const emit = defineEmits(['send'])
+const modeCopy = {
+  qa: {
+    placeholder: '输入金属材料、铸造工艺相关问题...',
+    footer: 'AI 回答可能不准确，请核实关键数据',
+  },
+  requirement_clarification: {
+    placeholder: '粘贴客户需求，提取工况、缺口和追问清单...',
+    footer: '需求澄清会优先输出已知条件、待确认条件和风险',
+  },
+  solution_draft: {
+    placeholder: '输入工况、性能目标和约束，生成方案草案...',
+    footer: '方案草案仅作为工程初稿，请结合实验与标准验证',
+  },
+  selection_matrix: {
+    placeholder: '输入候选材料、工况或目标，生成选型矩阵...',
+    footer: '选型矩阵会对候选项、评价维度、风险和证据充分度进行对比',
+  },
+  defect_diagnosis: {
+    placeholder: '输入缺陷现象、材料、工艺阶段或失效表现...',
+    footer: '缺陷诊断会输出可能原因、排查步骤、工艺检查点和纠正措施',
+  },
+}
+const placeholder = computed(() => (modeCopy[props.mode] || modeCopy.qa).placeholder)
+const footerText = computed(() => (modeCopy[props.mode] || modeCopy.qa).footer)
 function autoResize() { const el = textarea.value; if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 132) + 'px' } }
 function submit() { if (!text.value.trim() || props.disabled) return; emit('send', text.value.trim()); text.value = ''; nextTick(() => { if (textarea.value) textarea.value.style.height = 'auto' }) }
 </script>

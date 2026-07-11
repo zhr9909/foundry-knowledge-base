@@ -3,13 +3,53 @@ import { ref, computed } from 'vue'
 import { api } from '../utils/api.js'
 
 export const useChatStore = defineStore('chat', () => {
+  const supportedModes = ['qa', 'requirement_clarification', 'solution_draft', 'selection_matrix', 'defect_diagnosis']
+  const defaultProgress = () => ({ rewrite: '', search: '', context: '', generate: '', check: '' })
+  const defaultSession = () => ({
+    messages: [],
+    currentConvId: null,
+    showProgress: false,
+    progressSteps: defaultProgress(),
+    logs: [],
+  })
+  const modeSessions = ref(Object.fromEntries(supportedModes.map((mode) => [mode, defaultSession()])))
   const messages = ref([])
   const conversations = ref([])
   const currentConvId = ref(null)
   const isProcessing = ref(false)
   const showProgress = ref(false)
-  const progressSteps = ref({ rewrite: '', search: '', context: '', generate: '', check: '' })
+  const progressSteps = ref(defaultProgress())
   const logs = ref([])
+  const currentMode = ref(localStorage.getItem('task_mode') || 'qa')
+
+  function snapshotMode(mode = currentMode.value) {
+    if (!supportedModes.includes(mode)) return
+    modeSessions.value[mode] = {
+      messages: [...messages.value],
+      currentConvId: currentConvId.value,
+      showProgress: showProgress.value,
+      progressSteps: { ...progressSteps.value },
+      logs: [...logs.value],
+    }
+  }
+
+  function restoreMode(mode) {
+    const session = modeSessions.value[mode] || defaultSession()
+    messages.value = [...session.messages]
+    currentConvId.value = session.currentConvId
+    showProgress.value = session.showProgress
+    progressSteps.value = { ...session.progressSteps }
+    logs.value = [...session.logs]
+  }
+
+  function setMode(mode) {
+    if (isProcessing.value) return
+    const nextMode = supportedModes.includes(mode) ? mode : 'qa'
+    snapshotMode()
+    currentMode.value = nextMode
+    localStorage.setItem('task_mode', currentMode.value)
+    restoreMode(nextMode)
+  }
 
   function addLog(msg, level = 'info') {
     logs.value.push({ msg, level, time: new Date().toLocaleTimeString('zh-CN', { hour12: false }) })
@@ -18,13 +58,15 @@ export const useChatStore = defineStore('chat', () => {
   function clearChat() {
     messages.value = []
     logs.value = []
-    progressSteps.value = { rewrite: '', search: '', context: '', generate: '', check: '' }
+    progressSteps.value = defaultProgress()
     showProgress.value = false
     currentConvId.value = null
+    snapshotMode()
   }
 
   function addMessage(role, content, metadata = {}) {
     messages.value.push({ role, content, metadata })
+    snapshotMode()
   }
 
   async function sendMessage(query, section = '') {
@@ -32,7 +74,7 @@ export const useChatStore = defineStore('chat', () => {
     isProcessing.value = true
     addMessage('user', query)
     const msgIdx = messages.value.length
-    addMessage('assistant', '', { citations: [], thinking: '', logs: [], question: query, retrieval: null })
+    addMessage('assistant', '', { citations: [], thinking: '', logs: [], question: query, retrieval: null, mode: currentMode.value, structured_output: null })
     if (messages.value[msgIdx]) {
       messages.value[msgIdx].metadata.logs = [...logs.value]
     }
@@ -43,6 +85,7 @@ export const useChatStore = defineStore('chat', () => {
 
     try {
       const params = new URLSearchParams({ query })
+      params.set('mode', currentMode.value)
       if (section) params.set('section', section)
       if (currentConvId.value) params.set('conv_id', currentConvId.value)
       if (localStorage.getItem('auth_token')) params.set('token', localStorage.getItem('auth_token'))
@@ -58,6 +101,8 @@ export const useChatStore = defineStore('chat', () => {
       let thinking = ''
       let graph = null
       let retrieval = null
+      let mode = currentMode.value
+      let structuredOutput = null
 
       const es = new EventSource(`/chat/stream?${params}`)
       const result = await new Promise((resolve, reject) => {
@@ -99,10 +144,12 @@ export const useChatStore = defineStore('chat', () => {
               thinking = data.data.thinking || ''
               graph = data.data.graph || null
               retrieval = data.data.retrieval || retrieval
+              mode = data.data.mode || mode
+              structuredOutput = data.data.structured_output || null
               progressSteps.value.check = '\u2714 完成'
               if (messages.value[msgIdx]) {
                 messages.value[msgIdx].content = answer
-                messages.value[msgIdx].metadata = { citations, thinking, graph, logs: [...logs.value], question: query, retrieval }
+                messages.value[msgIdx].metadata = { citations, thinking, graph, logs: [...logs.value], question: query, retrieval, mode, structured_output: structuredOutput }
               }
               resolve(true)
             }
@@ -123,6 +170,7 @@ export const useChatStore = defineStore('chat', () => {
     } finally {
       isProcessing.value = false
       showProgress.value = false
+      snapshotMode()
     }
   }
 
@@ -137,21 +185,25 @@ export const useChatStore = defineStore('chat', () => {
       const r = await api.getConversation(id)
       const cv = r.conversation
       if (!cv) return
+      const targetModeMsg = [...(cv.messages || [])].reverse().find((m) => supportedModes.includes(m.metadata?.mode))
+      const targetMode = targetModeMsg?.metadata?.mode || currentMode.value
+      if (targetMode !== currentMode.value) setMode(targetMode)
       currentConvId.value = cv.id
       messages.value = []
       if (cv.messages) {
         for (const m of cv.messages) {
-          addMessage(m.role, m.content, m.metadata || {})
+          messages.value.push({ role: m.role, content: m.content, metadata: m.metadata || {} })
         }
       }
+      snapshotMode(targetMode)
       await loadConversations()
     } catch { addLog('\u52a0\u8f7d\u5931\u8d25', 'error') }
   }
 
   return {
     messages, conversations, currentConvId, isProcessing,
-    showProgress, progressSteps, logs,
+    showProgress, progressSteps, logs, currentMode,
     addLog, clearChat, addMessage, sendMessage,
-    loadConversations, loadConversation,
+    loadConversations, loadConversation, setMode,
   }
 })

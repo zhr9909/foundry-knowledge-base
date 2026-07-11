@@ -6,6 +6,7 @@
         <div class="topbar-left">
           <button v-if="auth.isLoggedIn" class="icon-btn" @click="newChat" title="&#x65B0;&#x5EFA;&#x5BF9;&#x8BDD;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
           <div class="workspace-title"><span class="status-dot"></span><span>&#x77E5;&#x8BC6;&#x68C0;&#x7D22;&#x5DE5;&#x4F5C;&#x53F0;</span></div>
+          <ModeSwitcher :model-value="chat.currentMode" :disabled="chat.isProcessing" @update:modelValue="chat.setMode" />
         </div>
         <div class="topbar-right">
           <button class="icon-btn" @click="toggleTheme" title="&#x5207;&#x6362;&#x4E3B;&#x9898;">
@@ -19,7 +20,7 @@
         </div>
       </header>
       <ChatArea :messages="chat.messages" :chat="chat" @suggest="handleSuggest" />
-      <ChatInput :disabled="chat.isProcessing" @send="handleSend" />
+      <ChatInput :disabled="chat.isProcessing" :mode="chat.currentMode" @send="handleSend" />
     </div>
   </div>
 </template>
@@ -30,6 +31,7 @@ import { useChatStore } from '../stores/chat.js'
 import Sidebar from './Sidebar.vue'
 import ChatArea from './ChatArea.vue'
 import ChatInput from './ChatInput.vue'
+import ModeSwitcher from './ModeSwitcher.vue'
 const auth = useAuthStore()
 const chat = useChatStore()
 const menuOpen = ref(false)
@@ -50,6 +52,8 @@ onUnmounted(() => document.removeEventListener('click', closeMenu))
 .topbar { height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; background: rgba(255,255,255,.82); border-bottom: 1px solid var(--border-light); backdrop-filter: blur(10px); }
 [data-theme="dark"] .topbar { background: rgba(20,31,47,.82); }
 .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-left { min-width: 0; flex: 1; }
+.topbar-right { flex: 0 0 auto; }
 .workspace-title { display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; font-weight: 650; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
 .icon-btn { width: 34px; height: 34px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-surface); color: var(--text-secondary); display: grid; place-items: center; cursor: pointer; transition: background .16s ease, color .16s ease, border-color .16s ease; }
@@ -63,4 +67,9 @@ onUnmounted(() => document.removeEventListener('click', closeMenu))
 .user-dropdown-header { padding: 10px 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-light); font-size: 12px; }
 .user-dropdown-item { width: 100%; padding: 10px 12px; border: 0; background: transparent; color: var(--text-secondary); text-align: left; cursor: pointer; }
 .user-dropdown-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+@media (max-width: 980px) {
+  .topbar { height: auto; min-height: 58px; align-items: stretch; padding: 10px 12px; gap: 10px; }
+  .topbar-left { flex-wrap: wrap; }
+  .workspace-title { min-height: 34px; }
+}
 </style>

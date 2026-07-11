@@ -43,6 +43,7 @@
         </form>
       </section>
       <div v-if="msg.role === 'assistant' && msg.metadata.thinking" class="thinking-block"><details><summary>{{ thinkingTitle }}</summary><p>{{ msg.metadata.thinking }}</p></details></div>
+      <StructuredOutputRenderer v-if="structuredOutput" :output="structuredOutput" />
       <div class="answer-text" v-html="renderedAnswer"></div>
       <KnowledgeGraph v-if="msg.role === 'assistant'" :graph="knowledgeGraph" />
       <div v-if="msg.role === 'assistant' && msg.metadata.citations && msg.metadata.citations.length" class="citations">
@@ -64,6 +65,7 @@
 import { computed, ref } from 'vue'
 import LogPanel from './LogPanel.vue'
 import KnowledgeGraph from './KnowledgeGraph.vue'
+import StructuredOutputRenderer from './StructuredOutputRenderer.vue'
 import { buildKnowledgeGraph } from '../utils/knowledgeGraph.js'
 const props = defineProps({ msg: Object, logs: { type: Array, default: () => [] } })
 const emit = defineEmits(['correct-context'])
@@ -72,6 +74,11 @@ const citationTitle = '\u5f15\u7528\u6765\u6e90'
 const correctionOpen = ref(false)
 const correctionEntity = ref('')
 const retrieval = computed(() => props.msg.metadata?.retrieval || null)
+const structuredOutput = computed(() => {
+  const output = props.msg.metadata?.structured_output
+  if (!output || typeof output !== 'object') return null
+  return output.type ? output : null
+})
 const showRetrievalPanel = computed(() => props.msg.role === 'assistant' && retrieval.value)
 const searchQueries = computed(() => Array.isArray(retrieval.value?.search_queries) ? retrieval.value.search_queries : [])
 const entityText = computed(() => {

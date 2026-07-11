@@ -68,6 +68,7 @@ class ChatRequest(BaseModel):
     search_results: list = []
     history: list = []
     section: Optional[str] = None
+    mode: Optional[str] = "qa"
 
 _client = None
 async def _acall(method, url, **kwargs):
@@ -121,7 +122,7 @@ async def search(query: str = "", top_k: int = 10, section: str = None):
 async def chat(req: ChatRequest):
     try:
         task = {"source": "orchestrator", "type": "chat",
-                "input": {"query": req.query, "history": req.history or [], "section": req.section, "stream": False}}
+                "input": {"query": req.query, "history": req.history or [], "section": req.section, "mode": req.mode or "qa", "stream": False}}
         r = await _acall("post", f"{RAG_URL}/a2a/tasks", json=task, timeout=120)
         t = r.json()
         out = t.get("output", {})
@@ -136,7 +137,7 @@ async def chat(req: ChatRequest):
         return {"answer": f"Orchestrator error: {str(e)}", "citations": [], "search_results": [], "thinking": ""}
 
 @app.get("/chat/stream")
-async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None, history: str = None):
+async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None, history: str = None, mode: str = "qa"):
     """Direct SSE from agent.py - no proxy, no buffering.
     Supports: token (JWT) for auth, conv_id for conversation tracking.
     """
@@ -168,7 +169,7 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
         
         # Save user message
         try:
-            save_message(conversation_id, "user", query)
+            save_message(conversation_id, "user", query, {"mode": mode or "qa"})
             user_saved = True
         except Exception as e:
             _log.warning(f"Failed to save user message: {e}")
@@ -179,6 +180,8 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
         full_citations = []
         full_graph = {}
         full_retrieval = {}
+        full_mode = mode or "qa"
+        full_structured_output = {}
         try:
             if conversation_id:
                 yield f"data: {json.dumps({'type': 'conv_id', 'conv_id': conversation_id}, ensure_ascii=False)}\n\n"
@@ -201,6 +204,10 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
                     cm = get_conv_messages(conversation_id, auth_user["id"])
                     if cm and cm.get("messages"):
                         for msg in cm["messages"][-10:]:
+                            metadata = msg.get("metadata") or {}
+                            msg_mode = metadata.get("mode") or "qa"
+                            if msg_mode != full_mode:
+                                continue
                             if msg.get("role") in ("user", "assistant"):
                                 hist_from_conv.append({"role": msg["role"], "content": msg.get("content", "")})
                         if hist_from_conv and hist_from_conv[-1].get("role") == "user" and hist_from_conv[-1].get("content") == query:
@@ -208,7 +215,7 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
                 except Exception:
                     pass
             effective_history = request_history or hist_from_conv
-            for event in _agent.stream_chat(query, section, history=effective_history if effective_history else None):
+            for event in _agent.stream_chat(query, section, history=effective_history if effective_history else None, mode=full_mode):
                 if event is None:
                     continue
                 etype = event.get("type", "")
@@ -219,7 +226,9 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
                     full_citations = data.get("citations", [])
                     full_graph = data.get("graph", {})
                     full_retrieval = data.get("retrieval", {})
-                    payload = json.dumps({"type": "result", "data": {"answer": full_answer, "citations": full_citations, "thinking": data.get("thinking",""), "graph": full_graph, "retrieval": full_retrieval}}, ensure_ascii=False)
+                    full_mode = data.get("mode", full_mode)
+                    full_structured_output = data.get("structured_output", {}) or {}
+                    payload = json.dumps({"type": "result", "data": {"answer": full_answer, "citations": full_citations, "thinking": data.get("thinking",""), "graph": full_graph, "retrieval": full_retrieval, "mode": full_mode, "structured_output": full_structured_output}}, ensure_ascii=False)
                     yield f"data: {payload}\n\n"
                     break
                 elif etype == "error":
@@ -237,7 +246,7 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
             # Save assistant answer
             if auth_user and user_saved and full_answer and conversation_id:
                 try:
-                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations, "graph": full_graph, "retrieval": full_retrieval})
+                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations, "graph": full_graph, "retrieval": full_retrieval, "mode": full_mode, "structured_output": full_structured_output})
                     answer_saved = True
                 except Exception as e:
                     _log.warning(f"Failed to save assistant message: {e}")

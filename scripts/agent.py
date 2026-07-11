@@ -411,6 +411,8 @@ class AgentState(TypedDict):
     answer: str
     citations: list
     graph: dict
+    mode: str
+    structured_output: dict
     score: float
     attempts: int
     max_retries: int
@@ -427,14 +429,18 @@ def _rewrite_node(state: AgentState) -> dict:
     resolved_query = resolve_contextual_query(state["current_query"], state.get("history"))
     if resolved_query != state["current_query"] and state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": f"上下文解析：{state['current_query']} → {resolved_query}"})
-    rw = rewrite_query(resolved_query, state.get("history"))
+    mode = state.get("mode", "qa")
+    rw = rewrite_query_for_mode(resolved_query, state.get("history"), mode)
     retrieval = {
         "original_query": state.get("query", state["current_query"]),
         "resolved_query": resolved_query,
+        "mode": mode,
+        "context_scope": f"mode:{mode}",
         "core_entity": rw["core_entity"],
         "filter_rule": rw["filter_rule"],
         "search_queries": rw["search_queries"],
         "search_priority": rw["search_priority"],
+        "task_intent": rw.get("task_intent", ""),
         "used_history": resolved_query != state["current_query"],
     }
     if state.get("progress_callback"):
@@ -499,10 +505,10 @@ def _generate_node(state: AgentState) -> dict:
     _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在构建提示词并生成回答..."})
-    ad = generate_answer(state["current_query"], state["context"], state.get("history"))
+    ad = generate_mode_answer(state["current_query"], state["context"], state.get("history"), state.get("mode", "qa"))
     _elapsed = int((time.time() - _step_start) * 1000)
     _log.info("  [timing] _generate_node elapsed=%dms" % _elapsed)
-    return {"answer": ad.get("answer", ""), "citations": ad.get("citations", state["context"][:5])}
+    return {"answer": ad.get("answer", ""), "citations": ad.get("citations", state["context"][:5]), "structured_output": ad.get("structured_output", {})}
 
 def _check_node(state: AgentState) -> dict:
     _step_start = time.time()
@@ -590,6 +596,7 @@ def _output_node(state: AgentState) -> dict:
     retrieval.setdefault("candidate_count", len(state.get("search_results", []) or []))
     retrieval.setdefault("selected_count", len(state.get("context", []) or []))
     return {"answer": state["answer"], "citations": citations, "graph": graph, "retrieval": retrieval,
+            "mode": state.get("mode", "qa"), "structured_output": state.get("structured_output", {}),
             "model": "", "sub_queries": state["sub_queries"], "attempts": state["attempts"], "latency_ms": elapsed}
 
 _agent_graph = None
@@ -645,7 +652,7 @@ def _sanitize_history(query: str, history: list = None, limit: int = 8) -> list:
         cleaned.append({"role": role, "content": content})
     return cleaned[-limit:]
 
-def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None) -> dict:
+def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None, mode: str = "qa") -> dict:
 
     _log.info('=' * 50)
     _log.info(f'Query: {query}')
@@ -653,7 +660,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
     initial = {
         "query": query, "section": section, "history": history,
         "current_query": query, "sub_queries": [], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡", "search_results": [],
-        "context": [], "answer": "", "citations": [], "graph": {}, "score": 0, "retrieval": {},
+        "context": [], "answer": "", "citations": [], "graph": {}, "mode": normalize_mode(mode), "structured_output": {}, "score": 0, "retrieval": {},
         "attempts": 1, "max_retries": 1, "repair_attempts": 0, "max_repair_attempts": 2, "start_time": time.time(),
         "progress_callback": progress_callback,
     }
@@ -692,6 +699,8 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
         "thinking": "",
         "graph": result.get("graph", {}),
         "retrieval": result.get("retrieval", {}),
+        "mode": result.get("mode", normalize_mode(mode)),
+        "structured_output": result.get("structured_output", {}),
     }
 
 
@@ -919,6 +928,108 @@ def _entity_search_term(label: str) -> str:
     return lower
 
 
+_SEARCH_TERM_MAP = [
+    ("铝合金6061", "6061 aluminum alloy"),
+    ("6061铝合金", "6061 aluminum alloy"),
+    ("不锈钢", "stainless steel"),
+    ("铜合金", "copper alloy"),
+    ("钛合金", "titanium alloy"),
+    ("铝合金", "aluminum alloy"),
+    ("铁基合金", "iron alloy"),
+    ("铁合金", "iron alloy"),
+    ("铸铁", "cast iron"),
+    ("碳钢", "carbon steel"),
+    ("合金钢", "alloy steel"),
+    ("钢铁", "steel"),
+    ("镁合金", "magnesium alloy"),
+    ("钻石", "diamond"),
+    ("热处理温度", "heat treatment temperature"),
+    ("热处理", "heat treatment"),
+    ("铸造工艺", "casting process"),
+    ("铸造", "casting"),
+    ("力学性能", "mechanical properties"),
+    ("机械性能", "mechanical properties"),
+    ("抗拉强度", "tensile strength"),
+    ("抗拉", "tensile strength"),
+    ("拉伸", "tensile"),
+    ("屈服强度", "yield strength"),
+    ("屈服", "yield strength"),
+    ("剪切强度", "shear strength"),
+    ("剪切", "shear strength"),
+    ("硬度", "hardness"),
+    ("颜色", "color appearance"),
+    ("色泽", "color appearance"),
+    ("外观", "appearance"),
+    ("耐腐蚀", "corrosion resistance"),
+    ("腐蚀", "corrosion"),
+    ("耐磨", "wear resistance"),
+    ("磨损", "wear"),
+    ("密度", "density"),
+    ("导热", "thermal conductivity"),
+    ("气孔", "casting porosity"),
+    ("针孔", "pinholes porosity"),
+    ("缩孔", "shrinkage cavity"),
+    ("缩松", "shrinkage porosity"),
+    ("热裂", "hot tearing"),
+    ("冷裂", "cold cracking"),
+    ("裂纹", "cracking"),
+    ("夹杂", "inclusions"),
+    ("砂眼", "sand inclusion"),
+    ("冷隔", "cold shut"),
+    ("浇不足", "misrun"),
+    ("偏析", "segregation"),
+    ("变形", "distortion"),
+    ("硬度不够", "insufficient hardness"),
+    ("硬度不足", "insufficient hardness"),
+    ("失效", "failure analysis"),
+    ("疲劳", "fatigue failure"),
+    ("排查", "troubleshooting"),
+    ("纠正", "corrective action"),
+    ("高温", "high temperature"),
+    ("低温", "low temperature"),
+    ("海水", "seawater"),
+    ("泵体", "pump body"),
+    ("阀体", "valve body"),
+    ("壳体", "housing"),
+    ("轻量化", "lightweight"),
+    ("工况", "service conditions"),
+]
+
+
+def _normalize_search_query_english(query: str, source_query: str = "") -> str:
+    text = str(query or "").replace("harness", "hardness").strip()
+    for zh, en in _SEARCH_TERM_MAP:
+        text = re.sub(re.escape(zh), f" {en} ", text, flags=re.I)
+    text = re.sub(r"[\u4e00-\u9fff]+", " ", text)
+    text = re.sub(r"[^0-9A-Za-z+\-./\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip().lower()
+    text = re.sub(r"\b(and|or|with|between|compare|comparison)\b(?:\s+\b(and|or|with)\b)+", " ", text)
+    tokens = text.split()
+    if len(tokens) % 2 == 0 and tokens[: len(tokens) // 2] == tokens[len(tokens) // 2 :]:
+        text = " ".join(tokens[: len(tokens) // 2])
+    for _ in range(2):
+        text = re.sub(r"\b([a-z]+(?:\s+[a-z]+){0,2})\s+\1\b", r"\1", text)
+    if text:
+        return text
+
+    source = source_query or query
+    terms = []
+    rule = _entity_rule_for_text(source)
+    if rule:
+        terms.append(_entity_search_term(rule["label"]))
+    terms.extend(_intent_terms(source))
+    for zh, en in _SEARCH_TERM_MAP:
+        if zh in str(source or ""):
+            terms.append(en)
+    normalized = " ".join(_dedupe_keep_order([t for t in terms if t])).strip().lower()
+    return normalized or "casting alloy properties"
+
+
+def _normalize_search_queries_english(queries: list, source_query: str = "") -> list:
+    normalized = [_normalize_search_query_english(q, source_query) for q in (queries or [])]
+    return _dedupe_keep_order([q for q in normalized if q])[:4]
+
+
 def _explicit_entities_for_text(text: str) -> list:
     text = text or ""
     entities = []
@@ -929,14 +1040,14 @@ def _explicit_entities_for_text(text: str) -> list:
     # Generic comparison parsing: 铜合金和铝合金和铁合金和钻石相比较
     # Known material rules cover the common metals; this keeps non-metal entities
     # such as 钻石 from being swallowed by the first matched rule.
-    marker = r"相比较|比较|对比|相比|差异|区别|哪个|哪种|孰|更|性能|硬度|颜色|用途|应用"
+    marker = r"相比较|比较|对比|相比|差异|区别|哪个|哪种|孰|更|怎么选|选型|性能|硬度|颜色|用途|应用"
     head = re.split(marker, text, maxsplit=1)[0]
-    if re.search(r"和|与|以及|及|跟|同|、|,|，|vs\.?|versus", head, re.I):
+    if re.search(r"和|与|以及|及|跟|同|、|vs\.?|versus", head, re.I):
         head = re.sub(r"^(那|那么|请问|查询|分析|关于)\s*", "", head.strip())
-        parts = re.split(r"\s*(?:和|与|以及|及|跟|同|、|,|，|vs\.?|versus)\s*", head, flags=re.I)
+        parts = re.split(r"\s*(?:和|与|以及|及|跟|同|、|vs\.?|versus)\s*", head, flags=re.I)
         stop = {"它", "他", "他的", "它的", "这个", "这种", "该", "上面", "上述", "刚才", "前面", "那", "那么"}
         for part in parts:
-            item = _clean_entity_label(part)
+            item = _clean_entity_label(re.sub(r"(之间|哪个|哪种|怎么选|如何选|选型).*$", "", part).strip())
             if item and item not in stop and len(item) <= 24:
                 entities.append(item)
 
@@ -1096,10 +1207,10 @@ def _deterministic_search_query(query: str) -> str:
     rule = _entity_rule_for_text(query)
     intents = _intent_terms(query)
     if not rule:
-        return query.replace("harness", "hardness")
+        return _normalize_search_query_english(query, query)
     entity = _entity_search_term(rule["label"])
     intent = " ".join(intents) if intents else query
-    return f"{entity} {intent}".strip().replace("harness", "hardness")
+    return _normalize_search_query_english(f"{entity} {intent}", query)
 
 
 def _deterministic_multi_search_queries(query: str) -> list:
@@ -1110,14 +1221,14 @@ def _deterministic_multi_search_queries(query: str) -> list:
         return [_deterministic_search_query(query)]
     search_terms = [_entity_search_term(entity) for entity in entities[:4]]
     queries = [f"{term} {intent}".strip().replace("harness", "hardness") for term in search_terms]
-    return _dedupe_keep_order(queries)[:4]
+    return _normalize_search_queries_english(queries, query)
 
 
 def _guard_multi_search_queries(query: str, search_queries: list) -> list:
     entities = _explicit_entities_for_text(query)
     if len(entities) > 1:
         return _deterministic_multi_search_queries(query)
-    cleaned = [str(q).replace("harness", "hardness").strip() for q in (search_queries or []) if str(q).strip()]
+    cleaned = _normalize_search_queries_english(search_queries, query)
     if any(re.search(r"[\u4e00-\u9fff]", q) for q in cleaned):
         return _deterministic_multi_search_queries(query)
     joined = " ".join(cleaned).lower()
@@ -1126,11 +1237,11 @@ def _guard_multi_search_queries(query: str, search_queries: list) -> list:
     if not cleaned or len(missing) >= max(1, len(entities) // 2):
         return _deterministic_multi_search_queries(query)
     fallback = _deterministic_multi_search_queries(query)
-    return _dedupe_keep_order(cleaned + fallback)[:4]
+    return _normalize_search_queries_english(_dedupe_keep_order(cleaned + fallback), query)
 
 
 def _guard_search_queries(query: str, search_queries: list) -> list:
-    cleaned = [str(q).replace("harness", "hardness").strip() for q in (search_queries or []) if str(q).strip()]
+    cleaned = _normalize_search_queries_english(search_queries, query)
     if _is_multi_entity_query(query):
         return _guard_multi_search_queries(query, cleaned)
     rule = _entity_rule_for_text(query)
@@ -1140,13 +1251,13 @@ def _guard_search_queries(query: str, search_queries: list) -> list:
             joined = " ".join(cleaned).lower()
             if any(term.lower() in joined for term in leaked_terms):
                 return [_deterministic_search_query(query)]
-        return cleaned or [query]
+        return cleaned or [_deterministic_search_query(query)]
     joined = " ".join(cleaned).lower()
     has_required = any(term.lower() in joined for term in rule["terms"])
     has_banned = any(term.lower() in joined for term in rule["banned"])
     if has_banned or not has_required:
         return [_deterministic_search_query(query)]
-    return cleaned
+    return _normalize_search_queries_english(cleaned, query)
 
 
 def rewrite_query(query: str, history: list = None) -> dict:
@@ -1154,7 +1265,7 @@ def rewrite_query(query: str, history: list = None) -> dict:
     if len(multi_entities) > 1:
         return {"search_queries": _deterministic_multi_search_queries(query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
     if False and re.match(r'^[a-zA-Z0-9\s\-\.]+$', query) and len(query.split()) <= 10:
-        return {"search_queries": [query], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
+        return {"search_queries": _normalize_search_queries_english([query], query), "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
     if history and _query_needs_history(query):
         users = [m.get("content", "") for m in history if m.get("role") == "user" and m.get("content")]
         if users:
@@ -1200,7 +1311,7 @@ def rewrite_query(query: str, history: list = None) -> dict:
                         filter_rule = f"对比实体：{'、'.join(multi_entities)}" if len(multi_entities) > 1 else (rule["filter"] if rule else parsed.get("filter_rule", "全部"))
                         if not rule and _query_needs_history(query) and re.search(r"铝合金|aluminum|aluminium|6061", str(filter_rule), re.I):
                             filter_rule = "全部"
-                        return {"search_queries": sq[:4], "core_entity": core, "filter_rule": filter_rule, "search_priority": parsed.get("search_priority", "语义均衡")}
+                        return {"search_queries": _normalize_search_queries_english(sq[:4], query), "core_entity": core, "filter_rule": filter_rule, "search_priority": parsed.get("search_priority", "语义均衡")}
             if attempt < 2:
                 _log.warning(f"  Rewrite attempt {attempt+1} failed, retrying...")
                 time.sleep(0.5)
@@ -1212,7 +1323,7 @@ def rewrite_query(query: str, history: list = None) -> dict:
     multi_entities = _explicit_entities_for_text(query)
     if len(multi_entities) > 1:
         return {"search_queries": _deterministic_multi_search_queries(query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
-    return {"search_queries": [_deterministic_search_query(query)], "core_entity": [rule["label"]] if rule else [], "filter_rule": rule["filter"] if rule else "全部", "search_priority": "语义均衡"}
+    return {"search_queries": _normalize_search_queries_english([_deterministic_search_query(query)], query), "core_entity": [rule["label"]] if rule else [], "filter_rule": rule["filter"] if rule else "全部", "search_priority": "语义均衡"}
 
 def search_single(query: str, section: str = None, top_k: int = 8) -> list:
     from search import search
@@ -1332,7 +1443,7 @@ def select_context(results, top_k=6, original_query="", search_query="", preserv
     return formatted
 
 
-def stream_chat(query: str, section: str = None, history: list = None):
+def stream_chat(query: str, section: str = None, history: list = None, mode: str = "qa"):
     """Generator that yields progress events during agent_chat execution."""
     import queue as _q
     import threading as _t
@@ -1343,7 +1454,7 @@ def stream_chat(query: str, section: str = None, history: list = None):
 
     def worker():
         try:
-            result = agent_chat(query, section, history, progress_callback=progress)
+            result = agent_chat(query, section, history, progress_callback=progress, mode=mode)
             q.put({"type": "result", "data": result})
         except Exception as e:
             q.put({"type": "error", "message": str(e)})
@@ -1631,6 +1742,8 @@ class AgentState(TypedDict):
     answer: str
     citations: list
     graph: dict
+    mode: str
+    structured_output: dict
     score: float
     attempts: int
     max_retries: int
@@ -1647,14 +1760,18 @@ def _rewrite_node(state: AgentState) -> dict:
     resolved_query = resolve_contextual_query(state["current_query"], state.get("history"))
     if resolved_query != state["current_query"] and state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": f"上下文解析：{state['current_query']} → {resolved_query}"})
-    rw = rewrite_query(resolved_query, state.get("history"))
+    mode = state.get("mode", "qa")
+    rw = rewrite_query_for_mode(resolved_query, state.get("history"), mode)
     retrieval = {
         "original_query": state.get("query", state["current_query"]),
         "resolved_query": resolved_query,
+        "mode": mode,
+        "context_scope": f"mode:{mode}",
         "core_entity": rw["core_entity"],
         "filter_rule": rw["filter_rule"],
         "search_queries": rw["search_queries"],
         "search_priority": rw["search_priority"],
+        "task_intent": rw.get("task_intent", ""),
         "used_history": resolved_query != state["current_query"],
     }
     if state.get("progress_callback"):
@@ -1720,10 +1837,10 @@ def _generate_node(state: AgentState) -> dict:
     _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在构建提示词并生成回答..."})
-    ad = generate_answer(state["current_query"], state["context"], state.get("history"))
+    ad = generate_mode_answer(state["current_query"], state["context"], state.get("history"), state.get("mode", "qa"))
     _elapsed = int((time.time() - _step_start) * 1000)
     _log.info("  [timing] _generate_node elapsed=%dms" % _elapsed)
-    return {"answer": ad.get("answer", ""), "citations": ad.get("citations", state["context"][:5])}
+    return {"answer": ad.get("answer", ""), "citations": ad.get("citations", state["context"][:5]), "structured_output": ad.get("structured_output", {})}
 
 def _check_node(state: AgentState) -> dict:
     _step_start = time.time()
@@ -1811,6 +1928,7 @@ def _output_node(state: AgentState) -> dict:
     retrieval.setdefault("candidate_count", len(state.get("search_results", []) or []))
     retrieval.setdefault("selected_count", len(state.get("context", []) or []))
     return {"answer": state["answer"], "citations": citations, "graph": graph, "retrieval": retrieval,
+            "mode": state.get("mode", "qa"), "structured_output": state.get("structured_output", {}),
             "model": "", "sub_queries": state["sub_queries"], "attempts": state["attempts"], "latency_ms": elapsed}
 
 _agent_graph = None
@@ -1850,7 +1968,7 @@ def _save_msgs(tid, msgs):
 def _load_msgs(tid):
     return _message_store.get(tid, [])
 
-def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None) -> dict:
+def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None, mode: str = "qa") -> dict:
 
     _log.info('=' * 50)
     _log.info(f'Query: {query}')
@@ -1858,7 +1976,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
     initial = {
         "query": query, "section": section, "history": history,
         "current_query": query, "sub_queries": [], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡", "search_results": [],
-        "context": [], "answer": "", "citations": [], "graph": {}, "score": 0, "retrieval": {},
+        "context": [], "answer": "", "citations": [], "graph": {}, "mode": normalize_mode(mode), "structured_output": {}, "score": 0, "retrieval": {},
         "attempts": 1, "max_retries": 1, "repair_attempts": 0, "max_repair_attempts": 2, "start_time": time.time(),
         "progress_callback": progress_callback,
     }
@@ -1896,6 +2014,8 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
         "thinking": "",
         "graph": result.get("graph", {}),
         "retrieval": result.get("retrieval", {}),
+        "mode": result.get("mode", normalize_mode(mode)),
+        "structured_output": result.get("structured_output", {}),
     }
 
 
@@ -1920,12 +2040,415 @@ def _call_llm(messages, max_tokens=512, timeout=30):
     return ""
 
 
+SUPPORTED_MODES = {"qa", "requirement_clarification", "solution_draft", "selection_matrix", "defect_diagnosis"}
+
+
+def normalize_mode(mode: str = "qa") -> str:
+    mode = (mode or "qa").strip()
+    return mode if mode in SUPPORTED_MODES else "qa"
+
+
+def _context_to_text(context: list) -> str:
+    parts = []
+    for c in context or []:
+        source = f"[{c.get('index', len(parts) + 1)}] pg.{c.get('page', '?')}"
+        if c.get("section"):
+            source += f" ({c.get('section')})"
+        parts.append(f"{source}\n{c.get('text', '')}")
+    return "\n\n---\n\n".join(parts)
+
+
+def _extract_json_object(text: str) -> dict:
+    if not text:
+        return {}
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?", "", cleaned, flags=re.I).strip()
+        cleaned = re.sub(r"```$", "", cleaned).strip()
+    try:
+        data = json.loads(cleaned)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        pass
+    match = re.search(r"\{.*\}", cleaned, re.S)
+    if not match:
+        return {}
+    try:
+        data = json.loads(match.group(0))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _mode_prompt(mode: str) -> str:
+    if mode == "requirement_clarification":
+        return """你是材料铸造行业的解决方案需求澄清专家。请严格基于检索结果和用户问题输出。
+
+输出必须是一个 JSON 对象，禁止 Markdown 包裹，字段如下：
+{
+  "answer": "面向工程师的中文摘要，说明已识别需求、关键缺口和下一步",
+  "structured_output": {
+    "type": "requirement_clarification",
+    "known_conditions": ["已明确的材料/工况/性能/工艺条件"],
+    "missing_conditions": ["还缺少的约束条件"],
+    "risks": ["需求不清导致的工程风险"],
+    "questions_to_ask": ["需要继续追问客户的问题"],
+    "preliminary_direction": ["可先行判断的方案方向"],
+    "next_steps": ["建议下一步动作"]
+  }
+}
+
+要求：所有可验证的数据和结论必须来自检索结果；无法确认的内容放入 missing_conditions 或 questions_to_ask。"""
+    if mode == "solution_draft":
+        return """你是材料铸造行业的解决方案工程师。请严格基于检索结果和用户问题输出方案草案。
+
+输出必须是一个 JSON 对象，禁止 Markdown 包裹，字段如下：
+{
+  "answer": "面向工程师的中文方案摘要，包含推荐方向、依据和风险",
+  "structured_output": {
+    "type": "solution_draft",
+    "requirement_summary": ["需求归纳"],
+    "operating_conditions": ["工况与约束"],
+    "candidate_materials": ["候选材料或牌号"],
+    "recommended_processes": ["推荐工艺/热处理/铸造路线"],
+    "risks": ["技术风险和验证风险"],
+    "alternatives": ["备选路线"],
+    "evidence": ["来自检索结果的依据，保留引用编号"],
+    "open_questions": ["仍需确认的问题"],
+    "next_steps": ["建议验证或交付步骤"]
+  }
+}
+
+要求：不要编造手册外参数；对比类问题优先输出候选材料、性能维度、风险和验证步骤。"""
+    if mode == "selection_matrix":
+        return """你是材料铸造行业的选型矩阵分析师。请严格基于检索结果和用户问题，输出候选材料/工艺路线的工程决策矩阵。
+
+输出必须是一个 JSON 对象，禁止 Markdown 包裹，字段如下：
+{
+  "answer": "面向解决方案工程师的中文决策摘要，说明推荐候选、关键取舍和证据不足处",
+  "structured_output": {
+    "type": "selection_matrix",
+    "requirement_summary": ["从用户问题提炼出的工况、性能目标、预算、制造约束"],
+    "criteria": ["评价维度，例如耐腐蚀、强度、铸造/加工适配、成本、证据充分度"],
+    "rows": [
+      {
+        "candidate": "候选材料、牌号或工艺路线",
+        "category": "material",
+        "fit_score": 0,
+        "criteria_scores": {"评价维度": "high|medium|low|unknown"},
+        "advantages": ["基于检索结果的优势"],
+        "risks": ["基于检索结果的风险或证据不足"],
+        "process_fit": "铸造、热处理或加工适配说明",
+        "cost_level": "low|medium|high|unknown",
+        "evidence": ["检索依据，保留引用编号"],
+        "citations": [1]
+      }
+    ],
+    "recommendation": "推荐路线和理由",
+    "decision_notes": ["关键取舍说明"],
+    "open_questions": ["仍需客户或工程侧确认的问题"]
+  }
+}
+
+要求：
+1. rows 每个候选项必须独立判断，不能把一个候选的证据套到另一个候选。
+2. fit_score 只能在证据足够时给出 0-100；证据不足可省略或写 null。
+3. 每个关键优势、风险和证据必须来自检索结果；不确定时写入 risks 或 open_questions。
+4. 输出中文，但 citation 编号必须保留。"""
+    if mode == "defect_diagnosis":
+        return """你是材料铸造行业的缺陷与失效诊断工程师。请严格基于检索结果和用户问题，输出可执行的现场排查报告。
+
+输出必须是一个 JSON 对象，禁止 Markdown 包裹，字段如下：
+{
+  "answer": "面向工程师的中文诊断摘要，说明最可能原因、排查优先级和证据不足处",
+  "structured_output": {
+    "type": "defect_diagnosis",
+    "symptom_summary": ["从用户问题提取的缺陷现象、材料、工艺阶段、环境"],
+    "possible_causes": [
+      {
+        "cause": "可能原因",
+        "likelihood": "high|medium|low",
+        "evidence": "来自检索结果的依据，保留引用编号",
+        "inspection_method": "现场验证或检测方法",
+        "corrective_action": "对应纠正措施",
+        "citations": [1]
+      }
+    ],
+    "inspection_steps": ["建议现场排查顺序"],
+    "process_checks": ["熔炼、浇注、模具/砂型、热处理、环境等过程检查点"],
+    "corrective_actions": ["纠正或预防措施"],
+    "missing_field_info": ["仍需用户补充的现场信息"],
+    "severity": "high|medium|low|unknown"
+  }
+}
+
+要求：
+1. 不要只解释缺陷定义，必须输出排查动作。
+2. 可能原因必须按 likelihood 排序。
+3. 证据不足时必须写入 missing_field_info，不能编造现场事实。
+4. 关键判断必须来自检索结果；没有证据时明确标注待确认。"""
+    return IMPROVED_SYSTEM_PROMPT
+
+
+def _fallback_structured_output(mode: str, answer: str) -> dict:
+    if mode == "requirement_clarification":
+        return {
+            "type": mode,
+            "known_conditions": [],
+            "missing_conditions": ["结构化解析失败，请根据文本回答继续补充需求条件"],
+            "risks": [],
+            "questions_to_ask": [],
+            "preliminary_direction": [],
+            "next_steps": [],
+            "raw_answer": answer,
+        }
+    if mode == "solution_draft":
+        return {
+            "type": mode,
+            "requirement_summary": [],
+            "operating_conditions": [],
+            "candidate_materials": [],
+            "recommended_processes": [],
+            "risks": [],
+            "alternatives": [],
+            "evidence": [],
+            "open_questions": [],
+            "next_steps": [],
+            "raw_answer": answer,
+        }
+    if mode == "selection_matrix":
+        return {
+            "type": mode,
+            "requirement_summary": [],
+            "criteria": ["耐腐蚀", "强度", "工艺适配", "成本", "证据充分度"],
+            "rows": [],
+            "recommendation": "结构化解析失败，请根据文本回答重新评估候选项。",
+            "decision_notes": [],
+            "open_questions": [],
+            "raw_answer": answer,
+        }
+    if mode == "defect_diagnosis":
+        return {
+            "type": mode,
+            "symptom_summary": [],
+            "possible_causes": [],
+            "inspection_steps": [],
+            "process_checks": [],
+            "corrective_actions": [],
+            "missing_field_info": ["结构化解析失败，请补充材料、工艺阶段、缺陷位置和发生频率。"],
+            "severity": "unknown",
+            "raw_answer": answer,
+        }
+    return {}
+
+
+def generate_mode_answer(query: str, context: list, history: list = None, mode: str = "qa") -> dict:
+    mode = normalize_mode(mode)
+    if mode == "qa":
+        data = generate_answer(query, context, history)
+        data["structured_output"] = {}
+        return data
+
+    context_text = _context_to_text(context)
+    messages = [{"role": "system", "content": _mode_prompt(mode)}]
+    if history and _query_needs_history(query):
+        for msg in history[-8:]:
+            if msg.get("role") in ("user", "assistant"):
+                messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({
+        "role": "user",
+        "content": f"检索结果：\n\n{context_text}\n\n---\n\n用户问题：{query}\n\n请输出符合要求的 JSON。",
+    })
+    raw = _call_llm(messages, max_tokens=2400, timeout=60)
+    parsed = _extract_json_object(raw)
+    answer = (parsed.get("answer") if isinstance(parsed, dict) else "") or raw.strip()
+    structured = parsed.get("structured_output") if isinstance(parsed, dict) else {}
+    if not isinstance(structured, dict):
+        structured = {}
+    structured.setdefault("type", mode)
+    if not parsed:
+        structured = _fallback_structured_output(mode, answer)
+    return {
+        "answer": answer,
+        "citations": (context or [])[:5],
+        "thinking": "",
+        "structured_output": structured,
+    }
+
+
+MODE_REWRITE_PROMPTS = {
+    "requirement_clarification": """You are a retrieval planner for a casting/materials requirement clarification workflow.
+
+The user is not only asking for a factual answer. Your goal is to identify what engineering facts should be retrieved to clarify a customer requirement.
+
+Rules:
+1. Output ONLY one JSON object.
+2. search_queries must be English because the handbook corpus is English.
+3. Do not copy examples or inject old entities from history unless the current query has pronouns or omitted entities.
+4. Prefer broad engineering dimensions: material class, service environment, casting process, heat treatment, corrosion, mechanical properties, temperature, hardness, manufacturability.
+5. If the requirement lacks a material, search by application/environment/process instead of guessing a material.
+6. Keep 2-4 concise queries, each under 12 English words.
+
+JSON schema:
+{"core_entity":[],"filter_rule":"需求澄清：按当前需求限定","search_queries":[],"search_priority":"语义均衡","task_intent":"clarify customer requirement"}""",
+    "solution_draft": """You are a retrieval planner for a casting/materials solution drafting workflow.
+
+The user needs an engineering solution draft, not a single factual answer. Your retrieval should gather candidate materials, process routes, operating constraints, risks, and comparable properties.
+
+Rules:
+1. Output ONLY one JSON object.
+2. search_queries must be English because the handbook corpus is English.
+3. Do not copy examples or inject old entities from history unless the current query has pronouns or omitted entities.
+4. For explicit multi-material comparison, query each material separately; avoid one long mixed query.
+5. For vague solution requests, retrieve by application, service environment, casting process, corrosion resistance, strength, heat treatment, and manufacturability.
+6. Keep 2-4 concise queries, each under 12 English words.
+
+JSON schema:
+{"core_entity":[],"filter_rule":"方案草案：按候选材料和工况限定","search_queries":[],"search_priority":"语义均衡","task_intent":"draft engineering solution"}""",
+    "selection_matrix": """You are a retrieval planner for a materials and casting selection matrix workflow.
+
+The user needs an engineering decision matrix, not a single factual answer. Retrieval must support candidate-by-candidate comparison and evidence-backed criteria.
+
+Rules:
+1. Output ONLY one JSON object.
+2. search_queries must be English because the handbook corpus is English.
+3. If the user lists multiple candidates, produce one concise query per candidate.
+4. If the user gives an application or service condition, retrieve application, environment, material selection, corrosion, strength, process fit, and cost/manufacturability evidence.
+5. Avoid mixed long queries such as "candidate A candidate B candidate C comparison"; split candidates instead.
+6. Keep 2-4 concise queries, each under 12 English words.
+
+JSON schema:
+{"core_entity":[],"filter_rule":"选型矩阵：按候选项和评价维度限定","search_queries":[],"search_priority":"语义均衡","task_intent":"build selection matrix"}""",
+    "defect_diagnosis": """You are a retrieval planner for a casting defects and failure diagnosis workflow.
+
+The user needs troubleshooting, not a factual definition. Retrieval must support defect symptoms, likely causes, inspection steps, process checks, and corrective actions.
+
+Rules:
+1. Output ONLY one JSON object.
+2. search_queries must be English because the handbook corpus is English.
+3. Preserve explicit material/process context when present, for example "aluminum alloy casting porosity".
+4. Prefer defect and failure terminology: porosity, shrinkage cavity, shrinkage porosity, hot tearing, cracking, inclusions, cold shut, misrun, hardness failure, fatigue failure, corrosion failure.
+5. Include one query for causes/troubleshooting and one query for corrective actions when possible.
+6. Keep 2-4 concise queries, each under 12 English words.
+
+JSON schema:
+{"core_entity":[],"filter_rule":"缺陷诊断：按缺陷症状和工艺阶段限定","search_queries":[],"search_priority":"语义均衡","task_intent":"diagnose casting defect"}""",
+}
+
+
+def _fallback_mode_search_queries(query: str, mode: str) -> list:
+    entities = _explicit_entities_for_text(query)
+    if entities:
+        base = _deterministic_multi_search_queries(query) if len(entities) > 1 else [_deterministic_search_query(query)]
+    else:
+        base = [_deterministic_search_query(query)]
+    if mode == "requirement_clarification":
+        extras = [
+            "casting alloy service environment requirements",
+            "material selection corrosion temperature strength",
+        ]
+    elif mode == "solution_draft":
+        extras = [
+            "casting alloy material selection properties",
+            "casting process heat treatment mechanical properties",
+        ]
+    elif mode == "selection_matrix":
+        extras = [
+            "material selection corrosion strength cost",
+            "casting process manufacturability properties",
+            "alloy service environment selection",
+        ]
+    elif mode == "defect_diagnosis":
+        extras = [
+            "casting defects causes troubleshooting",
+            "casting defects corrective actions",
+            "foundry process defects inspection",
+        ]
+    else:
+        extras = []
+    queries = []
+    for item in base + extras:
+        if item and item not in queries:
+            queries.append(item)
+    return queries[:4]
+
+
+def rewrite_query_for_mode(query: str, history: list = None, mode: str = "qa") -> dict:
+    mode = normalize_mode(mode)
+    if mode == "qa":
+        data = rewrite_query(query, history)
+        data["search_queries"] = _normalize_search_queries_english(data.get("search_queries", []), query)
+        data["task_intent"] = "knowledge question answering"
+        return data
+
+    multi_entities = _explicit_entities_for_text(query)
+    if len(multi_entities) > 1:
+        return {
+            "search_queries": _normalize_search_queries_english(_deterministic_multi_search_queries(query), query),
+            "core_entity": multi_entities,
+            "filter_rule": f"{'缺陷诊断' if mode == 'defect_diagnosis' else ('选型矩阵' if mode == 'selection_matrix' else ('方案草案' if mode == 'solution_draft' else '需求澄清'))}：对比实体：{'、'.join(multi_entities)}",
+            "search_priority": "语义均衡",
+            "task_intent": "diagnose casting defect" if mode == "defect_diagnosis" else ("build selection matrix" if mode == "selection_matrix" else ("compare candidates for solution" if mode == "solution_draft" else "clarify multi-entity requirement")),
+        }
+
+    if history and _query_needs_history(query):
+        users = [m.get("content", "") for m in history if m.get("role") == "user" and m.get("content")]
+        history_text = "\n".join("User: " + u[:220] for u in users[-6:])
+        user_content = (
+            "[Same-mode Conversation History]\n"
+            + history_text
+            + "\n\n[Current]\n"
+            + query
+            + "\n\nOnly use this history to resolve pronouns or omitted entities in the same task mode."
+        )
+    else:
+        user_content = query
+
+    try:
+        result = _call_llm([
+            {"role": "system", "content": MODE_REWRITE_PROMPTS[mode]},
+            {"role": "user", "content": user_content},
+        ], max_tokens=700, timeout=45)
+        parsed = _extract_json_object(result)
+        if parsed:
+            rule = _entity_rule_for_text(query)
+            if mode == "defect_diagnosis" and rule and rule["label"] not in {item["label"] for item in _ENTITY_RULES}:
+                rule = None
+            search_queries = parsed.get("search_queries") or _fallback_mode_search_queries(query, mode)
+            guarded = _guard_search_queries(query, search_queries)
+            if not guarded:
+                guarded = _fallback_mode_search_queries(query, mode)
+            core = parsed.get("core_entity") or []
+            if rule:
+                core = [rule["label"]]
+            return {
+                "search_queries": _normalize_search_queries_english(guarded[:4], query),
+                "core_entity": core if isinstance(core, list) else [],
+                "filter_rule": parsed.get("filter_rule") or (rule["filter"] if rule else "全部"),
+                "search_priority": parsed.get("search_priority", "语义均衡"),
+                "task_intent": parsed.get("task_intent") or ("diagnose casting defect" if mode == "defect_diagnosis" else ("draft engineering solution" if mode == "solution_draft" else "clarify customer requirement")),
+            }
+    except Exception as e:
+        _log.warning(f"mode rewrite failed: {e}")
+
+    rule = _entity_rule_for_text(query)
+    if mode == "defect_diagnosis" and rule and rule["label"] not in {item["label"] for item in _ENTITY_RULES}:
+        rule = None
+    return {
+        "search_queries": _normalize_search_queries_english(_fallback_mode_search_queries(query, mode), query),
+        "core_entity": [rule["label"]] if rule else [],
+        "filter_rule": rule["filter"] if rule else ("缺陷诊断：按缺陷症状和工艺阶段检索" if mode == "defect_diagnosis" else ("选型矩阵：按候选项和评价维度检索" if mode == "selection_matrix" else ("方案草案：按工况和候选路线检索" if mode == "solution_draft" else "需求澄清：按工况和缺失条件检索"))),
+        "search_priority": "语义均衡",
+        "task_intent": "diagnose casting defect" if mode == "defect_diagnosis" else ("build selection matrix" if mode == "selection_matrix" else ("draft engineering solution" if mode == "solution_draft" else "clarify customer requirement")),
+    }
+
+
 def rewrite_query(query: str, history: list = None) -> dict:
     multi_entities = _explicit_entities_for_text(query)
     if len(multi_entities) > 1:
-        return {"search_queries": _deterministic_multi_search_queries(query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
+        return {"search_queries": _normalize_search_queries_english(_deterministic_multi_search_queries(query), query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
     if False and re.match(r'^[a-zA-Z0-9\s\-\.]+$', query) and len(query.split()) <= 10:
-        return {"search_queries": [query], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
+        return {"search_queries": _normalize_search_queries_english([query], query), "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
     if history and _query_needs_history(query):
         users = [m.get("content", "") for m in history if m.get("role") == "user" and m.get("content")]
         if users:
@@ -1971,7 +2494,7 @@ def rewrite_query(query: str, history: list = None) -> dict:
                         filter_rule = f"对比实体：{'、'.join(multi_entities)}" if len(multi_entities) > 1 else (rule["filter"] if rule else parsed.get("filter_rule", "全部"))
                         if not rule and _query_needs_history(query) and re.search(r"铝合金|aluminum|aluminium|6061", str(filter_rule), re.I):
                             filter_rule = "全部"
-                        return {"search_queries": sq[:4], "core_entity": core, "filter_rule": filter_rule, "search_priority": parsed.get("search_priority", "语义均衡")}
+                        return {"search_queries": _normalize_search_queries_english(sq[:4], query), "core_entity": core, "filter_rule": filter_rule, "search_priority": parsed.get("search_priority", "语义均衡")}
             if attempt < 2:
                 _log.warning(f"  Rewrite attempt {attempt+1} failed, retrying...")
                 time.sleep(0.5)
@@ -1982,8 +2505,8 @@ def rewrite_query(query: str, history: list = None) -> dict:
     rule = _entity_rule_for_text(query)
     multi_entities = _explicit_entities_for_text(query)
     if len(multi_entities) > 1:
-        return {"search_queries": _deterministic_multi_search_queries(query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
-    return {"search_queries": [_deterministic_search_query(query)], "core_entity": [rule["label"]] if rule else [], "filter_rule": rule["filter"] if rule else "全部", "search_priority": "语义均衡"}
+        return {"search_queries": _normalize_search_queries_english(_deterministic_multi_search_queries(query), query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
+    return {"search_queries": _normalize_search_queries_english([_deterministic_search_query(query)], query), "core_entity": [rule["label"]] if rule else [], "filter_rule": rule["filter"] if rule else "全部", "search_priority": "语义均衡"}
 
 def search_single(query: str, section: str = None, top_k: int = 8) -> list:
     from search import search
