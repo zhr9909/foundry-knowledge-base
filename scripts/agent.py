@@ -348,8 +348,14 @@ def _select_context_node(state: AgentState) -> dict:
     else: dk = 12
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在精选相关上下文..."})
-    ctx = select_context(rs, top_k=dk, original_query=" ".join(state["sub_queries"]),
-                         search_query=state["sub_queries"][0] if state["sub_queries"] else state["current_query"])
+    is_multi_entity = len(state.get("core_entity") or []) > 1
+    ctx = select_context(
+        rs,
+        top_k=dk,
+        original_query=" ".join(state["sub_queries"]),
+        search_query=" ".join(state["sub_queries"]) if is_multi_entity else (state["sub_queries"][0] if state["sub_queries"] else state["current_query"]),
+        preserve_order=is_multi_entity,
+    )
     retrieval = dict(state.get("retrieval") or {})
     retrieval["selected_count"] = len(ctx)
     if state.get("progress_callback"):
@@ -726,7 +732,9 @@ def _entity_search_term(label: str) -> str:
         "铝合金": "aluminum alloy",
         "铝合金 6061": "6061 aluminum alloy",
         "6061": "6061 aluminum alloy",
-        "铁合金": "ferroalloy",
+        "铁合金": "iron alloy",
+        "铁基合金": "iron alloy",
+        "铸铁": "cast iron",
         "钢铁": "steel",
         "碳钢": "carbon steel",
         "合金钢": "alloy steel",
@@ -934,8 +942,6 @@ def _deterministic_multi_search_queries(query: str) -> list:
         return [_deterministic_search_query(query)]
     search_terms = [_entity_search_term(entity) for entity in entities[:4]]
     queries = [f"{term} {intent}".strip().replace("harness", "hardness") for term in search_terms]
-    if len(entities) <= 3:
-        queries.insert(0, f"{' '.join(search_terms)} {intent} comparison".strip())
     return _dedupe_keep_order(queries)[:4]
 
 
@@ -1096,7 +1102,7 @@ def rerank(query, candidates, top_k=6):
     candidates.sort(key=lambda x: x.get("rerank_score", 0), reverse=True)
     return candidates[:top_k]
 
-def select_context(results, top_k=6, original_query="", search_query=""):
+def select_context(results, top_k=6, original_query="", search_query="", preserve_order=False):
     boost_keywords = []
     if original_query:
         import re as re2
@@ -1118,15 +1124,22 @@ def select_context(results, top_k=6, original_query="", search_query=""):
         if boosted:
             _log.info(f"    pg.{r['page']}: {original_score:.4f} -> {score:.4f} [+0.08]")
         scored.append((score, r))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    candidates_pool = [r for _, r in scored[:max(top_k * 3, 12)]]
-    # Apply cross-encoder reranker
-    try:
-        rq = search_query or original_query
-        candidates_pool = rerank(rq, candidates_pool, top_k=max(top_k * 3, 12))
-        _log.info("  Reranked: %d candidates" % len(candidates_pool))
-    except Exception as re_err:
-        _log.warning("  Reranker failed: %s" % re_err)
+    if preserve_order:
+        # Multi-entity comparison already arrives interleaved by sub-query.
+        # Re-ranking with one merged query tends to collapse coverage onto the
+        # first entity, so keep the balanced retrieval order.
+        candidates_pool = [r for _, r in scored[:max(top_k * 3, 12)]]
+        _log.info("  Rerank skipped: preserving multi-entity coverage")
+    else:
+        scored.sort(key=lambda x: x[0], reverse=True)
+        candidates_pool = [r for _, r in scored[:max(top_k * 3, 12)]]
+        # Apply cross-encoder reranker
+        try:
+            rq = search_query or original_query
+            candidates_pool = rerank(rq, candidates_pool, top_k=max(top_k * 3, 12))
+            _log.info("  Reranked: %d candidates" % len(candidates_pool))
+        except Exception as re_err:
+            _log.warning("  Reranker failed: %s" % re_err)
     selected = candidates_pool[:top_k]
     formatted = []
     for i, r in enumerate(selected):
@@ -1510,8 +1523,15 @@ def _select_context_node(state: AgentState) -> dict:
     else: dk = 12
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在精选相关上下文..."})
-    ctx = select_context(rs, top_k=dk, original_query=" ".join(state["sub_queries"]),
-                         search_query=state["sub_queries"][0] if state["sub_queries"] else state["current_query"])
+    is_multi_entity = len(state.get("core_entity") or []) > 1
+    merged_query = " ".join(state["sub_queries"])
+    ctx = select_context(
+        rs,
+        top_k=dk,
+        original_query=merged_query,
+        search_query=merged_query if is_multi_entity else (state["sub_queries"][0] if state["sub_queries"] else state["current_query"]),
+        preserve_order=is_multi_entity,
+    )
     retrieval = dict(state.get("retrieval") or {})
     retrieval["selected_count"] = len(ctx)
     if state.get("progress_callback"):
@@ -1810,7 +1830,7 @@ def rerank(query, candidates, top_k=6):
     candidates.sort(key=lambda x: x.get("rerank_score", 0), reverse=True)
     return candidates[:top_k]
 
-def select_context(results, top_k=6, original_query="", search_query=""):
+def select_context(results, top_k=6, original_query="", search_query="", preserve_order=False):
     boost_keywords = []
     if original_query:
         import re as re2
@@ -1832,15 +1852,21 @@ def select_context(results, top_k=6, original_query="", search_query=""):
         if boosted:
             _log.info(f"    pg.{r['page']}: {original_score:.4f} -> {score:.4f} [+0.08]")
         scored.append((score, r))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    candidates_pool = [r for _, r in scored[:max(top_k * 3, 12)]]
-    # Apply cross-encoder reranker
-    try:
-        rq = search_query or original_query
-        candidates_pool = rerank(rq, candidates_pool, top_k=max(top_k * 3, 12))
-        _log.info("  Reranked: %d candidates" % len(candidates_pool))
-    except Exception as re_err:
-        _log.warning("  Reranker failed: %s" % re_err)
+    if preserve_order:
+        # Multi-entity comparisons are already interleaved by sub-query in
+        # search_parallel. A single rerank query tends to collapse coverage
+        # onto one entity, so keep the balanced retrieval order.
+        candidates_pool = [r for _, r in scored[:max(top_k * 3, 12)]]
+        _log.info("  Rerank skipped: preserving multi-entity coverage")
+    else:
+        scored.sort(key=lambda x: x[0], reverse=True)
+        candidates_pool = [r for _, r in scored[:max(top_k * 3, 12)]]
+        try:
+            rq = search_query or original_query
+            candidates_pool = rerank(rq, candidates_pool, top_k=max(top_k * 3, 12))
+            _log.info("  Reranked: %d candidates" % len(candidates_pool))
+        except Exception as re_err:
+            _log.warning("  Reranker failed: %s" % re_err)
     selected = candidates_pool[:top_k]
     formatted = []
     for i, r in enumerate(selected):
