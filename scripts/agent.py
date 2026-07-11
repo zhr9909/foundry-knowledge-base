@@ -268,6 +268,134 @@ Output ONLY a JSON: {{"score": N, "reason": "one sentence", "missing": "what spe
         return {"score": 8, "reason": "eval failed", "missing": ""}
 
 
+def _answer_indicates_no_knowledge(answer: str) -> bool:
+    text = (answer or "").strip()
+    if not text or text.startswith("❌"):
+        return False
+    phrases = [
+        "知识库中没有找到相关信息",
+        "知识库中未找到相关信息",
+        "没有找到相关信息",
+        "未找到相关信息",
+        "未能找到与",
+        "未检索到",
+    ]
+    return any(p in text for p in phrases)
+
+
+def _should_repair_retrieval(state: dict) -> bool:
+    if int(state.get("repair_attempts", 0) or 0) >= int(state.get("max_repair_attempts", 0) or 0):
+        return False
+    answer = state.get("answer", "") or ""
+    if answer.strip().startswith("❌"):
+        return False
+    if not state.get("search_results") or not state.get("context"):
+        return True
+    if _answer_indicates_no_knowledge(answer):
+        return True
+    if answer and len(answer.strip()) < 50:
+        return True
+    return False
+
+
+def _repair_fallback_queries(query: str, state: dict) -> list:
+    entities = state.get("core_entity") or _explicit_entities_for_text(query)
+    intents = _intent_terms(query)
+    queries = []
+    if len(entities) > 1:
+        for entity in entities[:4]:
+            term = _entity_search_term(entity)
+            if intents:
+                queries.append(f"{term} {' '.join(intents)}")
+            queries.append(f"{term} properties and selection")
+            if term == "iron alloy":
+                queries.append("high alloy iron castings properties")
+    else:
+        rule = _entity_rule_for_text(query)
+        term = _entity_search_term(rule["label"]) if rule else query
+        if intents:
+            queries.append(f"{term} {' '.join(intents)}")
+        queries.extend([
+            f"{term} properties and selection",
+            f"{term} mechanical properties strength density corrosion resistance",
+            f"{term} processing heat treatment applications",
+        ])
+    return _dedupe_keep_order([q.replace("harness", "hardness").strip() for q in queries if q.strip()])[:6]
+
+
+def _repair_queries_with_llm(state: dict) -> tuple:
+    retrieval = state.get("retrieval") or {}
+    top_hits = retrieval.get("top_hits") or []
+    context = state.get("context") or []
+    hit_lines = [
+        f"- pg.{h.get('page')} score={h.get('score')} section={h.get('section', '')}"
+        for h in top_hits[:8]
+    ]
+    ctx_lines = [
+        f"[{c.get('index')}] pg.{c.get('page')} {c.get('section', '')}: {(c.get('text') or '')[:280]}"
+        for c in context[:6]
+    ]
+    prompt = f"""You are a retrieval repair planner for an ASM Handbook metal-material RAG system.
+Analyze why the previous retrieval or answer failed, then propose better English search queries.
+
+User question:
+{state.get('current_query') or state.get('query')}
+
+Previous search queries:
+{state.get('sub_queries')}
+
+Top hits:
+{chr(10).join(hit_lines) if hit_lines else '(none)'}
+
+Selected context snippets:
+{chr(10).join(ctx_lines) if ctx_lines else '(none)'}
+
+Failed/weak answer:
+{(state.get('answer') or '')[:800]}
+
+Rules:
+- Output only JSON.
+- Keep search_queries in English.
+- Prefer ASM section phrasing such as "properties and selection", "applications", "heat treatment", "forging", "corrosion resistance".
+- For multi-material comparison, include one query per explicit material so no entity is dropped.
+- Do not include Chinese in search_queries.
+
+JSON schema:
+{{"reason":"short diagnosis in Chinese","search_queries":["query 1","query 2"],"strategy":"short strategy in Chinese"}}"""
+    try:
+        raw = _call_llm([
+            {"role": "system", "content": "Output only valid JSON for retrieval repair."},
+            {"role": "user", "content": prompt},
+        ], max_tokens=512, timeout=25)
+        match = re.search(r"\{.*\}", raw or "", re.DOTALL)
+        if not match:
+            return "", []
+        data = json.loads(match.group())
+        queries = []
+        for item in data.get("search_queries", []):
+            q = str(item).replace("harness", "hardness").strip()
+            if q and not re.search(r"[\u4e00-\u9fff]", q):
+                queries.append(q)
+        return str(data.get("reason", "") or data.get("strategy", "")), _dedupe_keep_order(queries)[:6]
+    except Exception as exc:
+        _log.warning("retrieval repair planner failed: %s", exc)
+        return "", []
+
+
+def _plan_repair_queries(state: dict) -> tuple:
+    reason, llm_queries = _repair_queries_with_llm(state)
+    fallback = _repair_fallback_queries(state.get("current_query") or state.get("query", ""), state)
+    merged = _dedupe_keep_order((llm_queries or []) + fallback)
+    if not reason:
+        if not state.get("search_results"):
+            reason = "上一轮没有召回候选，改用更宽的材料族和性能章节检索。"
+        elif not state.get("context"):
+            reason = "上一轮候选未能精选为有效上下文，改用手册章节式检索词。"
+        else:
+            reason = "上一轮回答判断信息不足，改用更贴近ASM章节标题和材料族的检索词。"
+    return reason, merged[:6]
+
+
 # ===== LangGraph State & Node Definitions =====
 class AgentState(TypedDict):
     query: str
@@ -286,6 +414,8 @@ class AgentState(TypedDict):
     score: float
     attempts: int
     max_retries: int
+    repair_attempts: int
+    max_repair_attempts: int
     start_time: float
     progress_callback: Optional[callable]
     retrieval: dict
@@ -391,11 +521,47 @@ def _check_node(state: AgentState) -> dict:
 
 def _decide_next(state: AgentState) -> str:
     ans, sc = state["answer"], state["score"]
+    if _should_repair_retrieval(state):
+        return "repair"
     if state["attempts"] < state["max_retries"] and len(ans) > 30 and sc < 7:
-        return "retry"
+        return "repair"
     if len(ans) < 50 or "没有找到" in ans or "未找到" in ans:
         return "fallback"
     return "output"
+
+def _repair_node(state: AgentState) -> dict:
+    _step_start = time.time()
+    next_attempt = int(state.get("repair_attempts", 0) or 0) + 1
+    reason, queries = _plan_repair_queries(state)
+    retrieval = dict(state.get("retrieval") or {})
+    history = list(retrieval.get("repair_history") or [])
+    history.append({
+        "attempt": next_attempt,
+        "reason": reason,
+        "previous_queries": list(state.get("sub_queries") or []),
+        "search_queries": queries,
+        "candidate_count": len(state.get("search_results") or []),
+        "selected_count": len(state.get("context") or []),
+    })
+    retrieval["repair_history"] = history
+    retrieval["repair_reason"] = reason
+    retrieval["search_queries"] = queries
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": f"检索修复分析：{reason}", "level": "retry"})
+        state["progress_callback"]({"step": "repair_planned", "queries": queries, "retrieval": retrieval})
+        state["progress_callback"]({"type": "log", "message": f"重新规划查询：{queries}", "level": "retry"})
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _repair_node elapsed=%dms" % _elapsed)
+    return {
+        "sub_queries": queries,
+        "search_results": [],
+        "context": [],
+        "answer": "",
+        "citations": [],
+        "score": 0,
+        "repair_attempts": next_attempt,
+        "retrieval": retrieval,
+    }
 
 def _retry_node(state: AgentState) -> dict:
     _step_start = time.time()
@@ -437,6 +603,7 @@ def _get_graph():
     wf.add_node("select_ctx", _select_context_node)
     wf.add_node("generate", _generate_node)
     wf.add_node("check", _check_node)
+    wf.add_node("repair", _repair_node)
     wf.add_node("retry", _retry_node)
     wf.add_node("fallback", _fallback_node)
     wf.add_node("output", _output_node)
@@ -445,7 +612,8 @@ def _get_graph():
     wf.add_edge("search", "select_ctx")
     wf.add_edge("select_ctx", "generate")
     wf.add_edge("generate", "check")
-    wf.add_conditional_edges("check", _decide_next, {"retry": "retry", "fallback": "fallback", "output": "output"})
+    wf.add_conditional_edges("check", _decide_next, {"repair": "repair", "retry": "retry", "fallback": "fallback", "output": "output"})
+    wf.add_edge("repair", "search")
     wf.add_edge("retry", "rewrite")
     wf.add_edge("fallback", "output")
     wf.add_edge("output", END)
@@ -486,7 +654,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
         "query": query, "section": section, "history": history,
         "current_query": query, "sub_queries": [], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡", "search_results": [],
         "context": [], "answer": "", "citations": [], "graph": {}, "score": 0, "retrieval": {},
-        "attempts": 1, "max_retries": 1, "start_time": time.time(),
+        "attempts": 1, "max_retries": 1, "repair_attempts": 0, "max_repair_attempts": 2, "start_time": time.time(),
         "progress_callback": progress_callback,
     }
     # Use only the conversation-scoped history supplied by the gateway.
@@ -947,6 +1115,8 @@ def _deterministic_multi_search_queries(query: str) -> list:
 
 def _guard_multi_search_queries(query: str, search_queries: list) -> list:
     entities = _explicit_entities_for_text(query)
+    if len(entities) > 1:
+        return _deterministic_multi_search_queries(query)
     cleaned = [str(q).replace("harness", "hardness").strip() for q in (search_queries or []) if str(q).strip()]
     if any(re.search(r"[\u4e00-\u9fff]", q) for q in cleaned):
         return _deterministic_multi_search_queries(query)
@@ -980,6 +1150,9 @@ def _guard_search_queries(query: str, search_queries: list) -> list:
 
 
 def rewrite_query(query: str, history: list = None) -> dict:
+    multi_entities = _explicit_entities_for_text(query)
+    if len(multi_entities) > 1:
+        return {"search_queries": _deterministic_multi_search_queries(query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
     if False and re.match(r'^[a-zA-Z0-9\s\-\.]+$', query) and len(query.split()) <= 10:
         return {"search_queries": [query], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
     if history and _query_needs_history(query):
@@ -1461,6 +1634,8 @@ class AgentState(TypedDict):
     score: float
     attempts: int
     max_retries: int
+    repair_attempts: int
+    max_repair_attempts: int
     start_time: float
     progress_callback: Optional[callable]
     retrieval: dict
@@ -1567,11 +1742,47 @@ def _check_node(state: AgentState) -> dict:
 
 def _decide_next(state: AgentState) -> str:
     ans, sc = state["answer"], state["score"]
+    if _should_repair_retrieval(state):
+        return "repair"
     if state["attempts"] < state["max_retries"] and len(ans) > 30 and sc < 7:
-        return "retry"
+        return "repair"
     if len(ans) < 50 or "没有找到" in ans or "未找到" in ans:
         return "fallback"
     return "output"
+
+def _repair_node(state: AgentState) -> dict:
+    _step_start = time.time()
+    next_attempt = int(state.get("repair_attempts", 0) or 0) + 1
+    reason, queries = _plan_repair_queries(state)
+    retrieval = dict(state.get("retrieval") or {})
+    history = list(retrieval.get("repair_history") or [])
+    history.append({
+        "attempt": next_attempt,
+        "reason": reason,
+        "previous_queries": list(state.get("sub_queries") or []),
+        "search_queries": queries,
+        "candidate_count": len(state.get("search_results") or []),
+        "selected_count": len(state.get("context") or []),
+    })
+    retrieval["repair_history"] = history
+    retrieval["repair_reason"] = reason
+    retrieval["search_queries"] = queries
+    if state.get("progress_callback"):
+        state["progress_callback"]({"type": "log", "message": f"检索修复分析：{reason}", "level": "retry"})
+        state["progress_callback"]({"step": "repair_planned", "queries": queries, "retrieval": retrieval})
+        state["progress_callback"]({"type": "log", "message": f"重新规划查询：{queries}", "level": "retry"})
+    _elapsed = int((time.time() - _step_start) * 1000)
+    _log.info("  [timing] _repair_node elapsed=%dms" % _elapsed)
+    return {
+        "sub_queries": queries,
+        "search_results": [],
+        "context": [],
+        "answer": "",
+        "citations": [],
+        "score": 0,
+        "repair_attempts": next_attempt,
+        "retrieval": retrieval,
+    }
 
 def _retry_node(state: AgentState) -> dict:
     _step_start = time.time()
@@ -1613,6 +1824,7 @@ def _get_graph():
     wf.add_node("select_ctx", _select_context_node)
     wf.add_node("generate", _generate_node)
     wf.add_node("check", _check_node)
+    wf.add_node("repair", _repair_node)
     wf.add_node("retry", _retry_node)
     wf.add_node("fallback", _fallback_node)
     wf.add_node("output", _output_node)
@@ -1621,7 +1833,8 @@ def _get_graph():
     wf.add_edge("search", "select_ctx")
     wf.add_edge("select_ctx", "generate")
     wf.add_edge("generate", "check")
-    wf.add_conditional_edges("check", _decide_next, {"retry": "retry", "fallback": "fallback", "output": "output"})
+    wf.add_conditional_edges("check", _decide_next, {"repair": "repair", "retry": "retry", "fallback": "fallback", "output": "output"})
+    wf.add_edge("repair", "search")
     wf.add_edge("retry", "rewrite")
     wf.add_edge("fallback", "output")
     wf.add_edge("output", END)
@@ -1646,7 +1859,7 @@ def agent_chat(query: str, section: str = None, history: list = None, progress_c
         "query": query, "section": section, "history": history,
         "current_query": query, "sub_queries": [], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡", "search_results": [],
         "context": [], "answer": "", "citations": [], "graph": {}, "score": 0, "retrieval": {},
-        "attempts": 1, "max_retries": 1, "start_time": time.time(),
+        "attempts": 1, "max_retries": 1, "repair_attempts": 0, "max_repair_attempts": 2, "start_time": time.time(),
         "progress_callback": progress_callback,
     }
     # Use only the conversation-scoped history supplied by the gateway.
@@ -1708,6 +1921,9 @@ def _call_llm(messages, max_tokens=512, timeout=30):
 
 
 def rewrite_query(query: str, history: list = None) -> dict:
+    multi_entities = _explicit_entities_for_text(query)
+    if len(multi_entities) > 1:
+        return {"search_queries": _deterministic_multi_search_queries(query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
     if False and re.match(r'^[a-zA-Z0-9\s\-\.]+$', query) and len(query.split()) <= 10:
         return {"search_queries": [query], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡"}
     if history and _query_needs_history(query):
