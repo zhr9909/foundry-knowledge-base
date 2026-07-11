@@ -491,7 +491,7 @@ ALTER TABLE conversations ADD COLUMN IF NOT EXISTS project_id INT;
 }
 ```
 
-第二阶段再增加项目表：
+项目空间第一版已落地，项目表用于承载客户项目、工程主题和后续报告沉淀：
 
 ### projects
 
@@ -508,24 +508,48 @@ CREATE TABLE projects (
 );
 ```
 
-### solution_artifacts
+### conversations.project_id
 
-用于保存方案草案、选型矩阵、需求澄清结果等结构化产物。
+对话历史现在支持绑定到项目空间。未指定项目时保持 `NULL`，兼容原来的普通知识问答历史。
 
 ```sql
-CREATE TABLE solution_artifacts (
+ALTER TABLE conversations ADD COLUMN project_id INT;
+CREATE INDEX idx_conv_project ON conversations(project_id);
+```
+
+约定：
+
+- 用户选中项目后，新建对话会自动写入当前 `project_id`。
+- 已存在的对话继续使用原有 `project_id`，不会因为前端切换项目被中途改绑。
+- 项目详情会返回该项目下的对话列表，方便从项目空间恢复检索过程。
+
+### solution_artifacts
+
+旧设计中曾使用 `solution_artifacts` 作为命名。当前实现统一为更通用的 `project_artifacts`，用于保存知识问答、需求澄清、方案草案、选型矩阵、缺陷诊断等结构化产物。
+
+```sql
+CREATE TABLE project_artifacts (
   id SERIAL PRIMARY KEY,
   project_id INT REFERENCES projects(id) ON DELETE CASCADE,
-  conversation_id INT REFERENCES conversations(id) ON DELETE SET NULL,
-  type TEXT NOT NULL,
-  title TEXT DEFAULT '',
-  content TEXT DEFAULT '',
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  artifact_type TEXT NOT NULL DEFAULT 'qa',
+  title TEXT NOT NULL DEFAULT '未命名产物',
+  content TEXT NOT NULL DEFAULT '',
   structured_data JSONB DEFAULT '{}',
   citations JSONB DEFAULT '[]',
+  metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
+
+字段约定：
+
+- `artifact_type`：对应前端/Agent 的任务模式，如 `qa`、`requirement_clarification`、`solution_draft`、`selection_matrix`、`defect_diagnosis`。
+- `content`：回答正文 Markdown。
+- `structured_data`：结构化输出，例如方案步骤、选型矩阵、缺陷诊断表。
+- `citations`：引用来源卡片数据。
+- `metadata`：保存原问题、检索解释、知识图谱等辅助信息。
 
 ## 前端展示策略
 
@@ -541,10 +565,10 @@ CREATE TABLE solution_artifacts (
 - 可以复用聊天输入、SSE、历史记录、引用展示。
 - 用户能在同一上下文中切换任务。
 
-第二阶段再增加“项目空间”页面：
+项目空间当前采用“同一工作台 + 右侧项目面板”：
 
 ```text
-项目列表 -> 项目详情 -> 需求 / 对话 / 方案 / 引用 / 图谱
+侧栏项目列表 -> 右侧项目详情面板 -> 产物列表 / 引用 / 结构化数据
 ```
 
 ## 开发约定

@@ -73,7 +73,9 @@ type TaskMode =
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- |
 | `mode` | TaskMode | 否 | `qa` | 当前任务模式 |
-| `project_id` | number | 否 | 无 | 未来项目空间 ID |
+| `project_id` | number | 否 | 无 | 当前项目空间 ID |
+
+`project_id` 当前已启用：当前端选中项目且本轮没有已有 `conv_id` 时，后端自动创建的新对话会写入该项目。已有 `conv_id` 的连续追问沿用原对话归属。
 
 请求示例：
 
@@ -473,9 +475,9 @@ POST /api/conversations/{conv_id}/messages
 }
 ```
 
-## 未来项目空间接口
+## 项目空间接口
 
-第一版可以不实现，仅预留契约。
+项目空间第一版已实现。所有接口均需要登录态，通过 `Authorization: Bearer <token>` 鉴权。
 
 ### 项目列表
 
@@ -492,7 +494,10 @@ GET /api/projects
       "id": 1,
       "name": "海水泵体材料选型",
       "customer_name": "某客户",
+      "description": "80℃海水环境，预算中等",
       "status": "active",
+      "artifact_count": 3,
+      "conversation_count": 5,
       "created_at": "",
       "updated_at": ""
     }
@@ -526,13 +531,58 @@ GET /api/projects/{project_id}
 
 ```json
 {
-  "project": {},
-  "conversations": [],
-  "artifacts": []
+  "project": {
+    "id": 1,
+    "name": "海水泵体材料选型",
+    "customer_name": "某客户",
+    "description": "80℃海水环境，预算中等",
+    "status": "active",
+    "artifact_count": 2,
+    "artifacts": [
+      {
+        "id": 10,
+        "project_id": 1,
+        "type": "solution_draft",
+        "title": "海水泵体初步材料与工艺方案",
+        "content": "Markdown 正文",
+        "structured_data": {},
+        "citations": [],
+        "metadata": {}
+      }
+    ],
+    "conversations": [
+      {
+        "id": 12,
+        "title": "海水泵体材料选型",
+        "project_id": 1,
+        "created_at": "",
+        "updated_at": ""
+      }
+    ]
+  }
 }
 ```
 
-### 保存方案产物
+### 更新项目
+
+```http
+PUT /api/projects/{project_id}
+```
+
+请求：
+
+```json
+{
+  "name": "海水泵体耐腐蚀方案",
+  "customer_name": "某客户",
+  "description": "80℃海水环境，预算中等",
+  "status": "active"
+}
+```
+
+所有字段均可选。当前前端第一版主要使用 `name`，用于侧栏双击重命名。
+
+### 保存项目产物
 
 ```http
 POST /api/projects/{project_id}/artifacts
@@ -546,7 +596,32 @@ POST /api/projects/{project_id}/artifacts
   "title": "海水泵体初步材料与工艺方案",
   "content": "Markdown 正文",
   "structured_data": {},
-  "citations": []
+  "citations": [],
+  "metadata": {
+    "question": "海水环境泵体，80℃，中等预算，帮我出方案草案",
+    "retrieval": {},
+    "graph": {},
+    "mode": "solution_draft"
+  }
+}
+```
+
+返回：
+
+```json
+{
+  "artifact": {
+    "id": 10,
+    "project_id": 1,
+    "type": "solution_draft",
+    "title": "海水泵体初步材料与工艺方案",
+    "content": "Markdown 正文",
+    "structured_data": {},
+    "citations": [],
+    "metadata": {},
+    "created_at": "",
+    "updated_at": ""
+  }
 }
 ```
 

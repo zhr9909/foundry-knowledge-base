@@ -259,8 +259,34 @@ def init_auth_db():
             content TEXT NOT NULL,
             metadata JSONB DEFAULT '{}',
             created_at TIMESTAMPTZ DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS projects (
+            id SERIAL PRIMARY KEY,
+            user_id INT REFERENCES users(id) ON DELETE CASCADE,
+            name TEXT NOT NULL DEFAULT '未命名项目',
+            customer_name TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS project_artifacts (
+            id SERIAL PRIMARY KEY,
+            project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+            user_id INT REFERENCES users(id) ON DELETE CASCADE,
+            artifact_type TEXT NOT NULL DEFAULT 'qa',
+            title TEXT NOT NULL DEFAULT '未命名产物',
+            content TEXT NOT NULL DEFAULT '',
+            structured_data JSONB DEFAULT '{}',
+            citations JSONB DEFAULT '[]',
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW())""")
+        cur.execute("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS project_id INT")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_conv_user ON conversations(user_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_conv_project ON conversations(project_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_msg_conv ON conversation_messages(conversation_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_project_user ON projects(user_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_artifact_project ON project_artifacts(project_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_artifact_user ON project_artifacts(user_id)")
         conn.commit()
         print("[Auth] 数据库表已就绪")
     except Exception as e:
@@ -347,14 +373,28 @@ def _get_conn2():
     import psycopg2
     return psycopg2.connect(host="127.0.0.1", port=15432, dbname="foundry_kb", user="findmyjob", password="findmyjob_dev_password")
 
-def create_conversation(user_id, title=""):
+def _valid_project_id(cur, user_id, project_id):
+    if not project_id:
+        return None
+    try:
+        pid = int(project_id)
+    except (TypeError, ValueError):
+        return None
+    cur.execute("SELECT id FROM projects WHERE id = %s AND user_id = %s", (pid, user_id))
+    return pid if cur.fetchone() else None
+
+def create_conversation(user_id, title="", project_id=None):
     conn = _get_conn2()
     try:
         cur = conn.cursor()
-        cur.execute("INSERT INTO conversations (user_id, title) VALUES (%s, %s) RETURNING id, created_at", (user_id, title))
+        pid = _valid_project_id(cur, user_id, project_id)
+        cur.execute(
+            "INSERT INTO conversations (user_id, title, project_id) VALUES (%s, %s, %s) RETURNING id, created_at",
+            (user_id, title, pid),
+        )
         r = cur.fetchone()
         conn.commit()
-        return {"id": r[0], "title": title, "created_at": r[1].isoformat()}
+        return {"id": r[0], "title": title, "project_id": pid, "created_at": r[1].isoformat()}
     except Exception as e:
         conn.rollback()
         raise HTTPException(500, f"创建会话失败: {e}")
@@ -365,8 +405,8 @@ def list_conversations(user_id):
     conn = _get_conn2()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id, title, created_at, updated_at FROM conversations WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
-        return [{"id": r[0], "title": r[1], "created_at": r[2].isoformat(), "updated_at": r[3].isoformat()} for r in cur.fetchall()]
+        cur.execute("SELECT id, title, created_at, updated_at, project_id FROM conversations WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
+        return [{"id": r[0], "title": r[1], "created_at": r[2].isoformat(), "updated_at": r[3].isoformat(), "project_id": r[4]} for r in cur.fetchall()]
     finally:
         conn.close()
 
@@ -374,13 +414,13 @@ def get_conv_messages(conv_id, user_id):
     conn = _get_conn2()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id, title FROM conversations WHERE id = %s AND user_id = %s", (conv_id, user_id))
+        cur.execute("SELECT id, title, project_id FROM conversations WHERE id = %s AND user_id = %s", (conv_id, user_id))
         conv = cur.fetchone()
         if not conv:
             return None
         cur.execute("SELECT id, role, content, metadata, created_at FROM conversation_messages WHERE conversation_id = %s ORDER BY id", (conv_id,))
         msgs = [{"id": r[0], "role": r[1], "content": r[2], "metadata": r[3], "created_at": r[4].isoformat()} for r in cur.fetchall()]
-        return {"id": conv[0], "title": conv[1], "messages": msgs}
+        return {"id": conv[0], "title": conv[1], "project_id": conv[2], "messages": msgs}
     finally:
         conn.close()
 
@@ -417,5 +457,195 @@ def update_conv_title(conv_id, user_id, title):
         cur.execute("UPDATE conversations SET title = %s, updated_at = NOW() WHERE id = %s AND user_id = %s", (title, conv_id, user_id))
         conn.commit()
         return cur.rowcount > 0
+    finally:
+        conn.close()
+
+# ==================== Project Workspace CRUD ====================
+def _normalize_project_name(name):
+    name = (name or "").strip()
+    return name[:80] if name else "未命名项目"
+
+def _serialize_json(value, fallback):
+    if value is None:
+        value = fallback
+    return json.dumps(value, ensure_ascii=False)
+
+def _row_to_project(row):
+    return {
+        "id": row[0],
+        "name": row[1],
+        "customer_name": row[2] or "",
+        "description": row[3] or "",
+        "status": row[4] or "active",
+        "created_at": row[5].isoformat() if row[5] else None,
+        "updated_at": row[6].isoformat() if row[6] else None,
+        "artifact_count": row[7] if len(row) > 7 else 0,
+        "conversation_count": row[8] if len(row) > 8 else 0,
+    }
+
+def _row_to_artifact(row):
+    return {
+        "id": row[0],
+        "project_id": row[1],
+        "type": row[2],
+        "title": row[3],
+        "content": row[4],
+        "structured_data": row[5] or {},
+        "citations": row[6] or [],
+        "metadata": row[7] or {},
+        "created_at": row[8].isoformat() if row[8] else None,
+        "updated_at": row[9].isoformat() if row[9] else None,
+    }
+
+def create_project(user_id, name="", customer_name="", description=""):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """INSERT INTO projects (user_id, name, customer_name, description)
+               VALUES (%s, %s, %s, %s)
+               RETURNING id, name, customer_name, description, status, created_at, updated_at, 0, 0""",
+            (user_id, _normalize_project_name(name), (customer_name or "").strip(), (description or "").strip()),
+        )
+        row = cur.fetchone()
+        conn.commit()
+        return _row_to_project(row)
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"创建项目失败: {e}")
+    finally:
+        conn.close()
+
+def list_projects(user_id):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT p.id, p.name, p.customer_name, p.description, p.status, p.created_at, p.updated_at,
+                      COUNT(DISTINCT a.id)::int AS artifact_count,
+                      COUNT(DISTINCT c.id)::int AS conversation_count
+               FROM projects p
+               LEFT JOIN project_artifacts a ON a.project_id = p.id
+               LEFT JOIN conversations c ON c.project_id = p.id
+               WHERE p.user_id = %s
+               GROUP BY p.id
+               ORDER BY p.updated_at DESC""",
+            (user_id,),
+        )
+        return [_row_to_project(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+def get_project(project_id, user_id):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT p.id, p.name, p.customer_name, p.description, p.status, p.created_at, p.updated_at,
+                      COUNT(DISTINCT a.id)::int AS artifact_count,
+                      COUNT(DISTINCT c.id)::int AS conversation_count
+               FROM projects p
+               LEFT JOIN project_artifacts a ON a.project_id = p.id
+               LEFT JOIN conversations c ON c.project_id = p.id
+               WHERE p.id = %s AND p.user_id = %s
+               GROUP BY p.id""",
+            (project_id, user_id),
+        )
+        project_row = cur.fetchone()
+        if not project_row:
+            return None
+        cur.execute(
+            """SELECT id, project_id, artifact_type, title, content, structured_data, citations, metadata, created_at, updated_at
+               FROM project_artifacts
+               WHERE project_id = %s AND user_id = %s
+               ORDER BY created_at DESC, id DESC""",
+            (project_id, user_id),
+        )
+        project = _row_to_project(project_row)
+        project["artifacts"] = [_row_to_artifact(r) for r in cur.fetchall()]
+        cur.execute(
+            """SELECT id, title, created_at, updated_at
+               FROM conversations
+               WHERE project_id = %s AND user_id = %s
+               ORDER BY updated_at DESC""",
+            (project_id, user_id),
+        )
+        project["conversations"] = [
+            {"id": r[0], "title": r[1], "created_at": r[2].isoformat(), "updated_at": r[3].isoformat(), "project_id": project_id}
+            for r in cur.fetchall()
+        ]
+        return project
+    finally:
+        conn.close()
+
+def update_project(user_id, project_id, name=None, customer_name=None, description=None, status=None):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM projects WHERE id = %s AND user_id = %s", (project_id, user_id))
+        if not cur.fetchone():
+            return None
+        updates = []
+        values = []
+        if name is not None:
+            updates.append("name = %s")
+            values.append(_normalize_project_name(name))
+        if customer_name is not None:
+            updates.append("customer_name = %s")
+            values.append((customer_name or "").strip())
+        if description is not None:
+            updates.append("description = %s")
+            values.append((description or "").strip())
+        if status is not None:
+            updates.append("status = %s")
+            values.append((status or "active").strip() or "active")
+        if not updates:
+            return get_project(project_id, user_id)
+        updates.append("updated_at = NOW()")
+        values.extend([project_id, user_id])
+        cur.execute(f"UPDATE projects SET {', '.join(updates)} WHERE id = %s AND user_id = %s", values)
+        conn.commit()
+        return get_project(project_id, user_id)
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"更新项目失败: {e}")
+    finally:
+        conn.close()
+
+def save_project_artifact(user_id, project_id, artifact_type, title, content, structured_data=None, citations=None, metadata=None):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM projects WHERE id = %s AND user_id = %s", (project_id, user_id))
+        if not cur.fetchone():
+            raise HTTPException(404, "项目不存在")
+        clean_title = (title or "").strip()[:120] or "未命名产物"
+        clean_type = (artifact_type or "qa").strip()[:40] or "qa"
+        cur.execute(
+            """INSERT INTO project_artifacts
+               (project_id, user_id, artifact_type, title, content, structured_data, citations, metadata)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+               RETURNING id, project_id, artifact_type, title, content, structured_data, citations, metadata, created_at, updated_at""",
+            (
+                project_id,
+                user_id,
+                clean_type,
+                clean_title,
+                content or "",
+                _serialize_json(structured_data, {}),
+                _serialize_json(citations, []),
+                _serialize_json(metadata, {}),
+            ),
+        )
+        row = cur.fetchone()
+        cur.execute("UPDATE projects SET updated_at = NOW() WHERE id = %s", (project_id,))
+        conn.commit()
+        return _row_to_artifact(row)
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"保存项目产物失败: {e}")
     finally:
         conn.close()

@@ -19,11 +19,18 @@ export const api = {
 
   // Conversations
   listConversations: () => request('/api/conversations'),
-  createConversation: () => request('/api/conversations', { method: 'POST' }),
+  createConversation: (data = {}) => request('/api/conversations', { method: 'POST', body: JSON.stringify(data) }),
   getConversation: (id) => request(`/api/conversations/${id}`),
   updateConversation: (id, data) => request(`/api/conversations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteConversation: (id) => request(`/api/conversations/${id}`, { method: 'DELETE' }),
   saveMessage: (id, data) => request(`/api/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Project Workspace
+  listProjects: () => request('/api/projects'),
+  createProject: (data) => request('/api/projects', { method: 'POST', body: JSON.stringify(data) }),
+  getProject: (id) => request(`/api/projects/${id}`),
+  updateProject: (id, data) => request(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  saveProjectArtifact: (id, data) => request(`/api/projects/${id}/artifacts`, { method: 'POST', body: JSON.stringify(data) }),
 
   // Search & Chat
   search: (query, top_k = 10, section) => {

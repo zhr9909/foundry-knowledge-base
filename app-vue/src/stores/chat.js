@@ -69,7 +69,7 @@ export const useChatStore = defineStore('chat', () => {
     snapshotMode()
   }
 
-  async function sendMessage(query, section = '') {
+  async function sendMessage(query, section = '', projectId = null) {
     if (!query.trim() || isProcessing.value) return
     isProcessing.value = true
     addMessage('user', query)
@@ -88,6 +88,7 @@ export const useChatStore = defineStore('chat', () => {
       params.set('mode', currentMode.value)
       if (section) params.set('section', section)
       if (currentConvId.value) params.set('conv_id', currentConvId.value)
+      if (!currentConvId.value && projectId) params.set('project_id', projectId)
       if (localStorage.getItem('auth_token')) params.set('token', localStorage.getItem('auth_token'))
       const recentHistory = messages.value
         .slice(0, Math.max(0, msgIdx - 1))
@@ -197,6 +198,7 @@ export const useChatStore = defineStore('chat', () => {
       }
       snapshotMode(targetMode)
       await loadConversations()
+      return cv
     } catch { addLog('\u52a0\u8f7d\u5931\u8d25', 'error') }
   }
 

@@ -1,11 +1,25 @@
 <template>
   <div class="layout">
-    <Sidebar :items="chat.conversations" :activeId="chat.currentConvId" @select="loadConversation" @newChat="newChat" />
+    <Sidebar
+      :items="chat.conversations"
+      :activeId="chat.currentConvId"
+      :projects="project.projects"
+      :activeProjectId="project.activeProject?.id"
+      @select="loadConversation"
+      @newChat="newChat"
+      @selectProject="loadProject"
+      @newProject="newProject"
+      @renameProject="renameProject"
+    />
     <div class="main">
       <header class="topbar">
         <div class="topbar-left">
           <button v-if="auth.isLoggedIn" class="icon-btn" @click="newChat" title="&#x65B0;&#x5EFA;&#x5BF9;&#x8BDD;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
           <div class="workspace-title"><span class="status-dot"></span><span>&#x77E5;&#x8BC6;&#x68C0;&#x7D22;&#x5DE5;&#x4F5C;&#x53F0;</span></div>
+          <button v-if="project.activeProject" class="active-project-chip" type="button" @click="project.isPanelOpen = true" title="打开当前项目">
+            <span>项目</span>
+            <strong>{{ project.activeProject.name }}</strong>
+          </button>
           <ModeSwitcher :model-value="chat.currentMode" :disabled="chat.isProcessing" @update:modelValue="chat.setMode" />
         </div>
         <div class="topbar-right">
@@ -19,31 +33,79 @@
           <button v-else class="login-btn" @click="auth.showAuth = true">&#x767B;&#x5F55; / &#x6CE8;&#x518C;</button>
         </div>
       </header>
-      <ChatArea :messages="chat.messages" :chat="chat" @suggest="handleSuggest" />
+      <ChatArea :messages="chat.messages" :chat="chat" @suggest="handleSuggest" @save-artifact="handleSaveArtifact" />
       <ChatInput :disabled="chat.isProcessing" :mode="chat.currentMode" @send="handleSend" />
     </div>
+    <ProjectPanel v-if="project.isPanelOpen && project.activeProject" :project="project.activeProject" @close="project.closeProject" @select-conversation="loadConversation" />
   </div>
 </template>
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useChatStore } from '../stores/chat.js'
+import { useProjectStore } from '../stores/project.js'
 import Sidebar from './Sidebar.vue'
 import ChatArea from './ChatArea.vue'
 import ChatInput from './ChatInput.vue'
 import ModeSwitcher from './ModeSwitcher.vue'
+import ProjectPanel from './ProjectPanel.vue'
 const auth = useAuthStore()
 const chat = useChatStore()
+const project = useProjectStore()
 const menuOpen = ref(false)
 const isDark = ref(localStorage.getItem('theme') === 'dark')
 function toggleTheme() { isDark.value = !isDark.value; document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light'); localStorage.setItem('theme', isDark.value ? 'dark' : 'light') }
-async function handleSend(text) { await chat.sendMessage(text, ''); if (auth.isLoggedIn) chat.loadConversations() }
+async function handleSend(text) {
+  await chat.sendMessage(text, '', project.activeProject?.id || null)
+  if (auth.isLoggedIn) {
+    await chat.loadConversations()
+    if (project.activeProject?.id) {
+      await project.loadProject(project.activeProject.id, false)
+      await project.loadProjects()
+    } else {
+      await project.loadProjects()
+    }
+  }
+}
 function handleSuggest(query) { handleSend(query) }
-async function loadConversation(id) { await chat.loadConversation(id) }
+async function loadConversation(id) {
+  const cv = await chat.loadConversation(id)
+  if (cv?.project_id) await project.loadProject(cv.project_id)
+}
 function newChat() { chat.clearChat() }
-function logout() { auth.logout(); chat.clearChat(); chat.loadConversations(); menuOpen.value = false }
+async function loadProject(id) { await project.loadProject(id) }
+async function newProject(name) {
+  if (!auth.isLoggedIn) { auth.showAuth = true; return }
+  await project.createProject({ name })
+}
+async function renameProject(payload) {
+  if (!auth.isLoggedIn || !payload?.id) return
+  await project.updateProject(payload.id, { name: payload.name })
+}
+async function handleSaveArtifact(msg) {
+  if (!auth.isLoggedIn) { auth.showAuth = true; return }
+  const question = msg.metadata?.question || '项目产物'
+  let target = project.activeProject
+  if (!target) {
+    target = await project.createProject({ name: question.slice(0, 36) })
+  }
+  await project.saveArtifact(target.id, {
+    type: msg.metadata?.mode || chat.currentMode || 'qa',
+    title: question.slice(0, 80),
+    content: msg.content || '',
+    structured_data: msg.metadata?.structured_output || {},
+    citations: msg.metadata?.citations || [],
+    metadata: {
+      question,
+      retrieval: msg.metadata?.retrieval || null,
+      graph: msg.metadata?.graph || null,
+      mode: msg.metadata?.mode || chat.currentMode || 'qa',
+    },
+  })
+}
+function logout() { auth.logout(); chat.clearChat(); chat.loadConversations(); project.clearProjects(); menuOpen.value = false }
 function closeMenu() { if (menuOpen.value) menuOpen.value = false }
-onMounted(() => { document.addEventListener('click', closeMenu); const savedTheme = localStorage.getItem('theme'); if (savedTheme === 'dark') { isDark.value = true; document.documentElement.setAttribute('data-theme', 'dark') } if (auth.isLoggedIn) chat.loadConversations() })
+onMounted(() => { document.addEventListener('click', closeMenu); const savedTheme = localStorage.getItem('theme'); if (savedTheme === 'dark') { isDark.value = true; document.documentElement.setAttribute('data-theme', 'dark') } if (auth.isLoggedIn) { chat.loadConversations(); project.loadProjects() } })
 onUnmounted(() => document.removeEventListener('click', closeMenu))
 </script>
 <style scoped>
@@ -56,6 +118,10 @@ onUnmounted(() => document.removeEventListener('click', closeMenu))
 .topbar-right { flex: 0 0 auto; }
 .workspace-title { display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; font-weight: 650; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.active-project-chip { max-width: 230px; min-height: 34px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-light)); border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-strong); padding: 0 10px; cursor: pointer; }
+.active-project-chip span { font-size: 11px; font-weight: 800; }
+.active-project-chip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 760; }
+.active-project-chip:hover { border-color: var(--accent); }
 .icon-btn { width: 34px; height: 34px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-surface); color: var(--text-secondary); display: grid; place-items: center; cursor: pointer; transition: background .16s ease, color .16s ease, border-color .16s ease; }
 .icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-strong); }
 .icon-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

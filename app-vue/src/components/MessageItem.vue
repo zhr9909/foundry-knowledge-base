@@ -46,6 +46,11 @@
       <StructuredOutputRenderer v-if="structuredOutput" :output="structuredOutput" />
       <div class="answer-text" v-html="renderedAnswer"></div>
       <KnowledgeGraph v-if="msg.role === 'assistant'" :graph="knowledgeGraph" />
+      <div v-if="msg.role === 'assistant' && msg.content" class="artifact-actions">
+        <button type="button" class="artifact-save-btn" @click="$emit('save-artifact', msg)">
+          保存到项目
+        </button>
+      </div>
       <div v-if="msg.role === 'assistant' && msg.metadata.citations && msg.metadata.citations.length" class="citations">
         <div class="citations-title">{{ citationTitle }}</div>
         <a
@@ -68,7 +73,7 @@ import KnowledgeGraph from './KnowledgeGraph.vue'
 import StructuredOutputRenderer from './StructuredOutputRenderer.vue'
 import { buildKnowledgeGraph } from '../utils/knowledgeGraph.js'
 const props = defineProps({ msg: Object, logs: { type: Array, default: () => [] } })
-const emit = defineEmits(['correct-context'])
+const emit = defineEmits(['correct-context', 'save-artifact'])
 const thinkingTitle = 'AI \u601d\u8003\u8fc7\u7a0b'
 const citationTitle = '\u5f15\u7528\u6765\u6e90'
 const correctionOpen = ref(false)
@@ -171,6 +176,9 @@ function rememberCitation(c) {
 .answer-text { color: inherit; font-size: 14px; line-height: 1.78; white-space: pre-wrap; }
 .message.user .answer-text { text-align: left; }
 .message.user :deep(code) { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.18); color: #fff; }
+.artifact-actions { margin-top: 12px; display: flex; justify-content: flex-end; }
+.artifact-save-btn { height: 30px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--accent-strong); padding: 0 10px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .16s ease, border-color .16s ease; }
+.artifact-save-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
 .retrieval-panel { margin-bottom: 12px; padding: 11px; border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-light)); border-radius: var(--radius-md); background: color-mix(in srgb, var(--accent-soft) 36%, var(--bg-surface)); }
 .retrieval-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .retrieval-title { color: var(--text-primary); font-size: 13px; font-weight: 750; line-height: 1.35; }

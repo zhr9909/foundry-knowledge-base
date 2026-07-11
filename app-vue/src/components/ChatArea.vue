@@ -8,7 +8,14 @@
         <div class="suggestions"><button v-for="(s, i) in suggestions" :key="i" class="suggestion-chip" @click="$emit('suggest', s.query)"><span>{{ s.label }}</span></button></div>
       </div>
       <div class="messages-stack">
-        <MessageItem v-for="(msg, i) in messages" :key="i" :msg="msg" :logs="chat.logs" @correct-context="$emit('suggest', $event)" />
+        <MessageItem
+          v-for="(msg, i) in messages"
+          :key="i"
+          :msg="msg"
+          :logs="chat.logs"
+          @correct-context="$emit('suggest', $event)"
+          @save-artifact="$emit('save-artifact', $event)"
+        />
         <ProgressSteps :steps="chat.progressSteps" :visible="chat.showProgress" />
         <div v-if="chat.isProcessing && !messages.length" class="loading"><span>{{ loadingText }}</span></div>
       </div>
@@ -20,7 +27,7 @@ import { computed, ref } from 'vue'
 import MessageItem from './MessageItem.vue'
 import ProgressSteps from './ProgressSteps.vue'
 const props = defineProps({ messages: { type: Array, default: () => [] }, chat: Object })
-defineEmits(['suggest'])
+defineEmits(['suggest', 'save-artifact'])
 const loadingText = '\u6b63\u5728\u5904\u7406...'
 const modeWelcome = {
   qa: {

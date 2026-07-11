@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useChatStore } from './chat.js'
+import { useProjectStore } from './project.js'
 import { api } from '../utils/api.js'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -38,6 +39,9 @@ export const useAuthStore = defineStore('auth', () => {
     if (token.value) {
       try { const r = await api.getMe(); user.value = r.user; useChatStore().loadConversations() }
       catch { clearAuth() }
+      if (user.value) {
+        try { useProjectStore().loadProjects() } catch {}
+      }
     }
   }
 
@@ -46,15 +50,17 @@ export const useAuthStore = defineStore('auth', () => {
     saveToken(r.token)
     user.value = r.user
     try { useChatStore().loadConversations() } catch {}
+    try { useProjectStore().loadProjects() } catch {}
   }
 
   async function register(email, username, password) {
     const r = await api.register({ email, username, password })
     saveToken(r.token)
     user.value = r.user
+    try { useProjectStore().loadProjects() } catch {}
   }
 
-  function logout() { clearAuth() }
+  function logout() { clearAuth(); try { useProjectStore().clearProjects() } catch {} }
 
   return { user, token, showAuth, isLoggedIn, init, login, register, logout }
 })

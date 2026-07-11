@@ -12,7 +12,8 @@ from auth_handler import (
     verify_code, send_verification_code,
     get_google_auth_url, google_login, validate_email,
     create_conversation, list_conversations, get_conv_messages,
-    save_message, delete_conversation, update_conv_title
+    save_message, delete_conversation, update_conv_title,
+    create_project, list_projects, get_project, update_project, save_project_artifact
 )
 from auth_handler import decode_token as _decode_jwt
 from pydantic import BaseModel
@@ -137,7 +138,7 @@ async def chat(req: ChatRequest):
         return {"answer": f"Orchestrator error: {str(e)}", "citations": [], "search_results": [], "thinking": ""}
 
 @app.get("/chat/stream")
-async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None, history: str = None, mode: str = "qa"):
+async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None, history: str = None, mode: str = "qa", project_id: str = None):
     """Direct SSE from agent.py - no proxy, no buffering.
     Supports: token (JWT) for auth, conv_id for conversation tracking.
     """
@@ -163,13 +164,13 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
         if not conversation_id:
             # Auto-create conversation with first query as title
             title = query[:60] if len(query) > 60 else query
-            c = create_conversation(auth_user["id"], title)
+            c = create_conversation(auth_user["id"], title, project_id)
             conversation_id = c["id"]
             conv_id = str(conversation_id)
         
         # Save user message
         try:
-            save_message(conversation_id, "user", query, {"mode": mode or "qa"})
+            save_message(conversation_id, "user", query, {"mode": mode or "qa", "project_id": project_id})
             user_saved = True
         except Exception as e:
             _log.warning(f"Failed to save user message: {e}")
@@ -246,7 +247,7 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
             # Save assistant answer
             if auth_user and user_saved and full_answer and conversation_id:
                 try:
-                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations, "graph": full_graph, "retrieval": full_retrieval, "mode": full_mode, "structured_output": full_structured_output})
+                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations, "graph": full_graph, "retrieval": full_retrieval, "mode": full_mode, "structured_output": full_structured_output, "project_id": project_id})
                     answer_saved = True
                 except Exception as e:
                     _log.warning(f"Failed to save assistant message: {e}")
@@ -341,9 +342,10 @@ async def api_list_conversations(user: dict = Depends(require_user)):
     return {"conversations": list_conversations(user["id"])}
 
 @app.post("/api/conversations")
-async def api_create_conversation(user: dict = Depends(require_user)):
+async def api_create_conversation(req: Optional[dict] = None, user: dict = Depends(require_user)):
     """Create a new conversation."""
-    c = create_conversation(user["id"], "")
+    req = req or {}
+    c = create_conversation(user["id"], req.get("title", ""), req.get("project_id"))
     return {"conversation": c}
 
 @app.get("/api/conversations/{conv_id}")
@@ -379,6 +381,61 @@ async def api_save_message(conv_id: int, req: dict, user: dict = Depends(require
     meta = req.get("metadata", {})
     msg = save_message(conv_id, role, content, meta)
     return {"message": msg}
+
+# ==================== Project Workspace API ====================
+@app.get("/api/projects")
+async def api_list_projects(user: dict = Depends(require_user)):
+    """List project workspaces for the current user."""
+    return {"projects": list_projects(user["id"])}
+
+@app.post("/api/projects")
+async def api_create_project(req: dict, user: dict = Depends(require_user)):
+    """Create a project workspace."""
+    project = create_project(
+        user["id"],
+        req.get("name", ""),
+        req.get("customer_name", ""),
+        req.get("description", ""),
+    )
+    return {"project": project}
+
+@app.get("/api/projects/{project_id}")
+async def api_get_project(project_id: int, user: dict = Depends(require_user)):
+    """Get a project with saved artifacts."""
+    project = get_project(project_id, user["id"])
+    if not project:
+        raise HTTPException(404, "项目不存在")
+    return {"project": project}
+
+@app.put("/api/projects/{project_id}")
+async def api_update_project(project_id: int, req: dict, user: dict = Depends(require_user)):
+    """Update project metadata."""
+    project = update_project(
+        user["id"],
+        project_id,
+        req.get("name") if "name" in req else None,
+        req.get("customer_name") if "customer_name" in req else None,
+        req.get("description") if "description" in req else None,
+        req.get("status") if "status" in req else None,
+    )
+    if not project:
+        raise HTTPException(404, "项目不存在")
+    return {"project": project}
+
+@app.post("/api/projects/{project_id}/artifacts")
+async def api_save_project_artifact(project_id: int, req: dict, user: dict = Depends(require_user)):
+    """Save an answer or workflow output into a project."""
+    artifact = save_project_artifact(
+        user["id"],
+        project_id,
+        req.get("type", "qa"),
+        req.get("title", ""),
+        req.get("content", ""),
+        req.get("structured_data", {}),
+        req.get("citations", []),
+        req.get("metadata", {}),
+    )
+    return {"artifact": artifact}
 
 if __name__ == "__main__":
     print(f"[Orchestrator] Starting on {HOST}:{PORT}")
