@@ -113,6 +113,7 @@ type TaskMode =
 - `retrieval.search_queries` 必须统一语言；当前知识库文档主要为英文，所以实际检索语句统一规范化为英文，禁止中英文混杂。
 - 网关从数据库恢复历史时按 `metadata.mode` 过滤；旧消息缺少 `mode` 时视为 `qa`。
 - 检索诊断中的 `retrieval.mode`、`retrieval.context_scope` 和 `retrieval.task_intent` 用于解释本轮工作流。
+- 检索结果现在携带 `source_type` 与 `evidence_level`；现有 ASM 数据统一返回 `standard_manual / standard`，后续企业历史项目、当前项目沉淀和结构化资产必须复用该字段区分来源。
 
 ## SSE 事件契约
 
@@ -558,6 +559,26 @@ GET /api/projects/{project_id}
         "created_at": "",
         "updated_at": ""
       }
+    ],
+    "evidence_cards": [
+      {
+        "id": 8,
+        "project_id": 1,
+        "document_id": 2,
+        "artifact_id": 10,
+        "title": "方案依据 pg.399",
+        "evidence_type": "性能",
+        "page": 399,
+        "section": "6061-T6 mechanical properties",
+        "quote": "引用原文片段",
+        "summary": "简短摘要",
+        "tags": ["材料", "性能", "标准依据"],
+        "reliability": "medium",
+        "note": "工程师备注",
+        "status": "confirmed",
+        "usable_in_report": true,
+        "metadata": {}
+      }
     ]
   }
 }
@@ -625,6 +646,82 @@ POST /api/projects/{project_id}/artifacts
 }
 ```
 
+### 项目证据卡
+
+证据卡是从自动引用中人工确认、补充备注后形成的项目级依据资产。
+
+#### 列出证据卡
+
+```http
+GET /api/projects/{project_id}/evidence
+```
+
+返回：
+
+```json
+{
+  "evidence_cards": []
+}
+```
+
+#### 创建证据卡
+
+```http
+POST /api/projects/{project_id}/evidence
+```
+
+请求：
+
+```json
+{
+  "title": "方案依据 pg.399",
+  "evidence_type": "性能",
+  "page": 399,
+  "section": "6061-T6 mechanical properties",
+  "quote": "引用原文片段",
+  "summary": "简短摘要",
+  "tags": ["材料", "性能", "标准依据"],
+  "reliability": "medium",
+  "note": "",
+  "status": "confirmed",
+  "usable_in_report": false,
+  "source_id": 2,
+  "artifact_id": 10,
+  "metadata": {
+    "source_key": "2:399:...",
+    "source_type": "standard_manual",
+    "evidence_level": "standard"
+  }
+}
+```
+
+返回：
+
+```json
+{
+  "evidence_card": {}
+}
+```
+
+#### 更新证据卡
+
+```http
+PUT /api/projects/{project_id}/evidence/{evidence_id}
+```
+
+用途：
+
+- 修改备注。
+- 调整可靠性：`high`、`medium`、`low`。
+- 标记是否可用于报告：`usable_in_report`。
+- 更新标签、标题或摘要。
+
+#### 删除证据卡
+
+```http
+DELETE /api/projects/{project_id}/evidence/{evidence_id}
+```
+
 ### 生成项目简报
 
 ```http
@@ -641,6 +738,12 @@ POST /api/projects/{project_id}/brief
 
 然后调用 LLM 生成 Markdown 项目简报，并保存为 `project_artifacts` 中的 `project_brief` 类型产物。
 
+生成上下文优先级：
+
+1. 优先读取当前项目中 `usable_in_report = true` 的 `evidence_cards`。
+2. 简报中的“引用依据”优先使用这些已确认证据。
+3. 如果没有可用于报告的证据卡，再退回使用项目产物中的普通 `citations`。
+
 返回：
 
 ```json
@@ -654,11 +757,15 @@ POST /api/projects/{project_id}/brief
     "structured_data": {
       "type": "project_brief",
       "format": "markdown",
-      "generated_by": "llm"
+      "generated_by": "llm",
+      "report_evidence_count": 3
     },
     "citations": [],
     "metadata": {
-      "source": "project_brief_generator"
+      "source": "project_brief_generator",
+      "citation_source": "evidence_cards",
+      "report_evidence_count": 3,
+      "report_evidence_ids": [1, 2, 3]
     }
   },
   "project": {}
@@ -666,6 +773,28 @@ POST /api/projects/{project_id}/brief
 ```
 
 如果 LLM 调用失败，后端会使用项目中已有结构化字段生成基础版简报，并将 `generated_by` 标记为 `fallback`。
+
+### 导出项目产物 PDF
+
+```http
+GET /api/projects/{project_id}/artifacts/{artifact_id}/pdf
+```
+
+用途：
+
+- 将已保存的项目产物导出为 PDF。
+- 后端会把产物 Markdown 正文渲染为 HTML，再通过 Chromium 生成 PDF。
+- 标题、表格、列表、加粗、代码块等 Markdown 结构会按报告版式展示，而不是作为原始 Markdown 文本输出。
+
+返回：
+
+- `Content-Type: application/pdf`
+- `Content-Disposition: attachment`
+
+权限：
+
+- 需要登录。
+- 只能导出当前用户名下、属于该项目的产物。
 
 ## 前端路由与页面策略
 
@@ -739,3 +868,84 @@ ChatLayout
 - 旧消息没有 `mode` 时视为 `qa`。
 - 旧消息没有 `structured_output` 时只显示正文。
 - 历史会话加载不应报错。
+## 工程文档导入 API
+
+第一版使用 JSON + base64 上传，避免额外引入 `python-multipart` 依赖。后续切换 MinIO 时，接口可以保持业务字段不变，只把后端 `storage_backend` 从 `local` 换成 `minio`。
+
+### 列出项目工程文档
+
+```http
+GET /api/projects/{project_id}/engineering-documents
+```
+
+返回：
+
+```json
+{
+  "engineering_documents": [
+    {
+      "id": 1,
+      "project_id": 2,
+      "artifact_id": 10,
+      "title": "365/665树脂工厂回样和留样对比实验",
+      "original_filename": "365 665树脂工厂回样和留样.docx",
+      "document_kind": "engineering_case",
+      "source_type": "current_project",
+      "storage_backend": "local",
+      "bucket": "foundry-kb",
+      "object_key": "projects/2/engineering_cases/original/2026/07/12/xxxx-file.docx",
+      "content_hash": "sha256...",
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "file_size": 102400,
+      "parse_status": "parsed",
+      "structured_data": {},
+      "metadata": {}
+    }
+  ]
+}
+```
+
+### 导入项目工程文档
+
+```http
+POST /api/projects/{project_id}/engineering-documents
+Content-Type: application/json
+```
+
+请求：
+
+```json
+{
+  "filename": "现场实验记录.docx",
+  "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "document_kind": "engineering_case",
+  "source_type": "current_project",
+  "content_base64": "base64..."
+}
+```
+
+支持格式：
+- `.docx`：基于 Office Open XML 抽取标题、段落、列表、表格和图片引用。
+- `.txt/.md/.markdown`：按文本解码。
+- `.png/.jpg/.jpeg`：当前只保存原文件，`parse_status = stored`，后续接 OCR。
+
+后端动作：
+1. 写入本地对象存储 `storage/objects/...`。
+2. 计算 `content_hash`。
+3. 对 `.docx` 做确定性结构化解析，生成 `raw_blocks/tables/images/outline/statistics`。
+4. 自动生成一个 `project_artifacts`，类型为 `engineering_case`。
+5. 返回最新项目详情，方便前端刷新项目面板。
+
+返回：
+
+```json
+{
+  "document": {},
+  "artifact": {
+    "type": "engineering_case",
+    "title": "现场实验记录",
+    "content": "# 现场实验记录\n..."
+  },
+  "project": {}
+}
+```

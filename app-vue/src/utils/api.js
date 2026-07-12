@@ -9,6 +9,15 @@ async function request(url, options = {}) {
   return res.json()
 }
 
+async function requestBlob(url, options = {}) {
+  const headers = { ...options.headers }
+  const token = localStorage.getItem('auth_token')
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(BASE + url, { ...options, headers })
+  if (!res.ok) { const err = await res.text(); throw new Error(err || `HTTP ${res.status}`) }
+  return res.blob()
+}
+
 export const api = {
   // Auth
   register: (data) => request('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
@@ -32,6 +41,13 @@ export const api = {
   updateProject: (id, data) => request(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   saveProjectArtifact: (id, data) => request(`/api/projects/${id}/artifacts`, { method: 'POST', body: JSON.stringify(data) }),
   generateProjectBrief: (id) => request(`/api/projects/${id}/brief`, { method: 'POST' }),
+  downloadProjectArtifactPdf: (id, artifactId) => requestBlob(`/api/projects/${id}/artifacts/${artifactId}/pdf`),
+  listProjectEvidence: (id) => request(`/api/projects/${id}/evidence`),
+  createProjectEvidence: (id, data) => request(`/api/projects/${id}/evidence`, { method: 'POST', body: JSON.stringify(data) }),
+  updateProjectEvidence: (id, evidenceId, data) => request(`/api/projects/${id}/evidence/${evidenceId}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteProjectEvidence: (id, evidenceId) => request(`/api/projects/${id}/evidence/${evidenceId}`, { method: 'DELETE' }),
+  listEngineeringDocuments: (id) => request(`/api/projects/${id}/engineering-documents`),
+  uploadEngineeringDocument: (id, data) => request(`/api/projects/${id}/engineering-documents`, { method: 'POST', body: JSON.stringify(data) }),
 
   // Search & Chat
   search: (query, top_k = 10, section) => {

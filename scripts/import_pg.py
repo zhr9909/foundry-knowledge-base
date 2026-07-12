@@ -12,12 +12,25 @@ CHUNKS_DIR = BASE / "processed" / "chunks"
 MODEL_PATH = str(BASE / "processed" / "models" / "bge-base-zh-v1.5")
 DB_CONF = {"host":"127.0.0.1","port":15432,"dbname":"foundry_kb","user":"findmyjob","password":"findmyjob_dev_password"}
 
+def ensure_standard_source(cur):
+    cur.execute("""
+        INSERT INTO knowledge_sources (name, source_type, visibility, description, metadata)
+        VALUES ('ASM Handbook Vol.2', 'standard_manual', 'public', '当前系统默认标准手册知识源', '{"source": "asm_handbook_vol_2"}')
+        ON CONFLICT DO NOTHING
+    """)
+    cur.execute("SELECT id FROM knowledge_sources WHERE name=%s AND source_type=%s ORDER BY id LIMIT 1", ("ASM Handbook Vol.2", "standard_manual"))
+    return cur.fetchone()[0]
+
 def register_source(cur, name):
     cur.execute("SELECT id FROM document_sources WHERE title=%s", (name,))
     r = cur.fetchone()
     if r: return r[0]
-    cur.execute("INSERT INTO document_sources (title, file_name) VALUES (%s,%s) RETURNING id",
-                (name, name.replace(" ","_")[:80]))
+    knowledge_source_id = ensure_standard_source(cur)
+    cur.execute("""INSERT INTO document_sources
+        (knowledge_source_id, source_type, title, file_name, visibility, confidentiality)
+        VALUES (%s, 'standard_manual', %s, %s, 'public', 'public')
+        RETURNING id""",
+        (knowledge_source_id, name, name.replace(" ","_")[:80]))
     return cur.fetchone()[0]
 
 def main():

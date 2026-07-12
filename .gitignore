@@ -9,6 +9,7 @@ processed/markdown/
 processed/models/
 eval_results/
 ragflow-docker/
+storage/
 
 # Temp scripts
 scripts/00_search.bat

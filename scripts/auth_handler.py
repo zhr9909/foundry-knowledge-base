@@ -287,6 +287,115 @@ def init_auth_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_project_user ON projects(user_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_artifact_project ON project_artifacts(project_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_artifact_user ON project_artifacts(user_id)")
+        cur.execute("""CREATE TABLE IF NOT EXISTS knowledge_sources (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            source_type TEXT NOT NULL DEFAULT 'standard_manual',
+            owner_user_id INT,
+            organization_id INT,
+            visibility TEXT NOT NULL DEFAULT 'public',
+            description TEXT DEFAULT '',
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS evidence_cards (
+            id SERIAL PRIMARY KEY,
+            user_id INT REFERENCES users(id) ON DELETE CASCADE,
+            project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+            knowledge_source_id INT REFERENCES knowledge_sources(id),
+            document_id INT,
+            artifact_id INT REFERENCES project_artifacts(id) ON DELETE SET NULL,
+            title TEXT NOT NULL DEFAULT '未命名证据',
+            evidence_type TEXT NOT NULL DEFAULT 'general',
+            page INT,
+            section TEXT DEFAULT '',
+            quote TEXT NOT NULL DEFAULT '',
+            summary TEXT DEFAULT '',
+            tags JSONB DEFAULT '[]',
+            reliability TEXT DEFAULT 'medium',
+            note TEXT DEFAULT '',
+            status TEXT DEFAULT 'draft',
+            usable_in_report BOOLEAN DEFAULT FALSE,
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS engineering_documents (
+            id SERIAL PRIMARY KEY,
+            user_id INT REFERENCES users(id) ON DELETE CASCADE,
+            project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+            artifact_id INT REFERENCES project_artifacts(id) ON DELETE SET NULL,
+            title TEXT NOT NULL DEFAULT '未命名工程文档',
+            original_filename TEXT NOT NULL DEFAULT '',
+            document_kind TEXT NOT NULL DEFAULT 'engineering_case',
+            source_type TEXT NOT NULL DEFAULT 'current_project',
+            storage_backend TEXT NOT NULL DEFAULT 'local',
+            bucket TEXT NOT NULL DEFAULT '',
+            object_key TEXT NOT NULL DEFAULT '',
+            content_hash TEXT NOT NULL DEFAULT '',
+            mime_type TEXT DEFAULT '',
+            file_size BIGINT DEFAULT 0,
+            parse_status TEXT DEFAULT 'pending',
+            extracted_text TEXT DEFAULT '',
+            structured_data JSONB DEFAULT '{}',
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW())""")
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_knowledge_sources_name_type_unique ON knowledge_sources(name, source_type)")
+        cur.execute("""INSERT INTO knowledge_sources (name, source_type, visibility, description, metadata)
+            VALUES ('ASM Handbook Vol.2', 'standard_manual', 'public', '当前系统默认标准手册知识源', '{"source": "asm_handbook_vol_2"}')
+            ON CONFLICT DO NOTHING""")
+        cur.execute("ALTER TABLE document_sources ADD COLUMN IF NOT EXISTS knowledge_source_id INT")
+        cur.execute("ALTER TABLE document_sources ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'standard_manual'")
+        cur.execute("ALTER TABLE document_sources ADD COLUMN IF NOT EXISTS visibility TEXT NOT NULL DEFAULT 'public'")
+        cur.execute("ALTER TABLE document_sources ADD COLUMN IF NOT EXISTS organization_id INT")
+        cur.execute("ALTER TABLE document_sources ADD COLUMN IF NOT EXISTS owner_user_id INT")
+        cur.execute("ALTER TABLE document_sources ADD COLUMN IF NOT EXISTS domain_tags JSONB DEFAULT '[]'")
+        cur.execute("ALTER TABLE document_sources ADD COLUMN IF NOT EXISTS confidentiality TEXT DEFAULT 'public'")
+        cur.execute("ALTER TABLE document_sources ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'standard_manual'")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS document_id INT")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS visibility TEXT NOT NULL DEFAULT 'public'")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS organization_id INT")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS owner_user_id INT")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS project_id INT")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS domain_tags JSONB DEFAULT '[]'")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS confidentiality TEXT DEFAULT 'public'")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS evidence_level TEXT DEFAULT 'standard'")
+        cur.execute("ALTER TABLE chunks ADD COLUMN IF NOT EXISTS fts tsvector GENERATED ALWAYS AS (to_tsvector('english', content_text)) STORED")
+        cur.execute("ALTER TABLE evidence_cards ADD COLUMN IF NOT EXISTS note TEXT DEFAULT ''")
+        cur.execute("ALTER TABLE evidence_cards ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'draft'")
+        cur.execute("ALTER TABLE evidence_cards ADD COLUMN IF NOT EXISTS usable_in_report BOOLEAN DEFAULT FALSE")
+        cur.execute("""UPDATE document_sources
+            SET source_type = COALESCE(NULLIF(source_type, ''), 'standard_manual'),
+                visibility = COALESCE(NULLIF(visibility, ''), 'public'),
+                confidentiality = COALESCE(NULLIF(confidentiality, ''), 'public')""")
+        cur.execute("""UPDATE document_sources
+            SET knowledge_source_id = (
+                SELECT id FROM knowledge_sources
+                WHERE name = 'ASM Handbook Vol.2' AND source_type = 'standard_manual'
+                ORDER BY id LIMIT 1
+            )
+            WHERE knowledge_source_id IS NULL AND source_type = 'standard_manual'""")
+        cur.execute("""UPDATE chunks
+            SET source_type = COALESCE(NULLIF(source_type, ''), 'standard_manual'),
+                visibility = COALESCE(NULLIF(visibility, ''), 'public'),
+                confidentiality = COALESCE(NULLIF(confidentiality, ''), 'public'),
+                evidence_level = COALESCE(NULLIF(evidence_level, ''), 'standard')""")
+        cur.execute("""UPDATE chunks c
+            SET document_id = c.source_id
+            WHERE c.document_id IS NULL""")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_sources_type ON knowledge_sources(source_type)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_document_sources_type ON document_sources(source_type)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_chunks_source_type ON chunks(source_type)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_chunks_visibility ON chunks(visibility)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_chunks_project ON chunks(project_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_chunks_fts ON chunks USING GIN (fts)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_evidence_project ON evidence_cards(project_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_evidence_type ON evidence_cards(evidence_type)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_evidence_status ON evidence_cards(status)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_engineering_documents_project ON engineering_documents(project_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_engineering_documents_hash ON engineering_documents(content_hash)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_engineering_documents_status ON engineering_documents(parse_status)")
         conn.commit()
         print("[Auth] 数据库表已就绪")
     except Exception as e:
@@ -497,6 +606,52 @@ def _row_to_artifact(row):
         "updated_at": row[9].isoformat() if row[9] else None,
     }
 
+def _row_to_evidence_card(row):
+    return {
+        "id": row[0],
+        "project_id": row[1],
+        "knowledge_source_id": row[2],
+        "document_id": row[3],
+        "artifact_id": row[4],
+        "title": row[5],
+        "evidence_type": row[6],
+        "page": row[7],
+        "section": row[8] or "",
+        "quote": row[9] or "",
+        "summary": row[10] or "",
+        "tags": row[11] or [],
+        "reliability": row[12] or "medium",
+        "note": row[13] or "",
+        "status": row[14] or "draft",
+        "usable_in_report": bool(row[15]),
+        "metadata": row[16] or {},
+        "created_at": row[17].isoformat() if row[17] else None,
+        "updated_at": row[18].isoformat() if row[18] else None,
+    }
+
+def _row_to_engineering_document(row):
+    return {
+        "id": row[0],
+        "project_id": row[1],
+        "artifact_id": row[2],
+        "title": row[3],
+        "original_filename": row[4],
+        "document_kind": row[5],
+        "source_type": row[6],
+        "storage_backend": row[7],
+        "bucket": row[8],
+        "object_key": row[9],
+        "content_hash": row[10],
+        "mime_type": row[11] or "",
+        "file_size": row[12] or 0,
+        "parse_status": row[13] or "pending",
+        "extracted_text": row[14] or "",
+        "structured_data": row[15] or {},
+        "metadata": row[16] or {},
+        "created_at": row[17].isoformat() if row[17] else None,
+        "updated_at": row[18].isoformat() if row[18] else None,
+    }
+
 def create_project(user_id, name="", customer_name="", description=""):
     conn = _get_conn2()
     try:
@@ -574,6 +729,8 @@ def get_project(project_id, user_id):
             {"id": r[0], "title": r[1], "created_at": r[2].isoformat(), "updated_at": r[3].isoformat(), "project_id": project_id}
             for r in cur.fetchall()
         ]
+        project["evidence_cards"] = list_evidence_cards(user_id, project_id, cur=cur)
+        project["engineering_documents"] = list_engineering_documents(user_id, project_id, cur=cur)
         return project
     finally:
         conn.close()
@@ -647,5 +804,302 @@ def save_project_artifact(user_id, project_id, artifact_type, title, content, st
     except Exception as e:
         conn.rollback()
         raise HTTPException(500, f"保存项目产物失败: {e}")
+    finally:
+        conn.close()
+
+def list_evidence_cards(user_id, project_id, cur=None):
+    own_conn = None
+    try:
+        if cur is None:
+            own_conn = _get_conn2()
+            cur = own_conn.cursor()
+        cur.execute(
+            """SELECT id, project_id, knowledge_source_id, document_id, artifact_id, title, evidence_type,
+                      page, section, quote, summary, tags, reliability, note, status, usable_in_report,
+                      metadata, created_at, updated_at
+               FROM evidence_cards
+               WHERE project_id = %s AND user_id = %s
+               ORDER BY usable_in_report DESC, updated_at DESC, id DESC""",
+            (project_id, user_id),
+        )
+        return [_row_to_evidence_card(row) for row in cur.fetchall()]
+    finally:
+        if own_conn is not None:
+            own_conn.close()
+
+def _clean_evidence_payload(data):
+    data = data or {}
+    tags = data.get("tags") or []
+    if not isinstance(tags, list):
+        tags = [str(tags)]
+    metadata = data.get("metadata") or {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    reliability = (data.get("reliability") or "medium").strip()
+    if reliability not in ("high", "medium", "low"):
+        reliability = "medium"
+    status = (data.get("status") or "draft").strip()
+    if status not in ("draft", "confirmed", "archived"):
+        status = "draft"
+    page = data.get("page")
+    try:
+        page = int(page) if page not in (None, "") else None
+    except (TypeError, ValueError):
+        page = None
+    document_id = data.get("document_id") or data.get("source_id") or data.get("sourceId")
+    try:
+        document_id = int(document_id) if document_id not in (None, "") else None
+    except (TypeError, ValueError):
+        document_id = None
+    artifact_id = data.get("artifact_id") or data.get("artifactId")
+    try:
+        artifact_id = int(artifact_id) if artifact_id not in (None, "") else None
+    except (TypeError, ValueError):
+        artifact_id = None
+    title = (data.get("title") or "").strip()
+    quote = (data.get("quote") or data.get("text") or "").strip()
+    if not title:
+        title = (quote[:48] + "...") if len(quote) > 48 else (quote or "未命名证据")
+    return {
+        "title": title[:120],
+        "evidence_type": (data.get("evidence_type") or data.get("type") or "general").strip()[:40] or "general",
+        "page": page,
+        "section": (data.get("section") or "").strip()[:160],
+        "quote": quote,
+        "summary": (data.get("summary") or "").strip(),
+        "tags": tags,
+        "reliability": reliability,
+        "note": (data.get("note") or "").strip(),
+        "status": status,
+        "usable_in_report": bool(data.get("usable_in_report")),
+        "metadata": metadata,
+        "document_id": document_id,
+        "artifact_id": artifact_id,
+    }
+
+def create_evidence_card(user_id, project_id, data):
+    payload = _clean_evidence_payload(data)
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM projects WHERE id = %s AND user_id = %s", (project_id, user_id))
+        if not cur.fetchone():
+            raise HTTPException(404, "项目不存在")
+        if payload["artifact_id"]:
+            cur.execute(
+                "SELECT id FROM project_artifacts WHERE id = %s AND project_id = %s AND user_id = %s",
+                (payload["artifact_id"], project_id, user_id),
+            )
+            if not cur.fetchone():
+                payload["artifact_id"] = None
+        cur.execute(
+            """INSERT INTO evidence_cards
+               (user_id, project_id, document_id, artifact_id, title, evidence_type, page, section,
+                quote, summary, tags, reliability, note, status, usable_in_report, metadata)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+               RETURNING id, project_id, knowledge_source_id, document_id, artifact_id, title, evidence_type,
+                         page, section, quote, summary, tags, reliability, note, status, usable_in_report,
+                         metadata, created_at, updated_at""",
+            (
+                user_id,
+                project_id,
+                payload["document_id"],
+                payload["artifact_id"],
+                payload["title"],
+                payload["evidence_type"],
+                payload["page"],
+                payload["section"],
+                payload["quote"],
+                payload["summary"],
+                _serialize_json(payload["tags"], []),
+                payload["reliability"],
+                payload["note"],
+                payload["status"],
+                payload["usable_in_report"],
+                _serialize_json(payload["metadata"], {}),
+            ),
+        )
+        row = cur.fetchone()
+        cur.execute("UPDATE projects SET updated_at = NOW() WHERE id = %s", (project_id,))
+        conn.commit()
+        return _row_to_evidence_card(row)
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"保存证据卡失败: {e}")
+    finally:
+        conn.close()
+
+def update_evidence_card(user_id, project_id, evidence_id, data):
+    payload = _clean_evidence_payload(data)
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id FROM evidence_cards WHERE id = %s AND project_id = %s AND user_id = %s",
+            (evidence_id, project_id, user_id),
+        )
+        if not cur.fetchone():
+            return None
+        cur.execute(
+            """UPDATE evidence_cards
+               SET title = %s, evidence_type = %s, page = %s, section = %s, quote = %s, summary = %s,
+                   tags = %s, reliability = %s, note = %s, status = %s, usable_in_report = %s,
+                   metadata = %s, document_id = %s, artifact_id = %s, updated_at = NOW()
+               WHERE id = %s AND project_id = %s AND user_id = %s
+               RETURNING id, project_id, knowledge_source_id, document_id, artifact_id, title, evidence_type,
+                         page, section, quote, summary, tags, reliability, note, status, usable_in_report,
+                         metadata, created_at, updated_at""",
+            (
+                payload["title"],
+                payload["evidence_type"],
+                payload["page"],
+                payload["section"],
+                payload["quote"],
+                payload["summary"],
+                _serialize_json(payload["tags"], []),
+                payload["reliability"],
+                payload["note"],
+                payload["status"],
+                payload["usable_in_report"],
+                _serialize_json(payload["metadata"], {}),
+                payload["document_id"],
+                payload["artifact_id"],
+                evidence_id,
+                project_id,
+                user_id,
+            ),
+        )
+        row = cur.fetchone()
+        cur.execute("UPDATE projects SET updated_at = NOW() WHERE id = %s", (project_id,))
+        conn.commit()
+        return _row_to_evidence_card(row)
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"更新证据卡失败: {e}")
+    finally:
+        conn.close()
+
+def delete_evidence_card(user_id, project_id, evidence_id):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM evidence_cards WHERE id = %s AND project_id = %s AND user_id = %s",
+            (evidence_id, project_id, user_id),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+def list_engineering_documents(user_id, project_id, cur=None):
+    own_conn = None
+    try:
+        if cur is None:
+            own_conn = _get_conn2()
+            cur = own_conn.cursor()
+        cur.execute(
+            """SELECT id, project_id, artifact_id, title, original_filename, document_kind, source_type,
+                      storage_backend, bucket, object_key, content_hash, mime_type, file_size, parse_status,
+                      extracted_text, structured_data, metadata, created_at, updated_at
+               FROM engineering_documents
+               WHERE project_id = %s AND user_id = %s
+               ORDER BY created_at DESC, id DESC""",
+            (project_id, user_id),
+        )
+        return [_row_to_engineering_document(row) for row in cur.fetchall()]
+    finally:
+        if own_conn is not None:
+            own_conn.close()
+
+def create_engineering_document(
+    user_id,
+    project_id,
+    title,
+    original_filename,
+    document_kind,
+    source_type,
+    storage_info,
+    content_hash,
+    mime_type,
+    file_size,
+    parse_status,
+    extracted_text,
+    structured_data=None,
+    metadata=None,
+    artifact_id=None,
+):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM projects WHERE id = %s AND user_id = %s", (project_id, user_id))
+        if not cur.fetchone():
+            raise HTTPException(404, "项目不存在")
+        clean_kind = (document_kind or "engineering_case").strip()[:50] or "engineering_case"
+        clean_source_type = (source_type or "current_project").strip()[:50] or "current_project"
+        cur.execute(
+            """INSERT INTO engineering_documents
+               (user_id, project_id, artifact_id, title, original_filename, document_kind, source_type,
+                storage_backend, bucket, object_key, content_hash, mime_type, file_size, parse_status,
+                extracted_text, structured_data, metadata)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+               RETURNING id, project_id, artifact_id, title, original_filename, document_kind, source_type,
+                         storage_backend, bucket, object_key, content_hash, mime_type, file_size, parse_status,
+                         extracted_text, structured_data, metadata, created_at, updated_at""",
+            (
+                user_id,
+                project_id,
+                artifact_id,
+                (title or original_filename or "未命名工程文档").strip()[:160],
+                (original_filename or "").strip()[:240],
+                clean_kind,
+                clean_source_type,
+                storage_info.get("storage_backend") or "local",
+                storage_info.get("bucket") or "",
+                storage_info.get("object_key") or "",
+                content_hash,
+                mime_type or "",
+                int(file_size or 0),
+                parse_status or "pending",
+                extracted_text or "",
+                _serialize_json(structured_data, {}),
+                _serialize_json(metadata, {}),
+            ),
+        )
+        row = cur.fetchone()
+        cur.execute("UPDATE projects SET updated_at = NOW() WHERE id = %s", (project_id,))
+        conn.commit()
+        return _row_to_engineering_document(row)
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"保存工程文档失败: {e}")
+    finally:
+        conn.close()
+
+def attach_artifact_to_engineering_document(user_id, project_id, document_id, artifact_id):
+    conn = _get_conn2()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """UPDATE engineering_documents
+               SET artifact_id = %s, updated_at = NOW()
+               WHERE id = %s AND project_id = %s AND user_id = %s
+               RETURNING id, project_id, artifact_id, title, original_filename, document_kind, source_type,
+                         storage_backend, bucket, object_key, content_hash, mime_type, file_size, parse_status,
+                         extracted_text, structured_data, metadata, created_at, updated_at""",
+            (artifact_id, document_id, project_id, user_id),
+        )
+        row = cur.fetchone()
+        conn.commit()
+        return _row_to_engineering_document(row) if row else None
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"关联工程文档产物失败: {e}")
     finally:
         conn.close()

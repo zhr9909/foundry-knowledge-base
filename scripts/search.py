@@ -130,6 +130,8 @@ def _tsvector_search(query, top_k=40, cur=None):
         SELECT c.id, c.chunk_id, c.page, c.chunk_type,
             c.content_text, c.table_shape,
             ds.title as source_title, c.metadata,
+            COALESCE(c.source_type, ds.source_type, 'standard_manual') AS source_type,
+            COALESCE(c.evidence_level, 'standard') AS evidence_level,
             ts_rank(c.fts, plainto_tsquery('english', %(q)s)) AS score
         FROM chunks c
         JOIN document_sources ds ON ds.id = c.source_id
@@ -153,6 +155,8 @@ def _tsvector_search(query, top_k=40, cur=None):
             "text_full": row["content_text"] or "",
             "table_shape": row["table_shape"],
             "source": row["source_title"],
+            "source_type": row["source_type"],
+            "evidence_level": row["evidence_level"],
             "section": sp,
             "bm25_score": round(float(row["score"]), 4),
         })
@@ -191,6 +195,8 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
         SELECT c.id, c.chunk_id, c.page, c.chunk_type,
             c.content_text, c.table_shape,
             ds.title as source_title, c.metadata,
+            COALESCE(c.source_type, ds.source_type, 'standard_manual') AS source_type,
+            COALESCE(c.evidence_level, 'standard') AS evidence_level,
             1 - (c.embedding <=> %(query_vec)s::vector) AS score
         FROM chunks c
         JOIN document_sources ds ON ds.id = c.source_id
@@ -215,6 +221,8 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
                 "text_full": row["content_text"] or "",
                 "table_shape": row["table_shape"],
                 "source": row["source_title"],
+                "source_type": row["source_type"],
+                "evidence_level": row["evidence_level"],
                 "section": sp,
                 "score": round(float(row["score"]), 4),
             })
@@ -227,6 +235,8 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
         SELECT c.id, c.chunk_id, c.page, c.chunk_type,
             c.content_text, c.table_shape,
             ds.title as source_title, c.metadata,
+            COALESCE(c.source_type, ds.source_type, 'standard_manual') AS source_type,
+            COALESCE(c.evidence_level, 'standard') AS evidence_level,
             1 - (c.embedding <=> %(query_vec)s::vector) AS score
         FROM chunks c
         JOIN document_sources ds ON ds.id = c.source_id
@@ -254,6 +264,8 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
                 "text_full": row["content_text"] or "",
                 "table_shape": row["table_shape"],
                 "source": row["source_title"],
+                "source_type": row["source_type"],
+                "evidence_level": row["evidence_level"],
                 "section": sp,
                 "score": round(float(row["score"]), 4),
             })
@@ -338,7 +350,8 @@ def main():
             class SearchResult(BaseModel):
                 id: int; chunk_id: str; page: int; type: str
                 text: str; text_full: str; score: float
-                source: str = ""; table_shape: str = ""; section: str = ""
+                source: str = ""; source_type: str = "standard_manual"; evidence_level: str = "standard"
+                table_shape: str = ""; section: str = ""
             
             class SearchResponse(BaseModel):
                 query: str; top_k: int; hybrid: bool

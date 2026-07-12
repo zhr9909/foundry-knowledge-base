@@ -462,6 +462,8 @@ def _search_node(state: AgentState) -> dict:
             "page": r.get("page"),
             "score": round(float(r.get("score", 0) or 0), 4),
             "section": r.get("section", ""),
+            "source_type": r.get("source_type", "standard_manual"),
+            "evidence_level": r.get("evidence_level", "standard"),
             "reason": "语义/关键词混合命中",
         }
         for r in rs[:3]
@@ -1439,6 +1441,8 @@ def select_context(results, top_k=6, original_query="", search_query="", preserv
             "text": r.get("text_full", r.get("text", "")),
             "score": round(r.get("score", 0), 4),
             "section": r.get("section", ""),
+            "source_type": r.get("source_type", "standard_manual"),
+            "evidence_level": r.get("evidence_level", "standard"),
         })
     return formatted
 
@@ -1793,6 +1797,8 @@ def _search_node(state: AgentState) -> dict:
             "page": r.get("page"),
             "score": round(float(r.get("score", 0) or 0), 4),
             "section": r.get("section", ""),
+            "source_type": r.get("source_type", "standard_manual"),
+            "evidence_level": r.get("evidence_level", "standard"),
             "reason": "语义/关键词混合命中",
         }
         for r in rs[:3]
@@ -2621,5 +2627,7 @@ def select_context(results, top_k=6, original_query="", search_query="", preserv
             "text": r.get("text_full", r.get("text", "")),
             "score": round(r.get("score", 0), 4),
             "section": r.get("section", ""),
+            "source_type": r.get("source_type", "standard_manual"),
+            "evidence_level": r.get("evidence_level", "standard"),
         })
     return formatted

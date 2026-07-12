@@ -1,1 +1,0 @@
-import{p as e,t,u as n,v as r}from"./index-Me8PAqIq.js";var i={},a={class:`pdf-viewer`};function o(t,i){return r(),e(`div`,a,[...i[0]||=[n(`h2`,null,`PDF Viewer (placeholder)`,-1)]])}var s=t(i,[[`render`,o]]);export{s as default};

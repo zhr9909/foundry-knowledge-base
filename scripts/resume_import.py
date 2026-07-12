@@ -14,6 +14,13 @@ DB = dict(host="127.0.0.1", port=15432, dbname="foundry_kb", user="findmyjob", p
 
 conn = psycopg2.connect(**DB)
 cur = conn.cursor()
+cur.execute("""
+    INSERT INTO knowledge_sources (name, source_type, visibility, description, metadata)
+    VALUES ('ASM Handbook Vol.2', 'standard_manual', 'public', '当前系统默认标准手册知识源', '{"source": "asm_handbook_vol_2"}')
+    ON CONFLICT DO NOTHING
+""")
+cur.execute("SELECT id FROM knowledge_sources WHERE name=%s AND source_type=%s ORDER BY id LIMIT 1", ("ASM Handbook Vol.2", "standard_manual"))
+ASM_SOURCE_ID = cur.fetchone()[0]
 
 # Get existing source names
 cur.execute("SELECT title FROM document_sources")
@@ -33,7 +40,9 @@ for idx, jl in enumerate(files):
         print(f"  SKIP [{idx+1}/{len(files)}] {jl.stem[:30]:30s} (already imported)")
         continue
 
-    cur.execute("INSERT INTO document_sources (title, file_name) VALUES (%s,%s) RETURNING id", (src, src[:60]))
+    cur.execute("""INSERT INTO document_sources
+        (knowledge_source_id, source_type, title, file_name, visibility, confidentiality)
+        VALUES (%s, 'standard_manual', %s, %s, 'public', 'public') RETURNING id""", (ASM_SOURCE_ID, src, src[:60]))
     sid = cur.fetchone()[0]
 
     t1 = time.time()
@@ -49,7 +58,7 @@ for idx, jl in enumerate(files):
             cid = f"{sid}_{x['chunk_id']}"
             meta = json.dumps({"section_path": x.get("section_path",""), "page_range": x.get("pages",[pg]), "material_tags": x.get("material_tags",[]), "source": src})
             try:
-                cur.execute("INSERT INTO chunks(source_id,chunk_id,page,chunk_type,content_text,table_shape,table_header,embedding,metadata) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT(chunk_id) DO NOTHING", (sid, cid, pg, x["type"], x["content"], x.get("table_shape"), json.dumps(x.get("table_header",[])), embs[j].tolist(), meta))
+                cur.execute("INSERT INTO chunks(source_id,document_id,source_type,chunk_id,page,chunk_type,content_text,table_shape,table_header,embedding,metadata) VALUES(%s,%s,'standard_manual',%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT(chunk_id) DO NOTHING", (sid, sid, cid, pg, x["type"], x["content"], x.get("table_shape"), json.dumps(x.get("table_header",[])), embs[j].tolist(), meta))
                 if cur.rowcount: ok += 1
             except: pass
         conn.commit()

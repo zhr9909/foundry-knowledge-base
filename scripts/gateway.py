@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Orchestrator Gateway (port 8000)"""
 
-import os, sys, json, asyncio, logging, mimetypes, mimetypes
+import os, sys, json, asyncio, logging, mimetypes, mimetypes, re, html, base64, io, zipfile
 from pathlib import Path
 import hashlib
+import xml.etree.ElementTree as ET
 from typing import Optional
+from urllib.parse import quote
 import httpx
 from auth_handler import (
     init_auth_db, create_user, authenticate_user, create_session_token,
@@ -13,7 +15,9 @@ from auth_handler import (
     get_google_auth_url, google_login, validate_email,
     create_conversation, list_conversations, get_conv_messages,
     save_message, delete_conversation, update_conv_title,
-    create_project, list_projects, get_project, update_project, save_project_artifact
+    create_project, list_projects, get_project, update_project, save_project_artifact,
+    list_evidence_cards, create_evidence_card, update_evidence_card, delete_evidence_card,
+    list_engineering_documents, create_engineering_document, attach_artifact_to_engineering_document
 )
 from auth_handler import decode_token as _decode_jwt
 from pydantic import BaseModel
@@ -22,8 +26,11 @@ _scripts_dir = Path(__file__).resolve().parent
 if str(_scripts_dir) not in sys.path:
     sys.path.insert(0, str(_scripts_dir))
 
+from storage import build_object_key, get_object_store, object_hash, safe_name
+from document_parser import parse_document
+
 from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import FileResponse, StreamingResponse, RedirectResponse
+from fastapi.responses import FileResponse, StreamingResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
@@ -107,9 +114,36 @@ def _brief_text(value, limit=900):
     text = " ".join(text.split())
     return text[:limit]
 
+def _report_evidence_cards(project):
+    cards = project.get("evidence_cards") or []
+    return [card for card in cards if card.get("usable_in_report")]
+
+def _evidence_card_line(card, idx=None):
+    prefix = f"证据 {idx}：" if idx is not None else ""
+    page = card.get("page") or "?"
+    title = card.get("title") or "未命名证据"
+    reliability = card.get("reliability") or "medium"
+    quote_text = _brief_text(card.get("quote"), 520)
+    note = _brief_text(card.get("note"), 260)
+    tags = "、".join(str(tag) for tag in (card.get("tags") or [])[:5])
+    parts = [
+        f"{prefix}{title}",
+        f"- 页码：pg.{page}",
+        f"- 类型：{card.get('evidence_type') or 'general'}",
+        f"- 可靠性：{reliability}",
+    ]
+    if tags:
+        parts.append(f"- 标签：{tags}")
+    if quote_text:
+        parts.append(f"- 原文片段：{quote_text}")
+    if note:
+        parts.append(f"- 工程师备注：{note}")
+    return "\n".join(parts)
+
 def _collect_project_brief_context(project):
     artifacts = project.get("artifacts") or []
     conversations = project.get("conversations") or []
+    report_evidence = _report_evidence_cards(project)
     chunks = [
         f"项目名称：{project.get('name') or '未命名项目'}",
         f"客户名称：{project.get('customer_name') or '待确认'}",
@@ -136,11 +170,20 @@ def _collect_project_brief_context(project):
             f"- 结构化数据：{_brief_text(artifact.get('structured_data'), 1100)}",
             f"- 引用线索：{'；'.join(pages) if pages else '无'}",
         ])
+    chunks.append("")
+    chunks.append("【已选择报告证据】")
+    if report_evidence:
+        chunks.append("以下证据由工程师标记为可用于报告，生成简报时必须优先使用。")
+        for idx, card in enumerate(report_evidence[:18], 1):
+            chunks.append(_evidence_card_line(card, idx))
+    else:
+        chunks.append("暂无工程师确认的报告证据。可参考项目产物中的引用线索，但需要在简报中标注为待确认。")
     return "\n".join(chunks)[:18000]
 
 def _fallback_project_brief(project):
     artifacts = project.get("artifacts") or []
     conversations = project.get("conversations") or []
+    report_evidence = _report_evidence_cards(project)
     types = {a.get("type") for a in artifacts}
     stage = "项目初始化"
     if "defect_diagnosis" in types:
@@ -154,9 +197,16 @@ def _fallback_project_brief(project):
     elif "qa" in types or conversations:
         stage = "资料检索"
     citation_pages = []
-    for artifact in artifacts:
-        for c in (artifact.get("citations") or [])[:3]:
-            citation_pages.append(f"pg.{c.get('page') or '?'} {c.get('section') or ''}".strip())
+    if report_evidence:
+        for card in report_evidence[:12]:
+            citation_pages.append(
+                f"pg.{card.get('page') or '?'} {card.get('title') or card.get('section') or '已确认证据'}"
+                + (f"：{_brief_text(card.get('summary') or card.get('quote'), 140)}" if (card.get('summary') or card.get('quote')) else "")
+            )
+    else:
+        for artifact in artifacts:
+            for c in (artifact.get("citations") or [])[:3]:
+                citation_pages.append(f"pg.{c.get('page') or '?'} {c.get('section') or ''}".strip())
     citation_pages = list(dict.fromkeys(citation_pages))[:12]
     artifact_lines = [f"- {a.get('title') or '未命名产物'}（{a.get('type') or 'qa'}）" for a in artifacts[:8]]
     return "\n".join([
@@ -195,6 +245,27 @@ def _fallback_project_brief(project):
 def _project_brief_citations(project):
     seen = set()
     result = []
+    report_evidence = _report_evidence_cards(project)
+    for card in report_evidence:
+        metadata = card.get("metadata") or {}
+        citation = {
+            "source_id": card.get("document_id") or metadata.get("source_id") or 2,
+            "page": card.get("page"),
+            "section": card.get("section") or card.get("title") or "已确认证据",
+            "text": card.get("quote") or card.get("summary") or "",
+            "source_type": metadata.get("source_type") or "standard_manual",
+            "evidence_level": metadata.get("evidence_level") or "confirmed",
+            "evidence_card_id": card.get("id"),
+        }
+        key = (citation.get("source_id"), citation.get("page"), citation.get("text"))
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(citation)
+        if len(result) >= 20:
+            return result
+    if result:
+        return result
     for artifact in project.get("artifacts") or []:
         for c in artifact.get("citations") or []:
             key = (c.get("source_id"), c.get("page"), c.get("text"))
@@ -205,6 +276,405 @@ def _project_brief_citations(project):
             if len(result) >= 20:
                 return result
     return result
+
+def _safe_report_filename(value):
+    name = re.sub(r'[\\/:*?"<>|]+', "_", str(value or "project-artifact")).strip(" ._")
+    return (name or "project-artifact")[:80]
+
+def _render_inline_markdown(text):
+    code_parts = []
+
+    def stash_code(match):
+        code_parts.append(f"<code>{html.escape(match.group(1))}</code>")
+        return f"\x00CODE{len(code_parts) - 1}\x00"
+
+    result = re.sub(r"`([^`]+)`", stash_code, html.escape(str(text or "")))
+    result = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", result)
+    result = result.replace("\n", "<br>")
+
+    def restore_code(match):
+        idx = int(match.group(1))
+        return code_parts[idx] if idx < len(code_parts) else ""
+
+    return re.sub(r"\x00CODE(\d+)\x00", restore_code, result)
+
+def _is_markdown_table_start(lines, index):
+    if index + 1 >= len(lines):
+        return False
+    current = lines[index].strip()
+    sep = lines[index + 1].strip()
+    return (
+        current.startswith("|") and current.endswith("|")
+        and re.match(r"^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$", sep)
+    )
+
+def _render_markdown_table(table_lines):
+    rows = []
+    for i, line in enumerate(table_lines):
+        if i == 1:
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        rows.append(cells)
+    if not rows:
+        return ""
+    head = "".join(f"<th>{_render_inline_markdown(cell)}</th>" for cell in rows[0])
+    body = "".join(
+        "<tr>" + "".join(f"<td>{_render_inline_markdown(cell)}</td>" for cell in row) + "</tr>"
+        for row in rows[1:]
+    )
+    return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
+
+def _render_markdown_html(markdown):
+    lines = str(markdown or "").replace("\r\n", "\n").split("\n")
+    blocks = []
+    paragraph = []
+
+    def flush_paragraph():
+        nonlocal paragraph
+        if paragraph:
+            blocks.append(f"<p>{_render_inline_markdown(chr(10).join(paragraph))}</p>")
+            paragraph = []
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        trimmed = line.strip()
+        if not trimmed:
+            flush_paragraph()
+            i += 1
+            continue
+        if trimmed.startswith("```"):
+            flush_paragraph()
+            code_lines = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code_lines.append(lines[i])
+                i += 1
+            blocks.append(f"<pre><code>{html.escape(chr(10).join(code_lines))}</code></pre>")
+            i += 1
+            continue
+        if _is_markdown_table_start(lines, i):
+            flush_paragraph()
+            table_lines = [lines[i], lines[i + 1]]
+            i += 2
+            while i < len(lines) and lines[i].strip().startswith("|") and lines[i].strip().endswith("|"):
+                table_lines.append(lines[i])
+                i += 1
+            blocks.append(_render_markdown_table(table_lines))
+            continue
+        heading = re.match(r"^(#{1,4})\s+(.+)$", trimmed)
+        if heading:
+            flush_paragraph()
+            level = min(len(heading.group(1)) + 1, 5)
+            blocks.append(f"<h{level}>{_render_inline_markdown(heading.group(2))}</h{level}>")
+            i += 1
+            continue
+        if re.match(r"^[-*]\s+", trimmed):
+            flush_paragraph()
+            items = []
+            while i < len(lines) and re.match(r"^[-*]\s+", lines[i].strip()):
+                items.append(re.sub(r"^[-*]\s+", "", lines[i].strip()))
+                i += 1
+            blocks.append("<ul>" + "".join(f"<li>{_render_inline_markdown(item)}</li>" for item in items) + "</ul>")
+            continue
+        if re.match(r"^\d+\.\s+", trimmed):
+            flush_paragraph()
+            items = []
+            while i < len(lines) and re.match(r"^\d+\.\s+", lines[i].strip()):
+                items.append(re.sub(r"^\d+\.\s+", "", lines[i].strip()))
+                i += 1
+            blocks.append("<ol>" + "".join(f"<li>{_render_inline_markdown(item)}</li>" for item in items) + "</ol>")
+            continue
+        paragraph.append(line)
+        i += 1
+
+    flush_paragraph()
+    return "\n".join(blocks)
+
+def _artifact_report_html(project, artifact):
+    citations = artifact.get("citations") or []
+    citation_html = "".join(
+        "<li>"
+        f"<strong>pg.{html.escape(str(c.get('page') or '?'))}</strong>"
+        f"<span>{html.escape(str(c.get('section') or '引用依据'))}</span>"
+        f"<p>{html.escape(str(c.get('text') or ''))}</p>"
+        "</li>"
+        for c in citations
+    ) or "<li>暂无引用来源。</li>"
+    structured = artifact.get("structured_data") or {}
+    structured_html = ""
+    if isinstance(structured, dict) and structured:
+        structured_html = (
+            "<section><h2>结构化数据</h2><pre><code>"
+            + html.escape(json.dumps(structured, ensure_ascii=False, indent=2))
+            + "</code></pre></section>"
+        )
+    return f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>{html.escape(str(artifact.get("title") or "项目产物"))}</title>
+  <style>
+    @page {{ size: A4; margin: 18mm; }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      color: #0f172a;
+      background: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      line-height: 1.72;
+      font-size: 14px;
+    }}
+    header {{ border-bottom: 2px solid #0f766e; padding-bottom: 14px; margin-bottom: 22px; }}
+    .kicker {{ color: #0f766e; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }}
+    h1 {{ margin: 6px 0 8px; font-size: 26px; line-height: 1.28; }}
+    h2 {{ margin: 22px 0 8px; font-size: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }}
+    h3 {{ margin: 18px 0 8px; font-size: 16px; }}
+    h4, h5 {{ margin: 14px 0 6px; font-size: 14px; }}
+    h2, h3, h4, h5 {{ break-after: avoid; color: #0f172a; line-height: 1.35; }}
+    p {{ margin: 0 0 10px; word-break: break-word; }}
+    strong {{ color: #0f172a; font-weight: 760; }}
+    .meta {{ color: #64748b; display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; }}
+    code {{ border: 1px solid #cbd5e1; border-radius: 4px; background: #f8fafc; color: #0f766e; padding: 1px 4px; font-family: "Cascadia Mono", Consolas, monospace; font-size: .9em; }}
+    pre {{ margin: 10px 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; padding: 10px 12px; white-space: pre-wrap; word-break: break-word; }}
+    pre code {{ border: 0; background: transparent; color: inherit; padding: 0; font-size: 12px; line-height: 1.7; }}
+    table {{ width: 100%; border-collapse: collapse; margin: 12px 0 16px; break-inside: avoid; font-size: 12px; }}
+    th, td {{ border: 1px solid #cbd5e1; padding: 7px 8px; text-align: left; vertical-align: top; }}
+    th {{ background: #f1f5f9; color: #0f172a; font-weight: 760; }}
+    ul, ol {{ margin: 0 0 12px; padding-left: 22px; }}
+    li {{ break-inside: avoid; margin: 0 0 6px; }}
+    .citations li {{ margin-bottom: 10px; }}
+    .citations strong {{ color: #0f766e; margin-right: 8px; }}
+    .citations span {{ color: #475569; font-weight: 650; }}
+    .citations p {{ margin: 4px 0 0; color: #334155; }}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="kicker">Foundry Knowledge Base · Project Artifact</div>
+    <h1>{html.escape(str(artifact.get("title") or "未命名产物"))}</h1>
+    <div class="meta">
+      <span>项目：{html.escape(str(project.get("name") or "未命名项目"))}</span>
+      <span>类型：{html.escape(str(artifact.get("type") or "项目产物"))}</span>
+      <span>创建时间：{html.escape(str(artifact.get("created_at") or "未知"))}</span>
+    </div>
+  </header>
+  <section>
+    <h2>正文</h2>
+    {_render_markdown_html(artifact.get("content") or "暂无正文内容。")}
+  </section>
+  {structured_html}
+  <section class="citations">
+    <h2>引用来源</h2>
+    <ul>{citation_html}</ul>
+  </section>
+</body>
+</html>"""
+
+async def _artifact_pdf_bytes(project, artifact):
+    from playwright.async_api import async_playwright
+
+    report_html = _artifact_report_html(project, artifact)
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        try:
+            page = await browser.new_page()
+            await page.set_content(report_html, wait_until="load")
+            return await page.pdf(
+                format="A4",
+                print_background=True,
+                prefer_css_page_size=True,
+                margin={"top": "18mm", "right": "18mm", "bottom": "18mm", "left": "18mm"},
+            )
+        finally:
+            await browser.close()
+
+def _extract_docx_text(data):
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as docx:
+            document_xml = docx.read("word/document.xml")
+    except Exception:
+        return ""
+    try:
+        root = ET.fromstring(document_xml)
+    except Exception:
+        return ""
+    ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    paragraphs = []
+    for para in root.findall(".//w:p", ns):
+        text = "".join(node.text or "" for node in para.findall(".//w:t", ns)).strip()
+        if text:
+            paragraphs.append(text)
+    return "\n".join(paragraphs)
+
+def _decode_text_bytes(data):
+    for encoding in ("utf-8-sig", "utf-8", "gb18030"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return data.decode("utf-8", errors="ignore")
+
+def _extract_text_from_upload(filename, data, mime_type=""):
+    lower = str(filename or "").lower()
+    if lower.endswith(".docx") or mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return _extract_docx_text(data)
+    if lower.endswith((".txt", ".md", ".markdown", ".csv")) or str(mime_type or "").startswith("text/"):
+        return _decode_text_bytes(data)
+    return ""
+
+def _parse_uploaded_document(filename, data, mime_type=""):
+    parsed = parse_document(filename, data, mime_type)
+    if not isinstance(parsed, dict):
+        return {
+            "parser": "unknown",
+            "parse_status": "stored",
+            "text": _extract_text_from_upload(filename, data, mime_type),
+            "markdown": "",
+            "blocks": [],
+            "tables": [],
+            "images": [],
+            "outline": [],
+            "statistics": {},
+        }
+    if not parsed.get("text"):
+        parsed["text"] = _extract_text_from_upload(filename, data, mime_type)
+    return parsed
+
+def _clean_lines(text):
+    return [line.strip() for line in str(text or "").replace("\r\n", "\n").split("\n") if line.strip()]
+
+def _pick_lines(lines, patterns, limit=12):
+    result = []
+    for line in lines:
+        if any(re.search(pattern, line, re.I) for pattern in patterns):
+            result.append(line)
+        if len(result) >= limit:
+            break
+    return result
+
+def _safe_title_from_filename(filename):
+    name = Path(str(filename or "工程文档")).stem
+    return safe_name(name, "工程文档")
+
+def _parse_engineering_case(extracted_text, filename, document_kind="engineering_case", parsed_document=None):
+    parsed_document = parsed_document or {}
+    lines = _clean_lines(extracted_text)
+    for table in parsed_document.get("tables") or []:
+        for row in table.get("row_text") or []:
+            line = " | ".join(str(cell).strip() for cell in row if str(cell).strip())
+            if line:
+                lines.append(line)
+    title = lines[0][:120] if lines else _safe_title_from_filename(filename)
+    outline = parsed_document.get("outline") or []
+    if outline:
+        title = (outline[0].get("text") or title)[:120]
+    condition_patterns = [
+        r"条件", r"参数", r"温度", r"压力", r"时间", r"比例", r"树脂", r"砂芯", r"浇注", r"孕育",
+        r"temperature", r"pressure", r"time", r"ratio", r"condition", r"parameter",
+    ]
+    observation_patterns = [
+        r"现象", r"结果", r"固化", r"强度", r"硬度", r"颜色", r"对比", r"差异", r"优于", r"不如",
+        r"result", r"observation", r"compare", r"strength", r"hardness",
+    ]
+    conclusion_patterns = [
+        r"结论", r"总结", r"汇总", r"建议", r"原因", r"风险", r"下一步", r"实际", r"说明",
+        r"conclusion", r"summary", r"recommend", r"risk",
+    ]
+    variables = []
+    variable_regexes = [
+        r"\d+(?:\.\d+)?\s*(?:s|sec|秒|℃|°C|bar|MPa|%|ml|mL|kg|Kg)",
+        r"[A-Za-z]?\d{2,4}/\d{2,4}",
+        r"\d{3,4}[/\-]\d{3,4}",
+    ]
+    for line in lines:
+        for pattern in variable_regexes:
+            variables.extend(re.findall(pattern, line, re.I))
+    variables = list(dict.fromkeys(variables))[:24]
+    return {
+        "type": "engineering_case",
+        "document_kind": document_kind or "engineering_case",
+        "title": title,
+        "problem_summary": "\n".join(lines[1:5]) if len(lines) > 1 else "",
+        "experiment_conditions": _pick_lines(lines, condition_patterns),
+        "observations": _pick_lines(lines, observation_patterns),
+        "conclusions": _pick_lines(lines, conclusion_patterns),
+        "variables": variables,
+        "line_count": len(lines),
+        "source_title": _safe_title_from_filename(filename),
+        "raw_blocks": (parsed_document.get("blocks") or [])[:500],
+        "tables": (parsed_document.get("tables") or [])[:80],
+        "images": parsed_document.get("images") or [],
+        "outline": outline,
+        "parser": parsed_document.get("parser") or "",
+        "statistics": parsed_document.get("statistics") or {},
+    }
+
+def _md_list(items, fallback="待进一步整理"):
+    if not items:
+        return f"- {fallback}"
+    return "\n".join(f"- {item}" for item in items[:18])
+
+def _engineering_case_markdown(structured, extracted_text, filename, parsed_document=None):
+    parsed_document = parsed_document or {}
+    source_title = structured.get("source_title") or _safe_title_from_filename(filename)
+    parsed_markdown = parsed_document.get("markdown") or ""
+    preview = parsed_markdown.strip() or "\n".join(_clean_lines(extracted_text)[:18])
+    if len(preview) > 5000:
+        preview = preview[:5000].rstrip() + "\n..."
+    return "\n".join([
+        f"# {structured.get('title') or source_title}",
+        "",
+        "## 1. 文档来源",
+        f"- 原始文件：{filename}",
+        f"- 文档类型：{structured.get('document_kind') or 'engineering_case'}",
+        "",
+        "## 2. 问题与背景",
+        structured.get("problem_summary") or "- 待从现场记录中进一步归纳。",
+        "",
+        "## 3. 工程条件 / 实验参数",
+        _md_list(structured.get("experiment_conditions") or [], "暂未识别到明确条件参数"),
+        "",
+        "## 4. 观察结果",
+        _md_list(structured.get("observations") or [], "暂未识别到明确观察结果"),
+        "",
+        "## 5. 初步结论 / 后续动作",
+        _md_list(structured.get("conclusions") or [], "待工程师补充结论或下一步验证计划"),
+        "",
+        "## 6. 识别到的关键变量",
+        _md_list(structured.get("variables") or [], "暂未识别到数值变量"),
+        "",
+        "## 7. 文档结构统计",
+        _md_list([
+            f"块数量：{(structured.get('statistics') or {}).get('block_count', 0)}",
+            f"表格数量：{(structured.get('statistics') or {}).get('table_count', 0)}",
+            f"图片数量：{(structured.get('statistics') or {}).get('image_count', 0)}",
+            f"标题数量：{(structured.get('statistics') or {}).get('heading_count', 0)}",
+        ], "暂未识别到结构信息"),
+        "",
+        "## 8. 原始结构化摘录",
+        "```markdown",
+        preview or "图片或附件暂未进行 OCR，已保存原始文件。",
+        "```",
+    ])
+
+def _parse_upload_payload(req):
+    filename = str(req.get("filename") or "upload.bin").strip() or "upload.bin"
+    encoded = str(req.get("content_base64") or "").strip()
+    if not encoded:
+        raise HTTPException(400, "缺少文件内容")
+    if "," in encoded and encoded.split(",", 1)[0].lower().startswith("data:"):
+        encoded = encoded.split(",", 1)[1]
+    try:
+        data = base64.b64decode(encoded, validate=True)
+    except Exception:
+        raise HTTPException(400, "文件内容不是有效的 base64")
+    if not data:
+        raise HTTPException(400, "文件为空")
+    max_size = 25 * 1024 * 1024
+    if len(data) > max_size:
+        raise HTTPException(413, "文件超过 25MB，简单版导入暂不支持")
+    return filename, data
 
 @app.get("/")
 async def root():
@@ -560,6 +1030,128 @@ async def api_save_project_artifact(project_id: int, req: dict, user: dict = Dep
     )
     return {"artifact": artifact}
 
+@app.get("/api/projects/{project_id}/evidence")
+async def api_list_project_evidence(project_id: int, user: dict = Depends(require_user)):
+    """List confirmed evidence cards for a project."""
+    project = get_project(project_id, user["id"])
+    if not project:
+        raise HTTPException(404, "项目不存在")
+    return {"evidence_cards": list_evidence_cards(user["id"], project_id)}
+
+@app.post("/api/projects/{project_id}/evidence")
+async def api_create_project_evidence(project_id: int, req: dict, user: dict = Depends(require_user)):
+    """Save an automatic citation as a project evidence card."""
+    card = create_evidence_card(user["id"], project_id, req)
+    return {"evidence_card": card}
+
+@app.put("/api/projects/{project_id}/evidence/{evidence_id}")
+async def api_update_project_evidence(project_id: int, evidence_id: int, req: dict, user: dict = Depends(require_user)):
+    """Update a project evidence card."""
+    card = update_evidence_card(user["id"], project_id, evidence_id, req)
+    if not card:
+        raise HTTPException(404, "证据卡不存在")
+    return {"evidence_card": card}
+
+@app.delete("/api/projects/{project_id}/evidence/{evidence_id}")
+async def api_delete_project_evidence(project_id: int, evidence_id: int, user: dict = Depends(require_user)):
+    """Delete a project evidence card."""
+    ok = delete_evidence_card(user["id"], project_id, evidence_id)
+    if not ok:
+        raise HTTPException(404, "证据卡不存在")
+    return {"message": "deleted"}
+
+@app.get("/api/projects/{project_id}/engineering-documents")
+async def api_list_engineering_documents(project_id: int, user: dict = Depends(require_user)):
+    """List engineering documents imported into a project."""
+    project = get_project(project_id, user["id"])
+    if not project:
+        raise HTTPException(404, "项目不存在")
+    return {"engineering_documents": list_engineering_documents(user["id"], project_id)}
+
+@app.post("/api/projects/{project_id}/engineering-documents")
+async def api_upload_engineering_document(project_id: int, req: dict, user: dict = Depends(require_user)):
+    """Import a field note, experiment record, or process mind-map into a project."""
+    project = get_project(project_id, user["id"])
+    if not project:
+        raise HTTPException(404, "项目不存在")
+
+    filename, data = _parse_upload_payload(req)
+    mime_type = str(req.get("mime_type") or mimetypes.guess_type(filename)[0] or "application/octet-stream")
+    document_kind = str(req.get("document_kind") or "engineering_case").strip()[:50] or "engineering_case"
+    source_type = str(req.get("source_type") or "current_project").strip()[:50] or "current_project"
+    digest = object_hash(data)
+    object_key = build_object_key(project_id, filename, digest)
+    storage_info = get_object_store().put_bytes(object_key, data)
+
+    parsed_document = _parse_uploaded_document(filename, data, mime_type)
+    extracted_text = parsed_document.get("text") or ""
+    structured = _parse_engineering_case(extracted_text, filename, document_kind, parsed_document)
+    parse_status = parsed_document.get("parse_status") or ("parsed" if extracted_text else "stored")
+    title = structured.get("title") or _safe_title_from_filename(filename)
+    document = create_engineering_document(
+        user["id"],
+        project_id,
+        title,
+        filename,
+        document_kind,
+        source_type,
+        storage_info,
+        digest,
+        mime_type,
+        len(data),
+        parse_status,
+        extracted_text,
+        structured,
+        {
+            "original_filename": filename,
+            "object_key": object_key,
+            "content_hash": digest,
+            "parser": parsed_document.get("parser") or ("simple_text_v1" if extracted_text else "stored_without_ocr_v1"),
+            "statistics": parsed_document.get("statistics") or {},
+        },
+    )
+    artifact = save_project_artifact(
+        user["id"],
+        project_id,
+        "engineering_case",
+        title,
+        _engineering_case_markdown(structured, extracted_text, filename, parsed_document),
+        structured,
+        [],
+        {
+            "source": "engineering_document_import",
+            "engineering_document_id": document.get("id"),
+            "storage_backend": storage_info.get("storage_backend"),
+            "bucket": storage_info.get("bucket"),
+            "object_key": object_key,
+            "parse_status": parse_status,
+            "mime_type": mime_type,
+        },
+    )
+    document = attach_artifact_to_engineering_document(user["id"], project_id, document["id"], artifact["id"]) or document
+    return {"document": document, "artifact": artifact, "project": get_project(project_id, user["id"])}
+
+@app.get("/api/projects/{project_id}/artifacts/{artifact_id}/pdf")
+async def api_download_project_artifact_pdf(project_id: int, artifact_id: int, user: dict = Depends(require_user)):
+    """Render a saved project artifact as a Markdown-formatted PDF download."""
+    project = get_project(project_id, user["id"])
+    if not project:
+        raise HTTPException(404, "项目不存在")
+    artifact = next((item for item in project.get("artifacts") or [] if int(item.get("id") or 0) == artifact_id), None)
+    if not artifact:
+        raise HTTPException(404, "项目产物不存在")
+    try:
+        pdf = await _artifact_pdf_bytes(project, artifact)
+    except Exception as e:
+        raise HTTPException(500, f"PDF 生成失败: {e}")
+    filename = _safe_report_filename(artifact.get("title") or "project-artifact") + ".pdf"
+    disposition = f"attachment; filename=\"project-artifact.pdf\"; filename*=UTF-8''{quote(filename)}"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": disposition},
+    )
+
 @app.post("/api/projects/{project_id}/brief")
 async def api_generate_project_brief(project_id: int, user: dict = Depends(require_user)):
     """Generate and save a project brief from conversations and artifacts."""
@@ -580,17 +1172,26 @@ async def api_generate_project_brief(project_id: int, user: dict = Depends(requi
 
     title = f"{project.get('name') or '项目'} - 项目简报"
     citations = _project_brief_citations(project)
+    report_evidence = _report_evidence_cards(project)
     artifact = save_project_artifact(
         user["id"],
         project_id,
         "project_brief",
         title[:120],
         brief,
-        {"type": "project_brief", "format": "markdown", "generated_by": generated_by},
+        {
+            "type": "project_brief",
+            "format": "markdown",
+            "generated_by": generated_by,
+            "report_evidence_count": len(report_evidence),
+        },
         citations,
         {
             "source": "project_brief_generator",
             "generated_by": generated_by,
+            "citation_source": "evidence_cards" if report_evidence else "artifact_citations",
+            "report_evidence_count": len(report_evidence),
+            "report_evidence_ids": [card.get("id") for card in report_evidence[:30]],
             "conversation_count": len(project.get("conversations") or []),
             "artifact_count": len(project.get("artifacts") or []),
         },

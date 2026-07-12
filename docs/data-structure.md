@@ -10,6 +10,42 @@
 - 新功能优先通过 `mode` 和 `structured_output` 扩展，避免把所有功能硬塞进单一问答字段。
 - 结构化数据应尽量可复用到项目空间、报告生成和知识卡片。
 
+## 多知识源基础结构
+
+当前系统已开始从单一 ASM 手册知识库升级为多知识源架构。第一步先兼容现有数据，不拆分 chunk 表。
+
+核心原则：
+
+- 文档源、业务资产、项目产物分表存储。
+- 检索 chunk 统一保存在 `chunks` 表。
+- 通过 `source_type`、`source_id`、`document_id`、`evidence_level` 区分来源和可信度。
+
+当前已落地：
+
+| 表 / 字段 | 用途 | 当前状态 |
+| --- | --- | --- |
+| `knowledge_sources` | 知识源总表 | 已新增 |
+| `document_sources.source_type` | 文档来源类型 | 已新增，现有 ASM 文档为 `standard_manual` |
+| `chunks.source_type` | chunk 来源类型 | 已新增，现有 33037 条 chunk 为 `standard_manual` |
+| `chunks.document_id` | 未来文档语义 ID | 已新增，当前回填为 `source_id` |
+| `chunks.evidence_level` | 证据可信层级 | 已新增，当前为 `standard` |
+| `evidence_cards` | 项目证据卡片 | 已新增空表，后续项目证据库使用 |
+
+当前默认知识源：
+
+```text
+knowledge_sources.name = ASM Handbook Vol.2
+knowledge_sources.source_type = standard_manual
+knowledge_sources.visibility = public
+```
+
+后续新增企业历史项目知识库时，不再新建独立 chunk 表，而是写入统一 `chunks` 表，并设置：
+
+```text
+source_type = enterprise_project
+evidence_level = validated_project / project_note / unverified
+```
+
 ## 任务模式
 
 第一阶段建议支持 4 个模式：
@@ -580,6 +616,77 @@ CREATE TABLE project_artifacts (
 - 项目简报预览：由当前项目名称、阶段、产物数量、候选项、风险、待确认问题和初步结论拼装生成。
 - 正式项目简报：调用项目级 LLM 生成接口后，以 `project_brief` 类型保存回 `project_artifacts`。
 
+### 项目证据库 V1
+
+第一版项目证据库不新增后端表，由前端在项目详情面板中从 `project_artifacts.citations` 派生：
+
+```text
+project_artifacts[] -> citations[] -> evidence items
+```
+
+派生规则：
+
+- 遍历当前项目下所有产物的 `citations`。
+- 按 `source_id + page + text[:180]` 去重，避免同一手册页片段在多个回答里重复堆叠。
+- 保留来源产物标题、产物类型、页码、引用片段、`source_type`、`evidence_level`。
+- 根据引用片段和产物内容推断标签：材料、性能、热处理、铸造工艺、腐蚀、缺陷风险、标准依据。
+- 点击证据卡片打开 PDF 查看器，并定位到对应页。
+
+V1 的定位是“项目内证据聚合视图”，不允许用户手动编辑证据。后续若需要人工确认、备注、可靠性评级和跨项目复用，再升级为持久化的 `evidence_cards`。
+
+### Evidence Cards V2
+
+第二版项目证据库开始使用持久化 `evidence_cards`，用于把自动引用升级为工程师确认过的项目依据。
+
+```sql
+CREATE TABLE evidence_cards (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+  knowledge_source_id INT REFERENCES knowledge_sources(id),
+  document_id INT,
+  artifact_id INT REFERENCES project_artifacts(id) ON DELETE SET NULL,
+  title TEXT NOT NULL DEFAULT '未命名证据',
+  evidence_type TEXT NOT NULL DEFAULT 'general',
+  page INT,
+  section TEXT DEFAULT '',
+  quote TEXT NOT NULL DEFAULT '',
+  summary TEXT DEFAULT '',
+  tags JSONB DEFAULT '[]',
+  reliability TEXT DEFAULT 'medium',
+  note TEXT DEFAULT '',
+  status TEXT DEFAULT 'draft',
+  usable_in_report BOOLEAN DEFAULT FALSE,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+字段约定：
+
+- `quote`：来自手册、项目文档或结构化资产的原始依据片段。
+- `summary`：证据摘要，便于报告和项目简报引用。
+- `note`：工程师备注，例如适用边界、限制条件、现场判断。
+- `reliability`：`high`、`medium`、`low`。
+- `status`：`draft`、`confirmed`、`archived`。
+- `usable_in_report`：是否允许进入项目简报/报告生成。
+- `metadata.source_key`：前端从 `source_id + page + quote` 生成的去重键，用于判断自动引用是否已保存。
+
+当前前端策略：
+
+- “引用依据”仍显示自动聚合的 citations。
+- 点击“保存证据”后写入 `evidence_cards`。
+- 已保存卡片展示在“已确认证据”区。
+- 用户可以调整可靠性、备注和“可用于报告”。
+
+项目简报使用策略：
+
+- `usable_in_report = true` 的证据卡会优先进入项目简报生成上下文。
+- 项目简报保存为 `project_artifacts` 时，会在 `structured_data.report_evidence_count` 和 `metadata.report_evidence_count` 中记录使用的证据数量。
+- `metadata.citation_source = evidence_cards` 表示本次简报优先使用了已确认证据。
+- 若没有可用于报告的证据卡，生成链路回退到项目产物中的普通 `citations`。
+
 ## 开发约定
 
 新增功能前必须先更新：
@@ -594,3 +701,70 @@ CREATE TABLE project_artifacts (
 - 历史消息能加载旧 metadata。
 - 新字段全部可选。
 - 前端渲染遇到未知 `structured_output.type` 时降级为普通 Markdown。
+## Engineering Documents V1
+
+第一版工程文档导入用于把解决方案工程师的现场记录、实验记录、验证报告、工艺脑图等材料先挂到当前项目下面，而不是立即进入全局知识库检索。
+
+### engineering_documents
+
+```sql
+CREATE TABLE engineering_documents (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+  artifact_id INT REFERENCES project_artifacts(id) ON DELETE SET NULL,
+  title TEXT NOT NULL DEFAULT '未命名工程文档',
+  original_filename TEXT NOT NULL DEFAULT '',
+  document_kind TEXT NOT NULL DEFAULT 'engineering_case',
+  source_type TEXT NOT NULL DEFAULT 'current_project',
+  storage_backend TEXT NOT NULL DEFAULT 'local',
+  bucket TEXT NOT NULL DEFAULT '',
+  object_key TEXT NOT NULL DEFAULT '',
+  content_hash TEXT NOT NULL DEFAULT '',
+  mime_type TEXT DEFAULT '',
+  file_size BIGINT DEFAULT 0,
+  parse_status TEXT DEFAULT 'pending',
+  extracted_text TEXT DEFAULT '',
+  structured_data JSONB DEFAULT '{}',
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+字段约定：
+- `storage_backend`：当前为 `local`，后续可切换为 `minio` 或 `s3`。
+- `bucket/object_key`：保留对象存储契约，避免以后从本地迁到 MinIO 时改业务表。
+- `content_hash`：SHA-256，用于去重、审计和后续文件一致性检查。
+- `document_kind`：`engineering_case`、`process_mindmap`、`customer_note`、`validation_report`。
+- `source_type`：当前项目内资料先使用 `current_project`，未来历史项目库可使用 `enterprise_project`。
+- `parse_status`：`parsed` 表示已抽取文本，`stored` 表示已保存原文件但暂未 OCR/解析。
+- `artifact_id`：导入后自动生成的 `project_artifacts.engineering_case` 产物。
+
+`structured_data` 当前保存确定性解析结果和工程语义初筛：
+- `raw_blocks`：按 Word 原始顺序抽取的标题、段落、列表项、表格、图片块。
+- `tables`：表格行列结构，保留 `row_text`、`headers`、行数、列数。
+- `images`：Word 内图片关系和文件名，当前不做 OCR。
+- `outline`：根据 Word heading 样式或大纲级别识别出的标题层级。
+- `statistics`：块数量、表格数量、图片数量、标题数量。
+- `experiment_conditions / observations / conclusions / variables`：基于规则从原文和表格中抽出的工程初筛字段。
+
+Word 解析不依赖 LLM，使用 `.docx` 内部的 Office Open XML：
+
+```text
+word/document.xml        正文块、段落、表格、图片引用
+word/styles.xml          标题样式和段落样式
+word/_rels/*.rels        图片和外部关系
+```
+
+后续 LLM 只在 `raw_blocks/tables` 的基础上做工程语义归纳，不直接替代确定性解析。
+
+### 本地对象存储约定
+
+当前简单版不依赖 MinIO，文件保存到：
+
+```text
+storage/objects/projects/{project_id}/engineering_cases/original/{yyyy}/{mm}/{dd}/{hash}-{filename}
+```
+
+`storage/` 已加入 `.gitignore`，原始工程文件不进入 Git。

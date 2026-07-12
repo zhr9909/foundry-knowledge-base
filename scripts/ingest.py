@@ -148,11 +148,23 @@ def import_to_pg(chunks, batch_size=32, dry_run=False, source_id=None, source_ti
     if source_id is None:
         source_name = source_title or chunks[0].get("source_file", "unknown")
         total_pages = max(c["page"] for c in chunks)
+        cur.execute("""
+            INSERT INTO knowledge_sources (name, source_type, visibility, description, metadata)
+            VALUES ('ASM Handbook Vol.2', 'standard_manual', 'public', '当前系统默认标准手册知识源', '{"source": "asm_handbook_vol_2"}')
+            ON CONFLICT DO NOTHING
+        """)
+        cur.execute("SELECT id FROM knowledge_sources WHERE name=%s AND source_type=%s ORDER BY id LIMIT 1", ("ASM Handbook Vol.2", "standard_manual"))
+        knowledge_source_id = cur.fetchone()[0]
         cur.execute(
-            "INSERT INTO document_sources (title, file_name, total_pages) "
-            "VALUES (%s, %s, %s) RETURNING id",
-            (source_name.replace(".pdf", "").replace("_", " ").title(),
-             source_name, total_pages),
+            """INSERT INTO document_sources
+                (knowledge_source_id, source_type, title, file_name, total_pages, visibility, confidentiality)
+               VALUES (%s, 'standard_manual', %s, %s, %s, 'public', 'public') RETURNING id""",
+            (
+                knowledge_source_id,
+                source_name.replace(".pdf", "").replace("_", " ").title(),
+                source_name,
+                total_pages,
+            ),
         )
         source_id = cur.fetchone()[0]
         conn.commit()
@@ -178,12 +190,13 @@ def import_to_pg(chunks, batch_size=32, dry_run=False, source_id=None, source_ti
             cur.execute(
                 """
                 INSERT INTO chunks
-                    (source_id, chunk_id, page, chunk_type, content_text,
+                    (source_id, document_id, source_type, chunk_id, page, chunk_type, content_text,
                      table_shape, table_header, embedding)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, 'standard_manual', %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (chunk_id) DO NOTHING
                 """,
                 (
+                    source_id,
                     source_id,
                     chunk["id"],
                     chunk["page"],
