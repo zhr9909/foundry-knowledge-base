@@ -36,7 +36,14 @@
       <ChatArea :messages="chat.messages" :chat="chat" @suggest="handleSuggest" @save-artifact="handleSaveArtifact" />
       <ChatInput :disabled="chat.isProcessing" :mode="chat.currentMode" @send="handleSend" />
     </div>
-    <ProjectPanel v-if="project.isPanelOpen && project.activeProject" :project="project.activeProject" @close="project.closeProject" @select-conversation="loadConversation" />
+    <ProjectPanel
+      v-if="project.isPanelOpen && project.activeProject"
+      :project="project.activeProject"
+      :isGeneratingBrief="project.isGeneratingBrief"
+      @close="project.closeProject"
+      @select-conversation="loadConversation"
+      @generate-brief="generateProjectBrief"
+    />
   </div>
 </template>
 <script setup>
@@ -81,6 +88,10 @@ async function newProject(name) {
 async function renameProject(payload) {
   if (!auth.isLoggedIn || !payload?.id) return
   await project.updateProject(payload.id, { name: payload.name })
+}
+async function generateProjectBrief() {
+  if (!auth.isLoggedIn || !project.activeProject?.id) return
+  await project.generateBrief(project.activeProject.id)
 }
 async function handleSaveArtifact(msg) {
   if (!auth.isLoggedIn) { auth.showAuth = true; return }

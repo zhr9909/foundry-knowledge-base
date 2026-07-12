@@ -545,7 +545,7 @@ CREATE TABLE project_artifacts (
 
 字段约定：
 
-- `artifact_type`：对应前端/Agent 的任务模式，如 `qa`、`requirement_clarification`、`solution_draft`、`selection_matrix`、`defect_diagnosis`。
+- `artifact_type`：对应前端/Agent 的任务模式或项目级产物，如 `qa`、`requirement_clarification`、`solution_draft`、`selection_matrix`、`defect_diagnosis`、`project_brief`。
 - `content`：回答正文 Markdown。
 - `structured_data`：结构化输出，例如方案步骤、选型矩阵、缺陷诊断表。
 - `citations`：引用来源卡片数据。
@@ -568,8 +568,17 @@ CREATE TABLE project_artifacts (
 项目空间当前采用“同一工作台 + 右侧项目面板”：
 
 ```text
-侧栏项目列表 -> 右侧项目详情面板 -> 产物列表 / 引用 / 结构化数据
+侧栏项目列表 -> 右侧项目详情面板 -> 项目概览 / 项目简报 / 项目内对话 / 五类产物分区
 ```
+
+项目概览第一版不新增持久化表，而是由前端根据 `project_artifacts` 的 `artifact_type`、`structured_data`、`citations` 和项目内 `conversations` 派生：
+
+- 当前阶段：根据已沉淀产物类型判断为项目初始化、资料检索、需求澄清、方案形成、选型决策或现场诊断。
+- 候选材料 / 工艺：来自方案草案的 `candidate_materials`、`recommended_processes` 和选型矩阵的候选项。
+- 关键风险：来自 `risks`、缺陷诊断 `possible_causes`。
+- 待确认问题：来自 `missing_conditions`、`questions_to_ask`、`open_questions`、`missing_field_info`。
+- 项目简报预览：由当前项目名称、阶段、产物数量、候选项、风险、待确认问题和初步结论拼装生成。
+- 正式项目简报：调用项目级 LLM 生成接口后，以 `project_brief` 类型保存回 `project_artifacts`。
 
 ## 开发约定
 

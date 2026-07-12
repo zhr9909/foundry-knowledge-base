@@ -71,6 +71,25 @@ class ChatRequest(BaseModel):
     section: Optional[str] = None
     mode: Optional[str] = "qa"
 
+PROJECT_BRIEF_PROMPT = """你是材料铸造行业的解决方案工程师，正在为一个客户项目生成内部评审/客户沟通用的项目简报。
+
+请基于输入的项目上下文生成一份中文 Markdown 简报。要求：
+1. 不要编造没有依据的具体数值；没有信息时写“待确认”。
+2. 保留关键引用线索，例如 pg.399、pg.3204 等。
+3. 语言要像工程方案文档，不要像聊天回复。
+4. 结构必须包含以下标题：
+   # 项目简报
+   ## 1. 项目背景
+   ## 2. 客户需求与约束
+   ## 3. 已确认工况
+   ## 4. 候选材料 / 工艺路线
+   ## 5. 选型对比结论
+   ## 6. 主要风险与待确认项
+   ## 7. 推荐方案
+   ## 8. 验证计划
+   ## 9. 引用依据
+"""
+
 _client = None
 async def _acall(method, url, **kwargs):
     global _client
@@ -82,6 +101,110 @@ async def _acall(method, url, **kwargs):
         await _client.aclose()
         _client = httpx.AsyncClient()
         return await _client.request(method, url, **kwargs)
+
+def _brief_text(value, limit=900):
+    text = json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else str(value or "")
+    text = " ".join(text.split())
+    return text[:limit]
+
+def _collect_project_brief_context(project):
+    artifacts = project.get("artifacts") or []
+    conversations = project.get("conversations") or []
+    chunks = [
+        f"项目名称：{project.get('name') or '未命名项目'}",
+        f"客户名称：{project.get('customer_name') or '待确认'}",
+        f"项目描述：{project.get('description') or '待补充'}",
+        f"项目状态：{project.get('status') or 'active'}",
+        "",
+        "【项目内对话】",
+    ]
+    for conv in conversations[:8]:
+        chunks.append(f"- {conv.get('title') or '新对话'}（更新时间：{conv.get('updated_at') or ''}）")
+    chunks.append("")
+    chunks.append("【已保存项目产物】")
+    for idx, artifact in enumerate(artifacts[:18], 1):
+        citations = artifact.get("citations") or []
+        pages = []
+        for c in citations[:6]:
+            page = c.get("page") or "?"
+            section = c.get("section") or ""
+            pages.append(f"pg.{page} {section}".strip())
+        chunks.extend([
+            f"\n产物 {idx}：{artifact.get('title') or '未命名产物'}",
+            f"- 类型：{artifact.get('type') or 'qa'}",
+            f"- 正文摘要：{_brief_text(artifact.get('content'), 1100)}",
+            f"- 结构化数据：{_brief_text(artifact.get('structured_data'), 1100)}",
+            f"- 引用线索：{'；'.join(pages) if pages else '无'}",
+        ])
+    return "\n".join(chunks)[:18000]
+
+def _fallback_project_brief(project):
+    artifacts = project.get("artifacts") or []
+    conversations = project.get("conversations") or []
+    types = {a.get("type") for a in artifacts}
+    stage = "项目初始化"
+    if "defect_diagnosis" in types:
+        stage = "现场诊断 / 风险闭环"
+    elif "selection_matrix" in types:
+        stage = "选型决策"
+    elif "solution_draft" in types:
+        stage = "方案形成"
+    elif "requirement_clarification" in types:
+        stage = "需求澄清"
+    elif "qa" in types or conversations:
+        stage = "资料检索"
+    citation_pages = []
+    for artifact in artifacts:
+        for c in (artifact.get("citations") or [])[:3]:
+            citation_pages.append(f"pg.{c.get('page') or '?'} {c.get('section') or ''}".strip())
+    citation_pages = list(dict.fromkeys(citation_pages))[:12]
+    artifact_lines = [f"- {a.get('title') or '未命名产物'}（{a.get('type') or 'qa'}）" for a in artifacts[:8]]
+    return "\n".join([
+        "# 项目简报",
+        "",
+        "## 1. 项目背景",
+        f"- 项目名称：{project.get('name') or '未命名项目'}",
+        f"- 客户名称：{project.get('customer_name') or '待确认'}",
+        f"- 当前阶段：{stage}",
+        "",
+        "## 2. 客户需求与约束",
+        f"- {project.get('description') or '待从后续需求澄清中补充。'}",
+        "",
+        "## 3. 已确认工况",
+        "- 待从项目对话和需求澄清结果中进一步确认。",
+        "",
+        "## 4. 候选材料 / 工艺路线",
+        "\n".join(artifact_lines) if artifact_lines else "- 暂无已保存方案产物。",
+        "",
+        "## 5. 选型对比结论",
+        "- 待生成或保存选型矩阵后补充。",
+        "",
+        "## 6. 主要风险与待确认项",
+        "- 待从方案草案、选型矩阵和缺陷诊断中补充。",
+        "",
+        "## 7. 推荐方案",
+        "- 当前信息不足，建议继续补充需求澄清、知识依据和选型矩阵。",
+        "",
+        "## 8. 验证计划",
+        "- 建议补充关键性能指标、工况边界、样件验证和引用依据后形成验证计划。",
+        "",
+        "## 9. 引用依据",
+        "\n".join([f"- {item}" for item in citation_pages]) if citation_pages else "- 暂无引用依据。",
+    ])
+
+def _project_brief_citations(project):
+    seen = set()
+    result = []
+    for artifact in project.get("artifacts") or []:
+        for c in artifact.get("citations") or []:
+            key = (c.get("source_id"), c.get("page"), c.get("text"))
+            if key in seen:
+                continue
+            seen.add(key)
+            result.append(c)
+            if len(result) >= 20:
+                return result
+    return result
 
 @app.get("/")
 async def root():
@@ -436,6 +559,43 @@ async def api_save_project_artifact(project_id: int, req: dict, user: dict = Dep
         req.get("metadata", {}),
     )
     return {"artifact": artifact}
+
+@app.post("/api/projects/{project_id}/brief")
+async def api_generate_project_brief(project_id: int, user: dict = Depends(require_user)):
+    """Generate and save a project brief from conversations and artifacts."""
+    project = get_project(project_id, user["id"])
+    if not project:
+        raise HTTPException(404, "项目不存在")
+
+    context = _collect_project_brief_context(project)
+    messages = [
+        {"role": "system", "content": PROJECT_BRIEF_PROMPT},
+        {"role": "user", "content": context},
+    ]
+    brief = _agent._call_llm(messages, max_tokens=2600, timeout=75)
+    generated_by = "llm"
+    if not brief.strip():
+        brief = _fallback_project_brief(project)
+        generated_by = "fallback"
+
+    title = f"{project.get('name') or '项目'} - 项目简报"
+    citations = _project_brief_citations(project)
+    artifact = save_project_artifact(
+        user["id"],
+        project_id,
+        "project_brief",
+        title[:120],
+        brief,
+        {"type": "project_brief", "format": "markdown", "generated_by": generated_by},
+        citations,
+        {
+            "source": "project_brief_generator",
+            "generated_by": generated_by,
+            "conversation_count": len(project.get("conversations") or []),
+            "artifact_count": len(project.get("artifacts") or []),
+        },
+    )
+    return {"artifact": artifact, "project": get_project(project_id, user["id"])}
 
 if __name__ == "__main__":
     print(f"[Orchestrator] Starting on {HOST}:{PORT}")

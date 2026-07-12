@@ -625,6 +625,48 @@ POST /api/projects/{project_id}/artifacts
 }
 ```
 
+### 生成项目简报
+
+```http
+POST /api/projects/{project_id}/brief
+```
+
+后端会读取当前项目的：
+
+- 项目基础信息。
+- 项目内对话列表。
+- 已保存项目产物。
+- 结构化输出。
+- 引用来源。
+
+然后调用 LLM 生成 Markdown 项目简报，并保存为 `project_artifacts` 中的 `project_brief` 类型产物。
+
+返回：
+
+```json
+{
+  "artifact": {
+    "id": 20,
+    "project_id": 1,
+    "type": "project_brief",
+    "title": "海水泵体耐腐蚀方案 - 项目简报",
+    "content": "# 项目简报\n...",
+    "structured_data": {
+      "type": "project_brief",
+      "format": "markdown",
+      "generated_by": "llm"
+    },
+    "citations": [],
+    "metadata": {
+      "source": "project_brief_generator"
+    }
+  },
+  "project": {}
+}
+```
+
+如果 LLM 调用失败，后端会使用项目中已有结构化字段生成基础版简报，并将 `generated_by` 标记为 `fallback`。
+
 ## 前端路由与页面策略
 
 第一阶段不建议拆成多个大页面，而是在现有工作台内增加任务模式。

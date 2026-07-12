@@ -31,6 +31,7 @@ export const api = {
   getProject: (id) => request(`/api/projects/${id}`),
   updateProject: (id, data) => request(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   saveProjectArtifact: (id, data) => request(`/api/projects/${id}/artifacts`, { method: 'POST', body: JSON.stringify(data) }),
+  generateProjectBrief: (id) => request(`/api/projects/${id}/brief`, { method: 'POST' }),
 
   // Search & Chat
   search: (query, top_k = 10, section) => {

@@ -7,6 +7,7 @@ export const useProjectStore = defineStore('project', () => {
   const activeProject = ref(null)
   const isPanelOpen = ref(false)
   const isLoading = ref(false)
+  const isGeneratingBrief = ref(false)
   const lastError = ref('')
 
   function clearProjects() {
@@ -74,6 +75,24 @@ export const useProjectStore = defineStore('project', () => {
     return r.project
   }
 
+  async function generateBrief(id) {
+    if (!id) return null
+    isGeneratingBrief.value = true
+    lastError.value = ''
+    try {
+      const r = await api.generateProjectBrief(id)
+      activeProject.value = r.project || activeProject.value
+      isPanelOpen.value = true
+      await loadProjects()
+      return r.artifact
+    } catch (e) {
+      lastError.value = e.message || '生成项目简报失败'
+      throw e
+    } finally {
+      isGeneratingBrief.value = false
+    }
+  }
+
   function closeProject() {
     isPanelOpen.value = false
   }
@@ -88,6 +107,7 @@ export const useProjectStore = defineStore('project', () => {
     activeProject,
     isPanelOpen,
     isLoading,
+    isGeneratingBrief,
     lastError,
     clearProjects,
     loadProjects,
@@ -95,6 +115,7 @@ export const useProjectStore = defineStore('project', () => {
     loadProject,
     saveArtifact,
     updateProject,
+    generateBrief,
     closeProject,
     clearActiveProject,
   }
