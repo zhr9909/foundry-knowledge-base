@@ -46,6 +46,15 @@
           </div>
         </div>
 
+        <div class="project-focus">
+          <div>
+            <span class="mini-label">项目主线</span>
+            <strong>{{ projectFocus.problem }}</strong>
+            <p>{{ projectFocus.basis }}</p>
+          </div>
+          <span class="focus-source">{{ projectFocus.source }}</span>
+        </div>
+
         <div class="overview-blocks">
           <div class="overview-block">
             <div class="mini-label">候选材料 / 工艺</div>
@@ -89,7 +98,7 @@
           已有 {{ savedEvidenceCards.length }} 张证据卡，但还没有勾选“可用于报告”。生成简报会退回使用普通引用线索。
         </div>
         <div v-if="briefOpen" class="brief-preview">
-          <pre>{{ briefPreview }}</pre>
+          <div class="brief-markdown answer-text" v-html="renderMarkdown(briefPreview)"></div>
         </div>
       </section>
 
@@ -144,9 +153,22 @@
       </section>
 
       <section class="conversation-section" v-if="conversations.length">
-        <div class="section-title">项目内对话</div>
+        <div class="conversation-head">
+          <div>
+            <div class="section-title">项目内对话</div>
+            <p>当前项目下保存的检索与方案讨论</p>
+          </div>
+          <button
+            v-if="conversations.length > conversationPreviewLimit"
+            class="conversation-toggle"
+            type="button"
+            @click="showAllConversations = !showAllConversations"
+          >
+            {{ showAllConversations ? '收起' : `全部 ${conversations.length}` }}
+          </button>
+        </div>
         <button
-          v-for="conv in conversations.slice(0, 6)"
+          v-for="conv in visibleConversations"
           :key="conv.id"
           class="conversation-row"
           type="button"
@@ -194,6 +216,7 @@
               <div>
                 <strong>{{ card.title }}</strong>
                 <span>pg.{{ card.page || '?' }} · {{ evidenceLevelText(card.metadata?.evidence_level) }}</span>
+                <em>{{ evidenceSourceText(card) }}</em>
               </div>
               <button type="button" @click="openPdf(card)" title="打开原文">原文</button>
             </div>
@@ -212,7 +235,20 @@
                 <option value="medium">中可靠</option>
                 <option value="low">待核实</option>
               </select>
-              <button type="button" class="danger-text" @click="deleteEvidenceCard(card)">删除</button>
+              <button
+                type="button"
+                class="danger-text danger-icon-btn"
+                title="删除证据"
+                aria-label="删除证据"
+                @click.stop="requestDeleteEvidenceCard(card)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16" />
+                  <path d="M10 11v6M14 11v6" />
+                  <path d="M6 7l1 14h10l1-14" />
+                  <path d="M9 7V4h6v3" />
+                </svg>
+              </button>
             </div>
             <textarea
               :value="card.note"
@@ -238,7 +274,7 @@
             <p>{{ item.text || '暂无摘录文本。' }}</p>
             <div class="evidence-card-foot">
               <span>{{ item.artifactTypeText }}</span>
-              <strong>{{ item.artifactTitle }}</strong>
+              <strong>{{ item.sourceHint }}</strong>
             </div>
             <div v-if="item.tags.length" class="evidence-card-tags">
               <span v-for="tag in item.tags.slice(0, 3)" :key="tag">{{ tag }}</span>
@@ -301,7 +337,19 @@
               </article>
             </div>
 
-            <div v-else class="workflow-empty">{{ group.empty }}</div>
+            <div v-else class="workflow-empty">
+              <p>{{ group.empty }}</p>
+              <button
+                v-if="group.type === 'project_brief'"
+                type="button"
+                @click="$emit('generate-brief')"
+              >生成项目简报</button>
+              <button
+                v-else-if="group.mode"
+                type="button"
+                @click="$emit('start-workflow', group.mode)"
+              >{{ group.action }}</button>
+            </div>
           </section>
         </div>
       </section>
@@ -348,6 +396,44 @@
         </div>
       </section>
     </div>
+    <Teleport to="body">
+      <div
+        v-if="pendingDeleteEvidenceCard"
+        class="confirm-backdrop"
+        role="presentation"
+        @click.self="cancelDeleteEvidenceCard"
+      >
+        <section
+          class="confirm-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="deleteEvidenceTitle"
+        >
+          <button
+            class="confirm-close"
+            type="button"
+            :disabled="!!deletingEvidenceId"
+            aria-label="关闭"
+            @click="cancelDeleteEvidenceCard"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+          <div class="confirm-kicker">删除证据</div>
+          <h3 id="deleteEvidenceTitle">确认删除这条证据？</h3>
+          <p>删除后，这条证据不会再出现在项目证据库、项目简报和报告候选中。</p>
+          <div class="confirm-preview">
+            <strong>{{ pendingDeleteEvidenceCard.title || `证据 pg.${pendingDeleteEvidenceCard.page || '?'}` }}</strong>
+            <span>{{ pendingDeleteEvidenceCard.quote || pendingDeleteEvidenceCard.summary || '暂无摘录文本。' }}</span>
+          </div>
+          <div class="confirm-actions">
+            <button type="button" class="confirm-secondary" :disabled="!!deletingEvidenceId" @click="cancelDeleteEvidenceCard">取消</button>
+            <button type="button" class="confirm-danger" :disabled="!!deletingEvidenceId" @click="confirmDeleteEvidenceCard">
+              {{ deletingEvidenceId ? '删除中...' : '确认删除' }}
+            </button>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </aside>
 </template>
 
@@ -359,9 +445,10 @@ const props = defineProps({
   project: { type: Object, required: true },
   isGeneratingBrief: { type: Boolean, default: false },
 })
-defineEmits(['close', 'select-conversation', 'generate-brief'])
+defineEmits(['close', 'select-conversation', 'generate-brief', 'start-workflow'])
 
 const briefOpen = ref(false)
+const showAllConversations = ref(false)
 const copied = ref(false)
 const detailSection = ref(null)
 const pdfExporting = ref(false)
@@ -370,12 +457,16 @@ const localArtifacts = ref([])
 const localEngineeringDocuments = ref([])
 const artifacts = computed(() => localArtifacts.value)
 const conversations = computed(() => props.project.conversations || [])
+const conversationPreviewLimit = 6
+const visibleConversations = computed(() => showAllConversations.value ? conversations.value : conversations.value.slice(0, conversationPreviewLimit))
 const artifactCount = computed(() => Math.max(Number(props.project.artifact_count || 0), artifacts.value.length))
 const latestBriefArtifact = computed(() => artifacts.value.find((item) => item.type === 'project_brief') || null)
 const evidenceSearch = ref('')
 const evidenceTag = ref('全部')
 const savedEvidenceCards = ref([])
 const savingEvidenceKey = ref('')
+const pendingDeleteEvidenceCard = ref(null)
+const deletingEvidenceId = ref(null)
 const selectedEngineeringFile = ref(null)
 const engineeringDocumentKind = ref('engineering_case')
 const isUploadingEngineeringDocument = ref(false)
@@ -387,6 +478,13 @@ watch(
     localArtifacts.value = Array.isArray(props.project.artifacts) ? [...props.project.artifacts] : []
   },
   { immediate: true, deep: true },
+)
+
+watch(
+  () => props.project.id,
+  () => {
+    showAllConversations.value = false
+  },
 )
 
 watch(
@@ -407,12 +505,12 @@ watch(
 
 const workflowConfig = [
   { type: 'project_brief', label: '项目简报', description: '客户沟通与内部评审摘要', empty: '还没有生成项目简报。' },
-  { type: 'requirement_clarification', label: '需求澄清', description: '客户条件、缺失信息、追问清单', empty: '还没有需求澄清产物。' },
-  { type: 'qa', label: '知识依据', description: '标准、手册、材料与工艺依据', empty: '还没有保存知识问答依据。' },
-  { type: 'engineering_case', label: '工程案例', description: '现场记录、实验结果与工艺脑图', empty: '还没有导入工程文档。' },
-  { type: 'solution_draft', label: '方案草案', description: '材料、工艺、验证路线', empty: '还没有方案草案。' },
-  { type: 'selection_matrix', label: '选型矩阵', description: '多候选对比与决策理由', empty: '还没有选型矩阵。' },
-  { type: 'defect_diagnosis', label: '缺陷诊断', description: '风险、失效与现场排查', empty: '还没有缺陷诊断记录。' },
+  { type: 'requirement_clarification', mode: 'requirement_clarification', label: '需求澄清', description: '客户条件、缺失信息、追问清单', empty: '在“需求澄清”模式里输入客户现场条件、约束和缺失信息后，会沉淀到这里。', action: '去做需求澄清' },
+  { type: 'qa', mode: 'qa', label: '知识依据', description: '标准、手册、材料与工艺依据', empty: '在知识问答里得到有价值回答后，点击回答下方“保存到项目”，会进入这里。', action: '去问知识依据' },
+  { type: 'engineering_case', label: '工程案例', description: '现场记录、实验结果与工艺脑图', empty: '在上方“工程文档导入”上传现场记录、实验报告或脑图后，会进入这里。' },
+  { type: 'solution_draft', mode: 'solution_draft', label: '方案草案', description: '材料、工艺、验证路线', empty: '在“方案草案”模式里描述目标、候选材料和工艺约束后，会生成方案草案。', action: '去写方案草案' },
+  { type: 'selection_matrix', mode: 'selection_matrix', label: '选型矩阵', description: '多候选对比与决策理由', empty: '在“选型矩阵”模式里提出候选材料/工艺的对比问题，例如“铜合金、铝合金和钛合金怎么选”，会生成矩阵。', action: '去做选型矩阵' },
+  { type: 'defect_diagnosis', mode: 'defect_diagnosis', label: '缺陷诊断', description: '风险、失效与现场排查', empty: '在“缺陷诊断”模式里描述缺陷现象、工况和材料工艺后，会形成诊断记录。', action: '去做缺陷诊断' },
 ]
 
 const artifactGroups = computed(() => workflowConfig.map((group) => ({
@@ -446,6 +544,8 @@ const evidenceItems = computed(() => {
         artifactId: artifact.id,
         artifactTitle: artifact.title || '未命名产物',
         artifactTypeText: typeText(artifact.type),
+        question: artifact.metadata?.question || artifact.structured_data?.question || '',
+        sourceHint: evidenceSourceHint(artifact),
         createdAt: artifact.created_at,
         searchText: compactText([
           text,
@@ -453,6 +553,7 @@ const evidenceItems = computed(() => {
           citation.source_type,
           citation.evidence_level,
           artifact.title,
+          artifact.metadata?.question,
           typeText(artifact.type),
           tags.join(' '),
           page ? `pg.${page}` : '',
@@ -536,6 +637,35 @@ const overview = computed(() => {
   }
 })
 
+const projectFocus = computed(() => {
+  const requirement = latestArtifactByType('requirement_clarification')
+  const solution = latestArtifactByType('solution_draft')
+  const matrix = latestArtifactByType('selection_matrix')
+  const diagnosis = latestArtifactByType('defect_diagnosis')
+  const sourceArtifact = requirement || solution || matrix || diagnosis || latestBriefArtifact.value
+  const projectDescription = compactText(props.project.description || props.project.summary || '')
+  const latestQuestion = compactText(conversations.value[0]?.title || '')
+  const artifactQuestion = compactText(sourceArtifact?.metadata?.question || '')
+  const artifactContent = compactText(sourceArtifact?.content || '')
+  const problem = projectDescription
+    || artifactQuestion
+    || latestQuestion
+    || '尚未确定核心问题'
+  let basis = '建议先用“需求澄清”沉淀客户场景、失效/目标、约束条件和评价指标。'
+  let source = '待确认'
+  if (requirement) {
+    basis = compactText(requirement.content).slice(0, 120) || '已存在需求澄清产物，可作为项目主线依据。'
+    source = '来自需求澄清'
+  } else if (solution || matrix || diagnosis) {
+    basis = artifactContent.slice(0, 120) || '已存在方案/矩阵/诊断产物，暂作为项目主线依据。'
+    source = `来自${typeText(sourceArtifact.type)}`
+  } else if (latestQuestion) {
+    basis = '当前仅能从最近项目对话推断，建议补一次需求澄清，避免项目主题被零散问答带偏。'
+    source = '来自最近对话'
+  }
+  return { problem, basis, source }
+})
+
 const projectBrief = computed(() => {
   const lines = [
     `# ${props.project.name}`,
@@ -561,6 +691,84 @@ const projectBrief = computed(() => {
   return lines.join('\n')
 })
 const briefPreview = computed(() => latestBriefArtifact.value?.content || projectBrief.value)
+
+function renderMarkdown(text) {
+  if (!text) return ''
+  const tableBlocks = []
+  let result = String(text).replace(/((?:\|.*\|(?:\r?\n|$)){2,})/g, (match) => {
+    tableBlocks.push(renderMarkdownTable(match))
+    return `\x00T${tableBlocks.length - 1}\x00`
+  })
+  result = escapeHtml(result)
+  result = result
+    .replace(/^###\s+(.*?)$/gm, '<h4>$1</h4>')
+    .replace(/^##\s+(.*?)$/gm, '<h3>$1</h3>')
+    .replace(/^#\s+(.*?)$/gm, '<h2>$1</h2>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+  result = result.replace(/\x00T(\d+)\x00/g, (_, id) => tableBlocks[Number(id)] || '')
+
+  const blocks = result.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean)
+  return blocks.map((block) => {
+    if (/^<h[2-4]/.test(block) || block.startsWith('<table')) return block
+    if (/^(?:-\s+.*(?:\n|$))+/.test(block)) {
+      const items = block.split('\n')
+        .filter((line) => line.trim().startsWith('- '))
+        .map((line) => `<li>${line.replace(/^-\s+/, '')}</li>`)
+        .join('')
+      return `<ul>${items}</ul>`
+    }
+    return `<p>${block.replace(/\n/g, '<br>')}</p>`
+  }).join('')
+}
+
+function renderMarkdownTable(markdown) {
+  const rows = markdown.trim().split(/\r?\n/).filter((line) => line.trim().startsWith('|'))
+  if (!rows.length) return escapeHtml(markdown)
+  const hasSeparator = rows.length > 1 && /\|?\s*:?-{3,}:?\s*\|/.test(rows[1])
+  const headerCells = splitTableRow(rows[0])
+  const bodyRows = rows.slice(hasSeparator ? 2 : 1).map(splitTableRow).filter((cells) => cells.length)
+  let html = '<table>'
+  if (hasSeparator) {
+    html += `<thead><tr>${headerCells.map((cell) => `<th>${escapeHtml(cell)}</th>`).join('')}</tr></thead>`
+  } else if (headerCells.length) {
+    bodyRows.unshift(headerCells)
+  }
+  html += `<tbody>${bodyRows.map((cells) => `<tr>${cells.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+  return html
+}
+
+function splitTableRow(row) {
+  return row.split('|').map((cell) => cell.trim()).filter(Boolean)
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function latestArtifactByType(type) {
+  return artifacts.value.find((item) => item.type === type) || null
+}
+
+function evidenceSourceHint(artifact) {
+  const question = compactText(artifact?.metadata?.question || '')
+  if (question) return `来自问题：${question}`
+  return `${typeText(artifact?.type)}：${artifact?.title || '未命名产物'}`
+}
+
+function evidenceSourceText(card) {
+  const question = compactText(card?.metadata?.question || '')
+  if (question) return `来源问题：${question}`
+  const title = compactText(card?.metadata?.artifact_title || card?.metadata?.artifactTitle || '')
+  const type = compactText(card?.metadata?.artifact_type_text || card?.metadata?.artifactTypeText || '')
+  if (title) return `来源：${type ? `${type} · ` : ''}${title}`
+  return '来源：项目证据池'
+}
 
 function openArtifact(artifact) {
   selectedArtifact.value = artifact
@@ -719,6 +927,8 @@ function evidencePayloadFromItem(item, patch = {}) {
       evidence_level: item.evidence_level || item.evidenceLevel || null,
       artifact_title: item.artifactTitle || null,
       artifact_type_text: item.artifactTypeText || null,
+      question: item.question || item.metadata?.question || null,
+      source_hint: item.sourceHint || null,
     },
   }
 }
@@ -758,12 +968,35 @@ async function updateEvidenceCard(card, patch) {
 }
 
 async function deleteEvidenceCard(card) {
-  if (!props.project.id || !card?.id) return
+  if (!props.project.id || !card?.id) return false
   try {
     await api.deleteProjectEvidence(props.project.id, card.id)
     savedEvidenceCards.value = savedEvidenceCards.value.filter((item) => item.id !== card.id)
+    return true
   } catch (error) {
     window.alert(error?.message || '删除证据失败')
+    return false
+  }
+}
+
+function requestDeleteEvidenceCard(card) {
+  pendingDeleteEvidenceCard.value = card
+}
+
+function cancelDeleteEvidenceCard() {
+  if (deletingEvidenceId.value) return
+  pendingDeleteEvidenceCard.value = null
+}
+
+async function confirmDeleteEvidenceCard() {
+  const card = pendingDeleteEvidenceCard.value
+  if (!card?.id || deletingEvidenceId.value) return
+  deletingEvidenceId.value = card.id
+  try {
+    const deleted = await deleteEvidenceCard(card)
+    if (deleted) pendingDeleteEvidenceCard.value = null
+  } finally {
+    deletingEvidenceId.value = null
   }
 }
 
@@ -929,10 +1162,13 @@ function formatFileSize(size) {
 
 function documentStatsText(doc) {
   const stats = doc?.structured_data?.statistics || doc?.metadata?.statistics || {}
+  const chunkIndex = doc?.chunk_index || doc?.metadata?.chunk_index || {}
   const tableCount = Number(stats.table_count || 0)
   const imageCount = Number(stats.image_count || 0)
   const blockCount = Number(stats.block_count || 0)
+  const chunkCount = Number(chunkIndex.chunk_count || 0)
   const parts = [doc?.parse_status || 'stored']
+  if (chunkCount) parts.push(`${chunkCount} 块入库`)
   if (blockCount) parts.push(`${blockCount} 块`)
   if (tableCount) parts.push(`${tableCount} 表`)
   if (imageCount) parts.push(`${imageCount} 图`)
@@ -976,6 +1212,10 @@ function formatTime(value) {
 .overview-item { min-width: 0; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); padding: 9px; }
 .overview-item span, .mini-label { display: block; color: var(--text-muted); font-size: 11px; font-weight: 720; }
 .overview-item strong { display: block; margin-top: 3px; color: var(--text-primary); font-size: 14px; line-height: 1.35; font-weight: 780; }
+.project-focus { margin-top: 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-light)); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--accent) 7%, var(--bg-surface)); padding: 10px; }
+.project-focus strong { display: block; margin-top: 4px; color: var(--text-primary); font-size: 13px; line-height: 1.5; font-weight: 800; text-wrap: pretty; }
+.project-focus p { margin-top: 5px; color: var(--text-secondary); font-size: 12px; line-height: 1.65; }
+.focus-source { flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-light)); border-radius: 999px; background: var(--bg-surface); color: var(--accent-strong); padding: 3px 8px; font-size: 11px; font-weight: 760; white-space: nowrap; }
 .overview-blocks { margin-top: 12px; display: flex; flex-direction: column; gap: 9px; }
 .overview-block { border-top: 1px solid var(--border-light); padding-top: 9px; }
 .overview-block p, .overview-block li { color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
@@ -983,7 +1223,20 @@ function formatTime(value) {
 .chip-row { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-row span { border: 1px solid var(--border-light); border-radius: 999px; background: var(--bg-surface); color: var(--text-secondary); padding: 4px 8px; font-size: 12px; font-weight: 650; }
 .brief-preview { margin-top: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); padding: 10px; }
-.brief-preview pre { margin: 0; color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; line-height: 1.65; white-space: pre-wrap; }
+.brief-markdown { color: var(--text-secondary); font-size: 12px; line-height: 1.72; }
+.brief-markdown :deep(h2) { margin: 0 0 10px; color: var(--text-primary); font-size: 16px; line-height: 1.45; font-weight: 820; }
+.brief-markdown :deep(h3) { margin: 14px 0 7px; color: var(--text-primary); font-size: 14px; line-height: 1.5; font-weight: 780; }
+.brief-markdown :deep(h4) { margin: 12px 0 6px; color: var(--text-primary); font-size: 13px; line-height: 1.45; font-weight: 760; }
+.brief-markdown :deep(p) { margin: 0 0 9px; }
+.brief-markdown :deep(ul) { margin: 7px 0 10px; padding-left: 18px; }
+.brief-markdown :deep(li) { margin: 3px 0; }
+.brief-markdown :deep(strong) { color: var(--text-primary); font-weight: 760; }
+.brief-markdown :deep(code) { border: 1px solid var(--border-light); border-radius: 5px; background: var(--bg-surface-2); padding: 1px 5px; font-family: var(--font-mono); font-size: 11px; }
+.brief-markdown :deep(table) { width: 100%; margin: 9px 0 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 11px; }
+.brief-markdown :deep(th), .brief-markdown :deep(td) { border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); padding: 6px 7px; text-align: left; vertical-align: top; }
+.brief-markdown :deep(th) { background: var(--bg-surface-2); color: var(--text-primary); font-weight: 760; }
+.brief-markdown :deep(th:last-child), .brief-markdown :deep(td:last-child) { border-right: 0; }
+.brief-markdown :deep(tr:last-child td) { border-bottom: 0; }
 .document-import-controls { margin-top: 12px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) auto; gap: 8px; align-items: center; }
 .document-import-controls select,
 .file-picker,
@@ -1004,6 +1257,10 @@ function formatTime(value) {
 .document-card span { display: block; margin-top: 3px; color: var(--text-muted); font-size: 11px; line-height: 1.35; }
 .document-card time { flex: 0 0 auto; color: var(--text-muted); font-size: 11px; white-space: nowrap; }
 .conversation-section { display: flex; flex-direction: column; gap: 7px; }
+.conversation-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 3px; }
+.conversation-head p { margin-top: 3px; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.conversation-toggle { flex: 0 0 auto; border: 1px solid var(--border-light); border-radius: 999px; background: var(--bg-surface); color: var(--text-secondary); padding: 4px 8px; font-size: 11px; font-weight: 760; cursor: pointer; }
+.conversation-toggle:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
 .conversation-row { width: 100%; min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-secondary); padding: 8px 10px; cursor: pointer; text-align: left; }
 .conversation-row:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--text-primary); }
 .conversation-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 700; }
@@ -1023,6 +1280,7 @@ function formatTime(value) {
 .confirmed-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .confirmed-head strong { display: block; color: var(--text-primary); font-size: 13px; line-height: 1.4; font-weight: 780; }
 .confirmed-head span { display: block; margin-top: 3px; color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; }
+.confirmed-head em { display: block; margin-top: 4px; color: var(--text-secondary); font-style: normal; font-size: 11px; line-height: 1.45; }
 .confirmed-head button, .evidence-actions button { flex: 0 0 auto; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-secondary); padding: 5px 8px; font-size: 11px; font-weight: 720; cursor: pointer; }
 .confirmed-head button:hover, .evidence-actions button:hover { border-color: var(--accent); color: var(--accent-strong); background: var(--accent-soft); }
 .confirmed-card p { margin-top: 7px; color: var(--text-secondary); font-size: 12px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1031,7 +1289,33 @@ function formatTime(value) {
 .confirmed-controls input { accent-color: var(--accent); }
 .confirmed-controls select { min-height: 28px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-secondary); padding: 0 7px; font-size: 11px; outline: none; }
 .confirmed-controls select:focus { border-color: var(--accent); }
-.confirmed-controls .danger-text { margin-left: auto; color: var(--danger, #ef4444); }
+.confirmed-controls .danger-text {
+  margin-left: auto;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+.confirmed-controls .danger-text:hover {
+  border-color: color-mix(in srgb, #ef4444 26%, var(--border-light));
+  background: color-mix(in srgb, #ef4444 8%, var(--bg-surface));
+  color: #dc2626;
+}
+.danger-icon-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+}
+.danger-icon-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .confirmed-card textarea { width: 100%; margin-top: 8px; resize: vertical; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); padding: 7px 8px; font-size: 12px; line-height: 1.5; outline: none; }
 .confirmed-card textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
 .evidence-list { margin-top: 11px; display: flex; flex-direction: column; gap: 8px; }
@@ -1065,6 +1349,9 @@ function formatTime(value) {
 .artifact-card p { margin-top: 6px; color: var(--text-secondary); font-size: 12px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .artifact-foot { margin-top: 8px; display: flex; gap: 7px; color: var(--accent-strong); font-size: 11px; font-weight: 720; }
 .workflow-empty { padding: 10px; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+.workflow-empty p { margin: 0; }
+.workflow-empty button { margin-top: 9px; min-height: 30px; border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border-light)); border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent-strong); padding: 0 10px; font-size: 12px; font-weight: 760; cursor: pointer; }
+.workflow-empty button:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg-surface)); }
 .artifact-detail { border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-light)); border-radius: var(--radius-md); background: var(--bg-surface-2); padding: 13px; }
 .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .detail-head p { margin-top: 3px; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
@@ -1080,6 +1367,127 @@ function formatTime(value) {
 .detail-citation strong { color: var(--accent-strong); font-family: var(--font-mono); font-size: 11px; }
 .detail-citation span { margin-left: 7px; color: var(--text-muted); font-size: 11px; }
 .detail-citation p { margin-top: 5px; color: var(--text-secondary); font-size: 12px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(2, 6, 23, .66);
+}
+.confirm-dialog {
+  width: min(430px, 100%);
+  position: relative;
+  border: 1px solid color-mix(in srgb, #ef4444 28%, var(--border-light));
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  padding: 22px;
+  box-shadow: var(--shadow-panel);
+}
+.confirm-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.confirm-close svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.confirm-close:hover { border-color: var(--accent); color: var(--text-primary); }
+.confirm-kicker {
+  color: #fca5a5;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 820;
+  letter-spacing: .04em;
+}
+.confirm-dialog h3 {
+  margin-top: 8px;
+  padding-right: 44px;
+  color: var(--text-primary);
+  font-size: 19px;
+  line-height: 1.35;
+  font-weight: 820;
+}
+.confirm-dialog p {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.confirm-preview {
+  margin-top: 14px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  padding: 11px 12px;
+}
+.confirm-preview strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 780;
+}
+.confirm-preview span {
+  display: -webkit-box;
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.confirm-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+.confirm-actions button {
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 780;
+  cursor: pointer;
+}
+.confirm-secondary {
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+.confirm-secondary:hover { border-color: var(--accent); color: var(--text-primary); }
+.confirm-danger {
+  border: 1px solid color-mix(in srgb, #ef4444 72%, #7f1d1d);
+  background: #dc2626;
+  color: #fff;
+}
+.confirm-danger:hover {
+  background: #b91c1c;
+  border-color: #ef4444;
+}
+.confirm-actions button:disabled,
+.confirm-close:disabled {
+  opacity: .6;
+  cursor: wait;
+}
 @media (max-width: 1120px) {
   .project-panel { position: fixed; right: 0; top: 0; z-index: 28; box-shadow: var(--shadow-panel); }
 }
@@ -1087,5 +1495,8 @@ function formatTime(value) {
   .project-panel { width: min(100vw, 430px); min-width: 0; }
   .overview-grid { grid-template-columns: 1fr; }
   .document-import-controls { grid-template-columns: 1fr; }
+  .confirm-dialog { padding: 18px; }
+  .confirm-actions { flex-direction: column-reverse; }
+  .confirm-actions button { width: 100%; }
 }
 </style>

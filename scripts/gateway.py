@@ -27,7 +27,7 @@ if str(_scripts_dir) not in sys.path:
     sys.path.insert(0, str(_scripts_dir))
 
 from storage import build_object_key, get_object_store, object_hash, safe_name
-from document_parser import parse_document
+from document_parser import build_document_chunks, parse_document
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import FileResponse, StreamingResponse, RedirectResponse, Response
@@ -43,6 +43,14 @@ HOST = "0.0.0.0"
 PORT = 8000
 STATIC_DIR = _scripts_dir.parent / "app-vue" / "dist"
 PDF_DIR = _scripts_dir.parent / "raw"
+
+DB_CONFIG = {
+    "host": "127.0.0.1",
+    "port": 15432,
+    "dbname": "foundry_kb",
+    "user": "findmyjob",
+    "password": "findmyjob_dev_password",
+}
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [ORCH] %(message)s', datefmt='%H:%M:%S', force=True)
 _log = logging.getLogger('orchestrator')
@@ -108,6 +116,14 @@ async def _acall(method, url, **kwargs):
         await _client.aclose()
         _client = httpx.AsyncClient()
         return await _client.request(method, url, **kwargs)
+
+_STREAM_DONE = object()
+
+def _next_stream_event(iterator):
+    try:
+        return next(iterator)
+    except StopIteration:
+        return _STREAM_DONE
 
 def _brief_text(value, limit=900):
     text = json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else str(value or "")
@@ -676,6 +692,141 @@ def _parse_upload_payload(req):
         raise HTTPException(413, "文件超过 25MB，简单版导入暂不支持")
     return filename, data
 
+def _get_embedding_model_for_ingest():
+    from search import get_embedding_model
+    return get_embedding_model()
+
+def _json_default(value, fallback):
+    try:
+        return json.dumps(value if value is not None else fallback, ensure_ascii=False)
+    except Exception:
+        return json.dumps(fallback, ensure_ascii=False)
+
+def _index_engineering_document_chunks(user_id, project_id, document, parsed_document, filename, document_kind):
+    chunks = build_document_chunks(parsed_document, filename=filename, document_kind=document_kind)
+    indexable_chunks = [chunk for chunk in chunks if chunk.get("type") != "image_note"]
+    if not indexable_chunks:
+        return {"status": "skipped", "chunk_count": 0, "reason": "no parsed chunks"}
+
+    import psycopg2
+
+    doc_id = int(document.get("id"))
+    source_title = document.get("title") or filename
+    object_key = (document.get("metadata") or {}).get("object_key", "")
+    model = _get_embedding_model_for_ingest()
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        cur = conn.cursor()
+        source_metadata = {
+            "source": "engineering_document",
+            "project_id": project_id,
+            "engineering_document_id": doc_id,
+            "document_kind": document_kind,
+            "object_key": object_key,
+        }
+        cur.execute(
+            """INSERT INTO document_sources
+               (source_type, title, file_name, visibility, owner_user_id, confidentiality, metadata)
+               VALUES ('project_document', %s, %s, 'private', %s, 'internal', %s)
+               RETURNING id""",
+            (
+                source_title,
+                filename,
+                user_id,
+                _json_default(source_metadata, {}),
+            ),
+        )
+        source_id = cur.fetchone()[0]
+
+        cur.execute(
+            "DELETE FROM chunks WHERE source_type = 'project_document' AND document_id = %s",
+            (doc_id,),
+        )
+
+        batch_size = 16
+        inserted = 0
+        for start in range(0, len(indexable_chunks), batch_size):
+            batch = indexable_chunks[start:start + batch_size]
+            embeddings = model.encode([c["content"] for c in batch], show_progress_bar=False)
+            for chunk, embedding in zip(batch, embeddings):
+                page = int((chunk.get("pages") or [1])[0] or 1)
+                chunk_meta = dict(chunk.get("metadata") or {})
+                chunk_meta.update({
+                    "source": "engineering_document",
+                    "project_id": project_id,
+                    "engineering_document_id": doc_id,
+                    "document_source_id": source_id,
+                    "section_path": chunk.get("section_path", ""),
+                    "page_range": chunk.get("pages") or [page],
+                    "tokens": chunk.get("tokens", 0),
+                })
+                cur.execute(
+                    """INSERT INTO chunks
+                       (source_id, document_id, source_type, visibility, owner_user_id, project_id,
+                        confidentiality, evidence_level, chunk_id, page, chunk_type, content_text,
+                        table_shape, table_header, embedding, metadata)
+                       VALUES (%s, %s, 'project_document', 'private', %s, %s,
+                               'internal', 'project', %s, %s, %s, %s, %s, %s, %s, %s)
+                       ON CONFLICT (chunk_id) DO UPDATE SET
+                         content_text = EXCLUDED.content_text,
+                         embedding = EXCLUDED.embedding,
+                         metadata = EXCLUDED.metadata,
+                         table_shape = EXCLUDED.table_shape,
+                         table_header = EXCLUDED.table_header""",
+                    (
+                        source_id,
+                        doc_id,
+                        user_id,
+                        project_id,
+                        f"engdoc-{doc_id}-{chunk['chunk_id']}",
+                        page,
+                        chunk.get("type") or "paragraph",
+                        chunk.get("content") or "",
+                        chunk.get("table_shape"),
+                        _json_default(chunk.get("table_header") or [], []),
+                        embedding.tolist(),
+                        _json_default(chunk_meta, {}),
+                    ),
+                )
+                inserted += 1
+        conn.commit()
+        chunk_types = {}
+        for chunk in chunks:
+            kind = chunk.get("type") or "unknown"
+            chunk_types[kind] = chunk_types.get(kind, 0) + 1
+        return {
+            "status": "indexed",
+            "chunk_count": inserted,
+            "parsed_chunk_count": len(chunks),
+            "skipped_image_notes": len(chunks) - len(indexable_chunks),
+            "document_source_id": source_id,
+            "chunk_types": chunk_types,
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def _update_engineering_document_chunk_index(user_id, project_id, document_id, chunk_index):
+    import psycopg2
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """UPDATE engineering_documents
+               SET metadata = COALESCE(metadata, '{}'::jsonb) || %s::jsonb,
+                   updated_at = NOW()
+               WHERE id = %s AND user_id = %s AND project_id = %s""",
+            (_json_default({"chunk_index": chunk_index}, {}), document_id, user_id, project_id),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
 @app.get("/")
 async def root():
     return RedirectResponse(url="/static/index.html")
@@ -731,10 +882,17 @@ async def chat(req: ChatRequest):
         return {"answer": f"Orchestrator error: {str(e)}", "citations": [], "search_results": [], "thinking": ""}
 
 @app.get("/chat/stream")
-async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None, history: str = None, mode: str = "qa", project_id: str = None):
+async def chat_stream(query: str, section: str = None, conv_id: str = None, token: str = None, history: str = None, mode: str = "qa", project_id: str = None, correction_entity: str = None, correction_original_query: str = None, display_query: str = None):
     """Direct SSE from agent.py - no proxy, no buffering.
     Supports: token (JWT) for auth, conv_id for conversation tracking.
     """
+    project_id_int = None
+    if project_id not in (None, "", "null", "undefined"):
+        try:
+            project_id_int = int(project_id)
+        except Exception:
+            project_id_int = None
+
     # Decode auth if token provided
     auth_user = None
     if token:
@@ -756,14 +914,20 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
                 pass
         if not conversation_id:
             # Auto-create conversation with first query as title
-            title = query[:60] if len(query) > 60 else query
-            c = create_conversation(auth_user["id"], title, project_id)
+            title_source = display_query or query
+            title = title_source[:60] if len(title_source) > 60 else title_source
+            c = create_conversation(auth_user["id"], title, project_id_int)
             conversation_id = c["id"]
             conv_id = str(conversation_id)
         
         # Save user message
         try:
-            save_message(conversation_id, "user", query, {"mode": mode or "qa", "project_id": project_id})
+            save_message(conversation_id, "user", display_query or query, {
+                "mode": mode or "qa",
+                "project_id": project_id_int,
+                "raw_query": query,
+                "correction_entity": correction_entity or "",
+            })
             user_saved = True
         except Exception as e:
             _log.warning(f"Failed to save user message: {e}")
@@ -804,12 +968,16 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
                                 continue
                             if msg.get("role") in ("user", "assistant"):
                                 hist_from_conv.append({"role": msg["role"], "content": msg.get("content", "")})
-                        if hist_from_conv and hist_from_conv[-1].get("role") == "user" and hist_from_conv[-1].get("content") == query:
+                        if hist_from_conv and hist_from_conv[-1].get("role") == "user" and hist_from_conv[-1].get("content") in {query, display_query}:
                             hist_from_conv.pop()
                 except Exception:
                     pass
             effective_history = request_history or hist_from_conv
-            for event in _agent.stream_chat(query, section, history=effective_history if effective_history else None, mode=full_mode):
+            stream_iter = _agent.stream_chat(query, section, history=effective_history if effective_history else None, mode=full_mode, project_id=project_id_int, correction_entity=correction_entity)
+            while True:
+                event = await asyncio.to_thread(_next_stream_event, stream_iter)
+                if event is _STREAM_DONE:
+                    break
                 if event is None:
                     continue
                 etype = event.get("type", "")
@@ -840,7 +1008,7 @@ async def chat_stream(query: str, section: str = None, conv_id: str = None, toke
             # Save assistant answer
             if auth_user and user_saved and full_answer and conversation_id:
                 try:
-                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations, "graph": full_graph, "retrieval": full_retrieval, "mode": full_mode, "structured_output": full_structured_output, "project_id": project_id})
+                    save_message(conversation_id, "assistant", full_answer, {"citations": full_citations, "graph": full_graph, "retrieval": full_retrieval, "mode": full_mode, "structured_output": full_structured_output, "project_id": project_id_int})
                     answer_saved = True
                 except Exception as e:
                     _log.warning(f"Failed to save assistant message: {e}")
@@ -1110,6 +1278,26 @@ async def api_upload_engineering_document(project_id: int, req: dict, user: dict
             "statistics": parsed_document.get("statistics") or {},
         },
     )
+    chunk_index = {"status": "not_started", "chunk_count": 0}
+    try:
+        chunk_index = _index_engineering_document_chunks(
+            user["id"],
+            project_id,
+            document,
+            parsed_document,
+            filename,
+            document_kind,
+        )
+    except Exception as exc:
+        _log.warning(f"Engineering document chunk indexing failed: {exc}")
+        chunk_index = {"status": "failed", "chunk_count": 0, "error": str(exc)[:240]}
+    try:
+        _update_engineering_document_chunk_index(user["id"], project_id, document["id"], chunk_index)
+    except Exception as exc:
+        _log.warning(f"Engineering document chunk metadata update failed: {exc}")
+    document.setdefault("metadata", {})
+    document["metadata"]["chunk_index"] = chunk_index
+    document["chunk_index"] = chunk_index
     artifact = save_project_artifact(
         user["id"],
         project_id,
@@ -1126,9 +1314,13 @@ async def api_upload_engineering_document(project_id: int, req: dict, user: dict
             "object_key": object_key,
             "parse_status": parse_status,
             "mime_type": mime_type,
+            "chunk_index": chunk_index,
         },
     )
     document = attach_artifact_to_engineering_document(user["id"], project_id, document["id"], artifact["id"]) or document
+    document.setdefault("metadata", {})
+    document["metadata"]["chunk_index"] = chunk_index
+    document["chunk_index"] = chunk_index
     return {"document": document, "artifact": artifact, "project": get_project(project_id, user["id"])}
 
 @app.get("/api/projects/{project_id}/artifacts/{artifact_id}/pdf")

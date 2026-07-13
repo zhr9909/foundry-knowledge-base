@@ -124,8 +124,20 @@ def _is_index_noise(text: str, section: str = "") -> bool:
     )
 
 
-def _tsvector_search(query, top_k=40, cur=None):
+def _source_scope_sql(project_id=None):
+    source_expr = "COALESCE(c.source_type, ds.source_type, 'standard_manual')"
+    if project_id is None:
+        return f"AND {source_expr} = 'standard_manual'", {}
+    return (
+        f"AND ({source_expr} = 'standard_manual' OR "
+        f"({source_expr} = 'project_document' AND c.project_id = %(project_id)s))",
+        {"project_id": int(project_id)},
+    )
+
+
+def _tsvector_search(query, top_k=40, cur=None, project_id=None):
     """PostgreSQL tsvector full-text search using existing DB cursor."""
+    source_where, source_params = _source_scope_sql(project_id)
     sql = f"""
         SELECT c.id, c.chunk_id, c.page, c.chunk_type,
             c.content_text, c.table_shape,
@@ -136,10 +148,13 @@ def _tsvector_search(query, top_k=40, cur=None):
         FROM chunks c
         JOIN document_sources ds ON ds.id = c.source_id
         WHERE c.fts @@ plainto_tsquery('english', %(q)s)
+        {source_where}
         ORDER BY score DESC
         LIMIT %(limit)s
         """
-    cur.execute(sql, {"q": query, "limit": top_k})
+    params = {"q": query, "limit": top_k}
+    params.update(source_params)
+    cur.execute(sql, params)
     rows = cur.fetchall()
     result = []
     for row in rows:
@@ -174,7 +189,7 @@ def detect_material_category(query):
                 return cat
     return None
 
-def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None, alpha: float = 0.5) -> dict:
+def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None, alpha: float = 0.5, project_id: int = None) -> dict:
     """Search the knowledge base with optional section filter."""
     model = get_embedding_model()
     query_vec = model.encode(query).tolist()
@@ -188,6 +203,7 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
     if section:
         section_where = "AND c.metadata->>'section_path' ILIKE '%%' || %(section_filter)s || '%%'"
         section_params["section_filter"] = section
+    source_where, source_params = _source_scope_sql(project_id)
     
     if hybrid:
         # BM25 + Vector RRF hybrid (no PostgreSQL ts_rank)
@@ -200,13 +216,14 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
             1 - (c.embedding <=> %(query_vec)s::vector) AS score
         FROM chunks c
         JOIN document_sources ds ON ds.id = c.source_id
-        WHERE 1=1 {section_where}
+        WHERE 1=1 {section_where} {source_where}
         ORDER BY c.embedding <=> %(query_vec)s::vector
         LIMIT %(top_k)s
         """
         vec_params = {"query_vec": query_vec, "top_k": top_k * 3}
         if section:
             vec_params["section_filter"] = section
+        vec_params.update(source_params)
         cur.execute(vec_sql, vec_params)
         vec_rows = cur.fetchall()
         vec_results = []
@@ -226,7 +243,7 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
                 "section": sp,
                 "score": round(float(row["score"]), 4),
             })
-        bm25_res = _tsvector_search(query, top_k * 3, cur)
+        bm25_res = _tsvector_search(query, top_k * 3, cur, project_id=project_id)
         bm25_raw_json = json.dumps([{"chunk_id": r["chunk_id"], "bm25_score": r["bm25_score"]} for r in bm25_res[:20]], default=str)
         results = _rrf_fuse(vec_results, bm25_res, top_k)
     else:
@@ -240,13 +257,14 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
             1 - (c.embedding <=> %(query_vec)s::vector) AS score
         FROM chunks c
         JOIN document_sources ds ON ds.id = c.source_id
-        WHERE 1=1 {section_where}
+        WHERE 1=1 {section_where} {source_where}
         ORDER BY c.embedding <=> %(query_vec)s::vector
         LIMIT %(top_k)s
         """
         params = {"query_vec": query_vec, "top_k": top_k}
         if section:
             params["section_filter"] = section
+        params.update(source_params)
     
         cur.execute(sql, params)
         rows = cur.fetchall()
@@ -294,6 +312,7 @@ def search(query: str, top_k: int = 10, hybrid: bool = True, section: str = None
         "top_k": top_k,
         "hybrid": hybrid,
         "section": section,
+        "project_id": project_id,
         "results": results,
         "latency_ms": int(elapsed),
     }
@@ -346,6 +365,7 @@ def main():
                 top_k: int = 10
                 hybrid: bool = True
                 section: Optional[str] = None
+                project_id: Optional[int] = None
             
             class SearchResult(BaseModel):
                 id: int; chunk_id: str; page: int; type: str
@@ -356,6 +376,7 @@ def main():
             class SearchResponse(BaseModel):
                 query: str; top_k: int; hybrid: bool
                 section: Optional[str] = None
+                project_id: Optional[int] = None
                 results: list; latency_ms: int
             
             @app.get("/health")
@@ -370,24 +391,23 @@ def main():
             def search_endpoint(req: SearchRequest):
                 if not req.query.strip():
                     raise HTTPException(400, "query is required")
-                return search(req.query, req.top_k, req.hybrid, req.section)
+                return search(req.query, req.top_k, req.hybrid, req.section, project_id=req.project_id)
             
             @app.get("/search")
-            def search_get(query: str = "", top_k: int = 10, hybrid: bool = True, section: Optional[str] = None):
+            def search_get(query: str = "", top_k: int = 10, hybrid: bool = True, section: Optional[str] = None, project_id: Optional[int] = None):
                 if not query.strip():
                     raise HTTPException(400, "query is required")
-                return search(query, top_k, hybrid, section)
+                return search(query, top_k, hybrid, section, project_id=project_id)
             
             uvicorn.run(app, host="0.0.0.0", port=8002)
         except ImportError:
             print("FastAPI not installed. Run: pip install fastapi uvicorn")
             print("Or use: python search.py --query \"盲陆聽莽職聞茅聴庐茅垄聵\"")
 
-print("Loading search engine (embedding model + PostgreSQL tsvector)...", flush=True)
-warmup()
-print("Search engine ready\n", flush=True)
-
 if __name__ == "__main__":
+    print("Loading search engine (embedding model + PostgreSQL tsvector)...", flush=True)
+    warmup()
+    print("Search engine ready\n", flush=True)
     main()
 
 

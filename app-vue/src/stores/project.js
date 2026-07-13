@@ -46,6 +46,21 @@ export const useProjectStore = defineStore('project', () => {
 
   async function loadProject(id, openPanel = true) {
     if (!id) return null
+    if (openPanel) {
+      const cached = projects.value.find((item) => item.id === id)
+      if (cached) {
+        const existing = activeProject.value?.id === id ? activeProject.value : {}
+        activeProject.value = {
+          conversations: [],
+          artifacts: [],
+          evidence_cards: [],
+          engineering_documents: [],
+          ...existing,
+          ...cached,
+        }
+        isPanelOpen.value = true
+      }
+    }
     isLoading.value = true
     lastError.value = ''
     try {

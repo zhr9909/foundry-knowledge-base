@@ -276,6 +276,231 @@ def _blocks_to_markdown(blocks):
     return "\n\n".join(parts)
 
 
+def _estimate_tokens(text):
+    return max(1, len(str(text or "")) // 2)
+
+
+def _norm_space(text):
+    return re.sub(r"\s+", " ", str(text or "")).strip()
+
+
+def _semantic_type(text, fallback="paragraph"):
+    sample = str(text or "").lower()
+    rules = [
+        ("conclusion", [
+            r"结论", r"总结", r"建议", r"因此", r"说明", r"可以看出", r"下一步", r"风险",
+            r"conclusion", r"summary", r"recommend", r"risk", r"therefore",
+        ]),
+        ("experiment_result", [
+            r"结果", r"强度", r"硬度", r"固化效果", r"对比", r"差异", r"数据", r"回样", r"留样",
+            r"result", r"observation", r"strength", r"hardness", r"compare", r"data",
+        ]),
+        ("experiment_condition", [
+            r"条件", r"温度", r"时间", r"配比", r"比例", r"压力", r"浇注", r"固化时间",
+            r"condition", r"temperature", r"time", r"ratio", r"pressure", r"parameter",
+        ]),
+    ]
+    for label, patterns in rules:
+        if any(re.search(pattern, sample, re.I) for pattern in patterns):
+            return label
+    return fallback
+
+
+def _split_long_text(text, max_chars=900):
+    text = str(text or "").strip()
+    if len(text) <= max_chars:
+        return [text] if text else []
+    parts = []
+    current = []
+    current_len = 0
+    sentences = re.split(r"(?<=[。！？.!?；;])\s*", text)
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+        if current and current_len + len(sentence) > max_chars:
+            parts.append("".join(current).strip())
+            current = []
+            current_len = 0
+        if len(sentence) > max_chars:
+            for i in range(0, len(sentence), max_chars):
+                part = sentence[i:i + max_chars].strip()
+                if part:
+                    parts.append(part)
+            continue
+        current.append(sentence)
+        current_len += len(sentence)
+    if current:
+        parts.append("".join(current).strip())
+    return [part for part in parts if part]
+
+
+def _heading_path(headings):
+    active = [h for h in headings if h]
+    return " / ".join(active) if active else "__root__"
+
+
+def _table_search_text(block, heading_path, filename):
+    md = _table_to_markdown(block)
+    if not md:
+        return ""
+    return "\n".join([
+        f"Document: {filename}",
+        f"Section: {heading_path}",
+        "Chunk type: table",
+        "",
+        md,
+    ]).strip()
+
+
+def build_document_chunks(parsed_document, filename="", document_kind="engineering_case", min_chars=260, max_chars=900):
+    """Build retrieval chunks from parsed Word/plain-text document structure.
+
+    This intentionally keeps the chunking deterministic: native document
+    headings, paragraphs, lists and tables define boundaries; no LLM call is
+    involved at ingestion time.
+    """
+    blocks = list((parsed_document or {}).get("blocks") or [])
+    filename = filename or (parsed_document or {}).get("filename") or "engineering-document"
+    headings = [""] * 6
+    chunks = []
+    buffer = []
+    buffer_meta = None
+    seq = 0
+
+    def emit_buffer():
+        nonlocal buffer, buffer_meta, seq
+        if not buffer or not buffer_meta:
+            buffer = []
+            buffer_meta = None
+            return
+        raw_text = "\n".join(item["text"] for item in buffer if item.get("text")).strip()
+        if not raw_text:
+            buffer = []
+            buffer_meta = None
+            return
+        for part in _split_long_text(raw_text, max_chars=max_chars):
+            seq += 1
+            content = "\n".join([
+                f"Document: {filename}",
+                f"Section: {buffer_meta['heading_path']}",
+                f"Chunk type: {buffer_meta['chunk_type']}",
+                "",
+                part,
+            ]).strip()
+            chunks.append({
+                "chunk_id": f"doc_chunk_{seq:04d}",
+                "type": buffer_meta["chunk_type"],
+                "content": content,
+                "raw_content": part,
+                "pages": [1],
+                "tokens": _estimate_tokens(content),
+                "section_path": buffer_meta["heading_path"],
+                "source": filename,
+                "metadata": {
+                    "doc_title": filename,
+                    "original_filename": filename,
+                    "document_kind": document_kind or "engineering_case",
+                    "heading_path": buffer_meta["heading_path"],
+                    "block_indexes": [item["index"] for item in buffer],
+                    "content_kind": buffer_meta["chunk_type"],
+                },
+            })
+        buffer = []
+        buffer_meta = None
+
+    for block in blocks:
+        btype = block.get("type")
+        text = str(block.get("text") or "").strip()
+        if btype == "heading":
+            emit_buffer()
+            level = max(1, min(6, int(block.get("level") or 1)))
+            headings[level - 1] = text
+            for i in range(level, len(headings)):
+                headings[i] = ""
+            continue
+
+        path = _heading_path(headings)
+        if btype == "table":
+            emit_buffer()
+            table_text = _table_search_text(block, path, filename)
+            if table_text:
+                seq += 1
+                chunks.append({
+                    "chunk_id": f"doc_chunk_{seq:04d}",
+                    "type": "table",
+                    "content": table_text,
+                    "raw_content": _table_to_markdown(block),
+                    "pages": [1],
+                    "tokens": _estimate_tokens(table_text),
+                    "section_path": path,
+                    "table_shape": f"{block.get('row_count', 0)}x{block.get('column_count', 0)}",
+                    "table_header": block.get("headers") or [],
+                    "source": filename,
+                    "metadata": {
+                        "doc_title": filename,
+                        "original_filename": filename,
+                        "document_kind": document_kind or "engineering_case",
+                        "heading_path": path,
+                        "block_indexes": [block.get("index")],
+                        "table_index": block.get("index"),
+                        "content_kind": "table",
+                    },
+                })
+            continue
+
+        if btype == "image":
+            emit_buffer()
+            images = block.get("images") or []
+            image_names = ", ".join(img.get("filename") or img.get("relation_id") for img in images)
+            if image_names:
+                seq += 1
+                content = "\n".join([
+                    f"Document: {filename}",
+                    f"Section: {path}",
+                    "Chunk type: image_note",
+                    "",
+                    f"Image placeholder: {image_names}",
+                ]).strip()
+                chunks.append({
+                    "chunk_id": f"doc_chunk_{seq:04d}",
+                    "type": "image_note",
+                    "content": content,
+                    "raw_content": image_names,
+                    "pages": [1],
+                    "tokens": _estimate_tokens(content),
+                    "section_path": path,
+                    "source": filename,
+                    "metadata": {
+                        "doc_title": filename,
+                        "original_filename": filename,
+                        "document_kind": document_kind or "engineering_case",
+                        "heading_path": path,
+                        "block_indexes": [block.get("index")],
+                        "images": images,
+                        "content_kind": "image_note",
+                    },
+                })
+            continue
+
+        if not text:
+            continue
+        chunk_type = _semantic_type(text, "list_item" if btype == "list_item" else "paragraph")
+        normalized = _norm_space(text)
+        next_meta = {"heading_path": path, "chunk_type": chunk_type}
+        current_len = sum(len(item.get("text", "")) for item in buffer)
+        same_bucket = buffer_meta == next_meta
+        if buffer and (not same_bucket or current_len + len(normalized) > max_chars):
+            emit_buffer()
+        buffer_meta = next_meta
+        buffer.append({"index": block.get("index"), "text": normalized})
+        if sum(len(item.get("text", "")) for item in buffer) >= min_chars and chunk_type in {"experiment_result", "conclusion"}:
+            emit_buffer()
+
+    emit_buffer()
+    return chunks
+
+
 def parse_docx(data, filename=""):
     try:
         docx = zipfile.ZipFile(io.BytesIO(data))

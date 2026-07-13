@@ -20,7 +20,7 @@
             <span>项目</span>
             <strong>{{ project.activeProject.name }}</strong>
           </button>
-          <ModeSwitcher :model-value="chat.currentMode" :disabled="chat.isProcessing" @update:modelValue="chat.setMode" />
+          <ModeSwitcher :model-value="chat.currentMode" @update:modelValue="chat.setMode" />
         </div>
         <div class="topbar-right">
           <button class="icon-btn" @click="toggleTheme" title="&#x5207;&#x6362;&#x4E3B;&#x9898;">
@@ -43,6 +43,7 @@
       @close="project.closeProject"
       @select-conversation="loadConversation"
       @generate-brief="generateProjectBrief"
+      @start-workflow="startWorkflow"
     />
   </div>
 </template>
@@ -62,8 +63,10 @@ const project = useProjectStore()
 const menuOpen = ref(false)
 const isDark = ref(localStorage.getItem('theme') === 'dark')
 function toggleTheme() { isDark.value = !isDark.value; document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light'); localStorage.setItem('theme', isDark.value ? 'dark' : 'light') }
-async function handleSend(text) {
-  await chat.sendMessage(text, '', project.activeProject?.id || null)
+async function handleSend(payload) {
+  const options = typeof payload === 'object' && payload ? payload : {}
+  const text = typeof payload === 'string' ? payload : (options.query || '')
+  await chat.sendMessage(text, '', project.activeProject?.id || null, options)
   if (auth.isLoggedIn) {
     await chat.loadConversations()
     if (project.activeProject?.id) {
@@ -74,7 +77,7 @@ async function handleSend(text) {
     }
   }
 }
-function handleSuggest(query) { handleSend(query) }
+function handleSuggest(payload) { handleSend(payload) }
 async function loadConversation(id) {
   const cv = await chat.loadConversation(id)
   if (cv?.project_id) await project.loadProject(cv.project_id)
@@ -92,6 +95,11 @@ async function renameProject(payload) {
 async function generateProjectBrief() {
   if (!auth.isLoggedIn || !project.activeProject?.id) return
   await project.generateBrief(project.activeProject.id)
+}
+function startWorkflow(mode) {
+  if (!mode) return
+  chat.setMode(mode)
+  project.closeProject()
 }
 async function handleSaveArtifact(msg) {
   if (!auth.isLoggedIn) { auth.showAuth = true; return }

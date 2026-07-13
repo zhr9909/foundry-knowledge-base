@@ -400,6 +400,7 @@ def _plan_repair_queries(state: dict) -> tuple:
 class AgentState(TypedDict):
     query: str
     section: Optional[str]
+    project_id: Optional[int]
     history: Optional[list]
     current_query: str
     sub_queries: list
@@ -454,7 +455,7 @@ def _search_node(state: AgentState) -> dict:
     _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在检索知识库..."})
-    rs = search_parallel(state["sub_queries"], state.get("section"), top_k=20)
+    rs = search_parallel(state["sub_queries"], state.get("section"), top_k=20, project_id=state.get("project_id"))
     retrieval = dict(state.get("retrieval") or {})
     retrieval["candidate_count"] = len(rs)
     retrieval["top_hits"] = [
@@ -1177,6 +1178,43 @@ def _intent_terms(query: str):
     return [term for pattern, term in checks if re.search(pattern, text, re.I)]
 
 
+def apply_entity_correction(query: str, correction_entity: str) -> str:
+    """Replace the material entity in the current query with a user-corrected entity."""
+    query = query or ""
+    entity = _clean_entity_label(correction_entity or "")
+    if not entity:
+        return query
+
+    corrected = query
+    for rule in _ENTITY_RULES:
+        corrected = re.sub(rule["pattern"], entity, corrected, flags=re.I)
+
+    # Generic grade fallback, e.g. "6061 tensile strength" -> "aluminum alloy tensile strength".
+    if corrected == query:
+        corrected = re.sub(r"\b\d{3,5}(?:[-\s]?[A-Za-z0-9]+)?\b", entity, corrected, count=1)
+
+    if corrected == query:
+        intents = _intent_terms(query)
+        if intents:
+            zh_intent = {
+                "hardness": "硬度",
+                "color appearance": "颜色",
+                "heat treatment temperature": "热处理温度",
+                "casting process": "铸造工艺",
+                "mechanical properties": "力学性能",
+                "tensile strength": "抗拉强度",
+                "yield strength": "屈服强度",
+                "corrosion resistance": "耐腐蚀性能",
+                "density": "密度",
+            }.get(intents[0], intents[0])
+            corrected = f"{entity}的{zh_intent}"
+        else:
+            corrected = f"{entity} {query}"
+
+    corrected = re.sub(rf"({re.escape(entity)})(\s*(?:和|与|、|,|，)\s*)\1", r"\1", corrected)
+    return corrected.strip()
+
+
 def resolve_contextual_query(query: str, history: list = None) -> str:
     if _query_has_explicit_entity(query) or not _query_needs_history(query):
         return query
@@ -1327,16 +1365,16 @@ def rewrite_query(query: str, history: list = None) -> dict:
         return {"search_queries": _deterministic_multi_search_queries(query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
     return {"search_queries": _normalize_search_queries_english([_deterministic_search_query(query)], query), "core_entity": [rule["label"]] if rule else [], "filter_rule": rule["filter"] if rule else "全部", "search_priority": "语义均衡"}
 
-def search_single(query: str, section: str = None, top_k: int = 8) -> list:
+def search_single(query: str, section: str = None, top_k: int = 8, project_id: int = None) -> list:
     from search import search
-    result = search(query, top_k=top_k, hybrid=True, section=section)
+    result = search(query, top_k=top_k, hybrid=True, section=section, project_id=project_id)
     return result.get("results", [])
 
-def search_parallel(sub_queries, section=None, top_k=20):
+def search_parallel(sub_queries, section=None, top_k=20, project_id: int = None):
     per_query = []
     all_results = []
     with ThreadPoolExecutor(max_workers=min(len(sub_queries), 3)) as executor:
-        futures = {executor.submit(search_single, q, section, top_k): q for q in sub_queries}
+        futures = {executor.submit(search_single, q, section, top_k, project_id): q for q in sub_queries}
         for future in as_completed(futures):
             q = futures[future]
             results = future.result()
@@ -1447,7 +1485,7 @@ def select_context(results, top_k=6, original_query="", search_query="", preserv
     return formatted
 
 
-def stream_chat(query: str, section: str = None, history: list = None, mode: str = "qa"):
+def stream_chat(query: str, section: str = None, history: list = None, mode: str = "qa", project_id: int = None, correction_entity: str = None):
     """Generator that yields progress events during agent_chat execution."""
     import queue as _q
     import threading as _t
@@ -1458,7 +1496,7 @@ def stream_chat(query: str, section: str = None, history: list = None, mode: str
 
     def worker():
         try:
-            result = agent_chat(query, section, history, progress_callback=progress, mode=mode)
+            result = agent_chat(query, section, history, progress_callback=progress, mode=mode, project_id=project_id, correction_entity=correction_entity)
             q.put({"type": "result", "data": result})
         except Exception as e:
             q.put({"type": "error", "message": str(e)})
@@ -1735,6 +1773,8 @@ Output ONLY a JSON: {{"score": N, "reason": "one sentence", "missing": "what spe
 class AgentState(TypedDict):
     query: str
     section: Optional[str]
+    project_id: Optional[int]
+    correction_entity: Optional[str]
     history: Optional[list]
     current_query: str
     sub_queries: list
@@ -1761,7 +1801,11 @@ def _rewrite_node(state: AgentState) -> dict:
     _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在进行查询语义拆解..."})
-    resolved_query = resolve_contextual_query(state["current_query"], state.get("history"))
+    correction_entity = (state.get("correction_entity") or "").strip()
+    if correction_entity:
+        resolved_query = apply_entity_correction(state["current_query"], correction_entity)
+    else:
+        resolved_query = resolve_contextual_query(state["current_query"], state.get("history"))
     if resolved_query != state["current_query"] and state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": f"上下文解析：{state['current_query']} → {resolved_query}"})
     mode = state.get("mode", "qa")
@@ -1776,7 +1820,9 @@ def _rewrite_node(state: AgentState) -> dict:
         "search_queries": rw["search_queries"],
         "search_priority": rw["search_priority"],
         "task_intent": rw.get("task_intent", ""),
-        "used_history": resolved_query != state["current_query"],
+        "used_history": bool((not correction_entity) and resolved_query != state["current_query"]),
+        "used_correction": bool(correction_entity),
+        "correction_entity": correction_entity,
     }
     if state.get("progress_callback"):
         state["progress_callback"]({"step": "rewritten", "queries": rw["search_queries"], "retrieval": retrieval})
@@ -1789,7 +1835,7 @@ def _search_node(state: AgentState) -> dict:
     _step_start = time.time()
     if state.get("progress_callback"):
         state["progress_callback"]({"type": "log", "message": "正在检索知识库..."})
-    rs = search_parallel(state["sub_queries"], state.get("section"), top_k=20)
+    rs = search_parallel(state["sub_queries"], state.get("section"), top_k=20, project_id=state.get("project_id"))
     retrieval = dict(state.get("retrieval") or {})
     retrieval["candidate_count"] = len(rs)
     retrieval["top_hits"] = [
@@ -1974,13 +2020,13 @@ def _save_msgs(tid, msgs):
 def _load_msgs(tid):
     return _message_store.get(tid, [])
 
-def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None, mode: str = "qa") -> dict:
+def agent_chat(query: str, section: str = None, history: list = None, progress_callback: callable = None, mode: str = "qa", project_id: int = None, correction_entity: str = None) -> dict:
 
     _log.info('=' * 50)
     _log.info(f'Query: {query}')
     app = _get_graph()
     initial = {
-        "query": query, "section": section, "history": history,
+        "query": query, "section": section, "history": history, "project_id": project_id, "correction_entity": correction_entity,
         "current_query": query, "sub_queries": [], "core_entity": [], "filter_rule": "全部", "search_priority": "语义均衡", "search_results": [],
         "context": [], "answer": "", "citations": [], "graph": {}, "mode": normalize_mode(mode), "structured_output": {}, "score": 0, "retrieval": {},
         "attempts": 1, "max_retries": 1, "repair_attempts": 0, "max_repair_attempts": 2, "start_time": time.time(),
@@ -2514,16 +2560,16 @@ def rewrite_query(query: str, history: list = None) -> dict:
         return {"search_queries": _normalize_search_queries_english(_deterministic_multi_search_queries(query), query), "core_entity": multi_entities, "filter_rule": f"对比实体：{'、'.join(multi_entities)}", "search_priority": "语义均衡"}
     return {"search_queries": _normalize_search_queries_english([_deterministic_search_query(query)], query), "core_entity": [rule["label"]] if rule else [], "filter_rule": rule["filter"] if rule else "全部", "search_priority": "语义均衡"}
 
-def search_single(query: str, section: str = None, top_k: int = 8) -> list:
+def search_single(query: str, section: str = None, top_k: int = 8, project_id: int = None) -> list:
     from search import search
-    result = search(query, top_k=top_k, hybrid=True, section=section)
+    result = search(query, top_k=top_k, hybrid=True, section=section, project_id=project_id)
     return result.get("results", [])
 
-def search_parallel(sub_queries, section=None, top_k=20):
+def search_parallel(sub_queries, section=None, top_k=20, project_id: int = None):
     per_query = []
     all_results = []
     with ThreadPoolExecutor(max_workers=min(len(sub_queries), 3)) as executor:
-        futures = {executor.submit(search_single, q, section, top_k): q for q in sub_queries}
+        futures = {executor.submit(search_single, q, section, top_k, project_id): q for q in sub_queries}
         for future in as_completed(futures):
             q = futures[future]
             results = future.result()

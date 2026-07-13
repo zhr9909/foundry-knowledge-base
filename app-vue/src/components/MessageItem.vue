@@ -149,7 +149,12 @@ function submitCorrection() {
   const entity = correctionEntity.value
   if (!entity) return
   const question = props.msg.metadata?.question || retrieval.value?.original_query || ''
-  emit('correct-context', `关于${entity}，${question}`)
+  emit('correct-context', {
+    type: 'entity_correction',
+    entity,
+    query: question,
+    displayQuery: `按“${entity}”重新检索：${question}`,
+  })
   correctionEntity.value = ''
   correctionOpen.value = false
 }
